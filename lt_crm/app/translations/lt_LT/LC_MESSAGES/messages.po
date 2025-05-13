@@ -1,0 +1,174 @@
+# Lithuanian translations for LT CRM.
+# Copyright (C) 2023 LT CRM
+# This file is distributed under the same license as the LT CRM project.
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2023-01-01 00:00+0200\n"
+"PO-Revision-Date: 2023-01-01 00:00+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: lt_LT\n"
+"Language-Team: lt_LT <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=9 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: app/templates/base.html:18
+msgid "Dashboard"
+msgstr "Valdymo skydelis"
+
+#: app/templates/base.html:19
+msgid "Logout"
+msgstr "Atsijungti"
+
+#: app/templates/base.html:21
+msgid "Login"
+msgstr "Prisijungti"
+
+#: app/templates/base.html:22
+msgid "Register"
+msgstr "Registruotis"
+
+#: app/templates/main/index.html:4
+msgid "Welcome to LT CRM"
+msgstr "Sveiki atvykę į LT CRM"
+
+#: app/templates/main/index.html:5
+msgid "A Customer Relationship Management System for Lithuanian Businesses"
+msgstr "Klientų valdymo sistema Lietuvos įmonėms"
+
+#: app/templates/main/index.html:10
+msgid "Go to Dashboard"
+msgstr "Eiti į valdymo skydelį"
+
+#: app/templates/main/index.html:23
+msgid "Customer Management"
+msgstr "Klientų valdymas"
+
+#: app/templates/main/index.html:24
+msgid "Organize and track all your customer interactions in one place."
+msgstr "Organizuokite ir sekite visus klientų kontaktus vienoje vietoje."
+
+#: app/templates/main/index.html:28
+msgid "Task Tracking"
+msgstr "Užduočių sekimas"
+
+#: app/templates/main/index.html:29
+msgid "Never miss a follow-up with integrated task management."
+msgstr "Niekada nepraleiskite tolesnių veiksmų su integruotu užduočių valdymu."
+
+#: app/templates/main/index.html:33
+msgid "Reports & Analytics"
+msgstr "Ataskaitos ir analitika"
+
+#: app/templates/main/index.html:34
+msgid "Get insights into your business relationships and performance."
+msgstr "Gaukite įžvalgų apie savo verslo santykius ir veiklą."
+
+#: app/templates/main/dashboard.html:4
+msgid "Welcome back"
+msgstr "Sveiki sugrįžę"
+
+#: app/templates/main/dashboard.html:9
+msgid "Customers"
+msgstr "Klientai"
+
+#: app/templates/main/dashboard.html:14
+msgid "Tasks"
+msgstr "Užduotys"
+
+#: app/templates/main/dashboard.html:19
+msgid "Pending Tasks"
+msgstr "Laukiančios užduotys"
+
+#: app/templates/main/dashboard.html:24
+msgid "Upcoming"
+msgstr "Artėjančios"
+
+#: app/templates/main/dashboard.html:30
+msgid "Recent Customers"
+msgstr "Naujausi klientai"
+
+#: app/templates/main/dashboard.html:34
+msgid "Name"
+msgstr "Vardas"
+
+#: app/templates/main/dashboard.html:35
+msgid "Company"
+msgstr "Įmonė"
+
+#: app/templates/main/dashboard.html:36
+msgid "Created"
+msgstr "Sukurta"
+
+#: app/templates/main/dashboard.html:37
+msgid "Status"
+msgstr "Būsena"
+
+#: app/templates/main/dashboard.html:42
+msgid "No customers yet"
+msgstr "Klientų dar nėra"
+
+#: app/templates/main/dashboard.html:48
+msgid "Your Tasks"
+msgstr "Jūsų užduotys"
+
+#: app/templates/main/dashboard.html:52
+msgid "Title"
+msgstr "Pavadinimas"
+
+#: app/templates/main/dashboard.html:53
+msgid "Customer"
+msgstr "Klientas"
+
+#: app/templates/main/dashboard.html:54
+msgid "Due Date"
+msgstr "Terminas"
+
+#: app/templates/main/dashboard.html:55
+msgid "Priority"
+msgstr "Prioritetas"
+
+#: app/templates/main/dashboard.html:60
+msgid "No tasks yet"
+msgstr "Užduočių dar nėra"
+
+#: app/templates/auth/login.html:4
+msgid "Sign In"
+msgstr "Prisijungti"
+
+#: app/templates/auth/login.html:8
+msgid "Email"
+msgstr "El. paštas"
+
+#: app/templates/auth/login.html:13
+msgid "Password"
+msgstr "Slaptažodis"
+
+#: app/templates/auth/login.html:18
+msgid "Remember me"
+msgstr "Prisiminti mane"
+
+#: app/templates/auth/login.html:29
+msgid "Don't have an account?"
+msgstr "Neturite paskyros?"
+
+#: app/templates/auth/register.html:4
+msgid "Register"
+msgstr "Registruotis"
+
+#: app/templates/auth/register.html:8
+msgid "Username"
+msgstr "Vartotojo vardas"
+
+#: app/templates/auth/register.html:18
+msgid "Confirm Password"
+msgstr "Patvirtinti slaptažodį"
+
+#: app/templates/auth/register.html:30
+msgid "Already have an account?"
+msgstr "Jau turite paskyrą?" 

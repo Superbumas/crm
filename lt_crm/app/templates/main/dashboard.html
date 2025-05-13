@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Skydelis - LT CRM{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Sales Summary Cards -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Šio mėnesio pardavimai</h2>
+            <p class="text-3xl font-bold">{{ monthly_sales|default(0)|euro }}</p>
+            <div class="flex items-center mt-2">
+                {% if sales_growth > 0 %}
+                <span class="text-success flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />
+                    </svg>
+                    +{{ sales_growth }}%
+                </span>
+                {% else %}
+                <span class="text-error flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12 13a1 1 0 110 2H7a1 1 0 01-1-1v-5a1 1 0 012 0v3.586l4.293-4.293a1 1 0 011.414 0L16 10.586V8a1 1 0 112 0v5a1 1 0 01-1 1h-5z" clip-rule="evenodd" />
+                    </svg>
+                    {{ sales_growth }}%
+                </span>
+                {% endif %}
+                <span class="ml-2 text-sm opacity-70">nuo praėjusio mėnesio</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Naujų užsakymų</h2>
+            <p class="text-3xl font-bold">{{ new_orders|default(0) }}</p>
+            <div class="mt-2 text-sm opacity-70">Per pastarąsias 24 val.</div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Neišsiųstų užsakymų</h2>
+            <p class="text-3xl font-bold">{{ pending_orders|default(0) }}</p>
+            <div class="mt-2">
+                <a href="{{ url_for('main.orders') }}?status=paid,packed" class="btn btn-sm btn-primary">Peržiūrėti</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Chart -->
+    <div class="card bg-base-100 shadow-xl lg:col-span-2">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Pardavimų statistika</h2>
+            <canvas id="salesChart" class="w-full h-64"></canvas>
+        </div>
+    </div>
+
+    <!-- Low Stock Alerts -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Prekės baigiasi</h2>
+            {% if low_stock_products %}
+            <div class="overflow-x-auto">
+                <table class="table table-compact w-full">
+                    <thead>
+                        <tr>
+                            <th>Prekė</th>
+                            <th>Likutis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in low_stock_products %}
+                        <tr class="hover">
+                            <td>
+                                <a href="{{ url_for('main.product_detail', id=product.id) }}" class="font-medium">
+                                    {{ product.name }}
+                                </a>
+                                <div class="text-xs opacity-60">{{ product.sku }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {{ 'badge-error' if product.quantity <= 5 else 'badge-warning' }}">
+                                    {{ product.quantity }} vnt.
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>Visos prekės turi pakankamą kiekį sandėlyje.</span>
+                </div>
+            </div>
+            {% endif %}
+            <div class="card-actions justify-end mt-4">
+                <a href="{{ url_for('main.products') }}?stock=low" class="btn btn-sm btn-primary">Peržiūrėti visus</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Naujausi užsakymai</h2>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Data</th>
+                            <th>Klientas</th>
+                            <th>Suma</th>
+                            <th>Būsena</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_orders %}
+                            {% for order in recent_orders %}
+                            <tr class="hover">
+                                <td>{{ order.order_number }}</td>
+                                <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ order.shipping_name or 'Nežinomas' }}</td>
+                                <td>{{ order.total_amount|euro }}</td>
+                                <td>
+                                    <span class="badge
+                                        {% if order.status.value == 'new' %}badge-primary
+                                        {% elif order.status.value == 'paid' %}badge-success
+                                        {% elif order.status.value == 'shipped' %}badge-info
+                                        {% elif order.status.value == 'cancelled' %}badge-error
+                                        {% else %}badge-ghost{% endif %}">
+                                        {{ order.status.value }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('main.order_detail', id=order.id) }}" class="btn btn-sm btn-ghost">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">Nėra naujų užsakymų</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-actions justify-end mt-4">
+                <a href="{{ url_for('main.orders') }}" class="btn btn-primary">Visi užsakymai</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sample data - this would be replaced with dynamic data from backend
+    const labels = ['Sau', 'Vas', 'Kov', 'Bal', 'Geg', 'Bir', 'Lie', 'Rgp', 'Rgs', 'Spa', 'Lap', 'Gru'];
+    const salesData = {{ sales_data|default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])|tojson }};
+    
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Pardavimai (EUR)',
+                data: salesData,
+                backgroundColor: 'rgba(0, 95, 184, 0.2)',
+                borderColor: 'rgba(0, 95, 184, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value + ' €';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

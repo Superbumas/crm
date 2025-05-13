@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center py-16">
+    <h1 class="text-4xl font-bold mb-6">{{ _('Welcome to LT CRM') }}</h1>
+    <p class="text-xl mb-8">{{ _('A Customer Relationship Management System for Lithuanian Businesses') }}</p>
+    
+    <div class="flex justify-center space-x-4">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.dashboard') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
+            {{ _('Go to Dashboard') }}
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
+            {{ _('Login') }}
+        </a>
+        <a href="{{ url_for('auth.register') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded shadow">
+            {{ _('Register') }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">{{ _('Customer Management') }}</h2>
+        <p>{{ _('Organize and track all your customer interactions in one place.') }}</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">{{ _('Task Tracking') }}</h2>
+        <p>{{ _('Never miss a follow-up with integrated task management.') }}</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">{{ _('Reports & Analytics') }}</h2>
+        <p>{{ _('Get insights into your business relationships and performance.') }}</p>
+    </div>
+</div>
+{% endblock %} 

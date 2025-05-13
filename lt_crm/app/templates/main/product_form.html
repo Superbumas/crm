@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}{% if product %}Redaguoti produktą{% else %}Naujas produktas{% endif %} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">{% if product %}Redaguoti produktą{% else %}Naujas produktas{% endif %}</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
+                <li>{% if product %}{{ product.name }}{% else %}Naujas{% endif %}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<form id="product-form" 
+      hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
+      hx-trigger="submit" 
+      hx-target="#form-response"
+      hx-indicator="#form-spinner"
+      class="space-y-6">
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Pagrindinė informacija</h2>
+            
+            <!-- Basic Product Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Pavadinimas</span>
+                    </label>
+                    <input type="text" name="name" value="{{ product.name if product else '' }}" 
+                           required class="input input-bordered w-full" 
+                           placeholder="Produkto pavadinimas" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">SKU</span>
+                    </label>
+                    <input type="text" name="sku" value="{{ product.sku if product else '' }}" 
+                           required class="input input-bordered w-full" 
+                           placeholder="Unikalus produkto kodas" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Kategorija</span>
+                    </label>
+                    <select name="category" class="select select-bordered w-full">
+                        <option value="" {% if not product or not product.category %}selected{% endif %}>Pasirinkite...</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if product and product.category == category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Barkodas (EAN)</span>
+                    </label>
+                    <input type="text" name="barcode" value="{{ product.barcode if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="Produkto barkodas" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Aprašymas</h2>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Produkto aprašymas (HTML)</span>
+                </label>
+                <textarea name="description_html" class="textarea textarea-bordered h-32" 
+                          placeholder="Išsamus produkto aprašymas su HTML">{{ product.description_html if product else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Kainos ir likučiai</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Galutinė kaina (EUR)</span>
+                    </label>
+                    <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
+                           required class="input input-bordered w-full" 
+                           step="0.01" min="0" 
+                           placeholder="0.00" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Sena kaina (EUR)</span>
+                    </label>
+                    <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           step="0.01" min="0" 
+                           placeholder="0.00" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Kiekis sandėlyje</span>
+                    </label>
+                    <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
+                           required class="input input-bordered w-full" 
+                           min="0" step="1" 
+                           placeholder="0" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Papildoma informacija</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Pristatymo trukmė (d.)</span>
+                    </label>
+                    <input type="number" name="delivery_days" value="{{ product.delivery_days if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           min="0" step="1" 
+                           placeholder="0" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Garantija (mėn.)</span>
+                    </label>
+                    <input type="number" name="warranty_months" value="{{ product.warranty_months if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           min="0" step="1" 
+                           placeholder="0" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Gamintojas</span>
+                    </label>
+                    <input type="text" name="manufacturer" value="{{ product.manufacturer if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="Gamintojas" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Modelis</span>
+                    </label>
+                    <input type="text" name="model" value="{{ product.model if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="Modelis" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Svoris (kg)</span>
+                    </label>
+                    <input type="number" name="weight_kg" value="{{ product.weight_kg if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           step="0.001" min="0" 
+                           placeholder="0.000" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Nuotraukos</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Pagrindinė nuotrauka</span>
+                    </label>
+                    <input type="text" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="https://example.com/image.jpg" />
+                    
+                    {% if product and product.main_image_url %}
+                    <div class="mt-2">
+                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}" class="max-h-32 rounded-md" />
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Papildomos nuotraukos (JSON)</span>
+                    </label>
+                    <textarea name="extra_image_urls" class="textarea textarea-bordered" 
+                              placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Parametrai ir variantai</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Parametrai (JSON)</span>
+                    </label>
+                    <textarea name="parameters" class="textarea textarea-bordered h-32" 
+                              placeholder='{"CPU": "Intel i5", "RAM": "8GB", "Storage": "256GB SSD"}'>{{ product.parameters|tojson if product and product.parameters else '' }}</textarea>
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Variantai (JSON)</span>
+                    </label>
+                    <textarea name="variants" class="textarea textarea-bordered h-32" 
+                              placeholder='[{"Color": "Red", "Size": "M"}, {"Color": "Blue", "Size": "L"}]'>{{ product.variants|tojson if product and product.variants else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Form response area for HTMX -->
+    <div id="form-response"></div>
+    
+    <div class="flex justify-between items-center">
+        <a href="{{ url_for('main.products') }}" class="btn btn-outline">Atšaukti</a>
+        
+        <div class="flex items-center space-x-2">
+            <div id="form-spinner" class="htmx-indicator">
+                <span class="loading loading-spinner loading-md"></span>
+                <span class="ml-2">Saugoma...</span>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                {% if product %}Išsaugoti{% else %}Sukurti{% endif %}
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Listen for successful form submission
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'form-response' && !evt.detail.xhr.response.includes('alert-error')) {
+                // After 3 seconds, redirect to products page if success
+                setTimeout(function() {
+                    window.location.href = "{{ url_for('main.products') }}";
+                }, 3000);
+            }
+        });
+        
+        // Auto-save functionality for fields that should auto-save
+        const autoSaveFields = document.querySelectorAll('[data-autosave="true"]');
+        autoSaveFields.forEach(field => {
+            field.addEventListener('change', function() {
+                const fieldName = this.name;
+                const fieldValue = this.value;
+                const fieldId = this.id;
+                
+                // Create small form with just this field
+                const formData = new FormData();
+                formData.append(fieldName, fieldValue);
+                formData.append('_autosave', 'true');
+                
+                // Send HTMX request
+                htmx.ajax('POST', "{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}", {
+                    target: '#' + fieldId + '-response',
+                    swap: 'innerHTML',
+                    values: formData
+                });
+            });
+        });
+    });
+</script>
+{% endblock %} 

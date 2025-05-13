@@ -1,0 +1,4 @@
+# Frontend dependencies for lt_crm
+babel==2.13.0  # For currency formatting
+flask-minify==0.42  # For minifying HTML/CSS/JS resources
+webassets==2.0  # For static asset bundling 

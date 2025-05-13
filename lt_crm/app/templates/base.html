@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}" data-theme="light" class="transition-colors duration-200">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title }} - LT CRM{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#005FB8',
+                        'primary-focus': '#0052A2',
+                        'primary-content': '#FFFFFF',
+                    }
+                }
+            },
+            daisyui: {
+                themes: ["light", "dark"]
+            }
+        }
+    </script>
+    {% block styles %}{% endblock %}
+</head>
+<body class="min-h-screen bg-base-100 text-base-content">
+    <div class="drawer drawer-mobile">
+        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar -->
+            <div class="navbar bg-base-100 shadow-md z-10">
+                <div class="flex-none">
+                    <label for="my-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <a href="{{ url_for('main.index') }}" class="text-xl font-bold">LT CRM</a>
+                </div>
+                <div class="flex-none gap-2">
+                    <!-- Dark mode toggle -->
+                    <button id="theme-toggle" class="btn btn-ghost btn-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 dark-icon hidden">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 light-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                        </svg>
+                    </button>
+                    {% if current_user.is_authenticated %}
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                            <div class="w-10 rounded-full">
+                                <span class="text-xl">{{ current_user.username[:1] }}</span>
+                            </div>
+                        </label>
+                        <ul tabindex="0" class="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
+                            <li><a href="{{ url_for('auth.profile') }}">Profilis</a></li>
+                            <li><a href="{{ url_for('auth.logout') }}">Atsijungti</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Prisijungti</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Registruotis</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="p-4 mt-2">
+                <!-- Toast alerts -->
+                <div id="toast-container" class="toast toast-top toast-end z-50">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert {{ 'alert-error' if category == 'error' else 'alert-success' }} shadow-lg mb-4 animate__animated animate__fadeIn">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>{{ message }}</span>
+                        </div>
+                        <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="drawer-side">
+            <label for="my-drawer" class="drawer-overlay"></label>
+            <ul class="menu p-4 w-60 bg-base-200 text-base-content">
+                <li class="mb-2 font-semibold text-lg">
+                    <a href="{{ url_for('main.index') }}">LT CRM</a>
+                </li>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
+                <li><a href="{{ url_for('main.orders') }}">Užsakymai</a></li>
+                <li><a href="{{ url_for('main.invoices') }}">Sąskaitos faktūros</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer footer-center p-4 bg-base-200 text-base-content">
+        <div>
+            <p>{{ _('LT CRM') }} &copy; {{ now.year }}</p>
+        </div>
+    </footer>
+
+    <script>
+        // Dark mode toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const darkIcon = document.querySelector('.dark-icon');
+        const lightIcon = document.querySelector('.light-icon');
+        
+        // Check for saved theme preference or use preferred-color-scheme
+        const savedTheme = localStorage.getItem('theme') || 
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        // Set initial theme
+        setTheme(savedTheme);
+        
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+        
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                darkIcon.classList.remove('hidden');
+                lightIcon.classList.add('hidden');
+            } else {
+                darkIcon.classList.add('hidden');
+                lightIcon.classList.remove('hidden');
+            }
+        }
+        
+        // Auto-remove toasts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast .alert');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.classList.add('animate__fadeOut');
+                    setTimeout(() => toast.remove(), 500);
+                }, 5000);
+            });
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

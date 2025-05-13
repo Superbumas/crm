@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Produktai - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">Produktai</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li>Produktai</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="flex space-x-2 mt-4 md:mt-0">
+        <a href="{{ url_for('main.product_new') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Naujas produktas
+        </a>
+        <button class="btn btn-outline" onclick="document.getElementById('import-modal').showModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+            Importuoti CSV
+        </button>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('main.products') }}">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-control">
+                    <div class="input-group">
+                        <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Ieškoti pagal pavadinimą, SKU..." class="input input-bordered w-full" />
+                        <button type="submit" class="btn btn-square">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-control">
+                    <select name="category" class="select select-bordered w-full">
+                        <option value="">Visos kategorijos</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-control">
+                    <select name="stock" class="select select-bordered w-full">
+                        <option value="">Visi likučiai</option>
+                        <option value="in_stock" {% if request.args.get('stock') == 'in_stock' %}selected{% endif %}>Yra sandėlyje</option>
+                        <option value="low" {% if request.args.get('stock') == 'low' %}selected{% endif %}>Mažas kiekis</option>
+                        <option value="out_of_stock" {% if request.args.get('stock') == 'out_of_stock' %}selected{% endif %}>Nėra sandėlyje</option>
+                    </select>
+                </div>
+                <div class="form-control flex flex-row space-x-2">
+                    <button type="submit" class="btn btn-primary flex-1">Filtruoti</button>
+                    <a href="{{ url_for('main.products') }}" class="btn btn-outline btn-error">Išvalyti</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card bg-base-100 shadow-xl overflow-hidden">
+    <div class="card-body p-0">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Nuotrauka</th>
+                        <th>Pavadinimas</th>
+                        <th>Kategorija</th>
+                        <th>Kaina</th>
+                        <th>Likutis</th>
+                        <th>Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for product in products %}
+                        <tr class="hover" data-product-id="{{ product.id }}">
+                            <td>{{ product.sku }}</td>
+                            <td>
+                                {% if product.main_image_url %}
+                                <div class="avatar">
+                                    <div class="mask mask-squircle w-12 h-12">
+                                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}" />
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="avatar placeholder">
+                                    <div class="mask mask-squircle w-12 h-12 bg-neutral-focus text-neutral-content">
+                                        <span>{{ product.name[:2] }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.product_detail', id=product.id) }}" class="font-medium hover:underline">
+                                    {{ product.name }}
+                                </a>
+                                {% if product.barcode %}
+                                <div class="text-xs opacity-60">EAN: {{ product.barcode }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ product.category or '-' }}</td>
+                            <td>
+                                <div class="font-semibold">{{ product.price_final|euro }}</div>
+                                {% if product.price_old %}
+                                <div class="text-xs line-through opacity-60">{{ product.price_old|euro }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if product.quantity > 10 %}badge-success{% elif product.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
+                                    {{ product.quantity }} vnt.
+                                </span>
+                            </td>
+                            <td>
+                                <div class="flex space-x-1">
+                                    <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-square btn-sm btn-ghost">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </a>
+                                    <button class="btn btn-square btn-sm btn-ghost" 
+                                            hx-delete="{{ url_for('main.product_delete', id=product.id) }}"
+                                            hx-confirm="Ar tikrai norite ištrinti šį produktą?"
+                                            hx-target="closest tr"
+                                            hx-swap="outerHTML swap:1s">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8">
+                                {% if request.args.get('q') or request.args.get('category') or request.args.get('stock') %}
+                                    Nerasta produktų pagal pasirinktus filtrus.
+                                    <a href="{{ url_for('main.products') }}" class="btn btn-sm btn-ghost mt-2">Išvalyti filtrus</a>
+                                {% else %}
+                                    Dar nėra produktų. <a href="{{ url_for('main.product_new') }}" class="link">Pridėkite naują produktą</a>.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<div class="flex justify-center mt-6">
+    <div class="btn-group">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('main.products', page=pagination.prev_num, **request.args) }}" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </a>
+        {% else %}
+        <button class="btn btn-disabled">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        {% endif %}
+        
+        {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page %}
+                {% if page == pagination.page %}
+                <button class="btn btn-active">{{ page }}</button>
+                {% else %}
+                <a href="{{ url_for('main.products', page=page, **request.args) }}" class="btn">{{ page }}</a>
+                {% endif %}
+            {% else %}
+                <button class="btn btn-disabled">...</button>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('main.products', page=pagination.next_num, **request.args) }}" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </a>
+        {% else %}
+        <button class="btn btn-disabled">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Import Modal -->
+<dialog id="import-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Importuoti produktus iš CSV</h3>
+        <form id="csv-upload-form" method="POST" action="{{ url_for('main.product_import_csv') }}" enctype="multipart/form-data" class="space-y-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">CSV failas</span>
+                </label>
+                <input type="file" name="csv_file" accept=".csv" class="file-input file-input-bordered w-full" required />
+                <label class="label">
+                    <span class="label-text-alt">Pasirinkite CSV failą su produktų duomenimis</span>
+                </label>
+            </div>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Kodavimas</span>
+                </label>
+                <select name="encoding" class="select select-bordered w-full">
+                    <option value="utf-8">UTF-8</option>
+                    <option value="cp1257">CP1257 (Windows Baltic)</option>
+                    <option value="iso-8859-13">ISO-8859-13 (Baltic)</option>
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Skirtukas</span>
+                </label>
+                <select name="delimiter" class="select select-bordered w-full">
+                    <option value=",">Kablelis (,)</option>
+                    <option value=";">Kabliataškis (;)</option>
+                    <option value="\t">Tabuliacija (Tab)</option>
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <label class="label cursor-pointer">
+                    <span class="label-text">Pirmoje eilutėje yra stulpelių pavadinimai</span>
+                    <input type="checkbox" name="has_header" checked class="checkbox checkbox-primary" />
+                </label>
+            </div>
+        
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Importuoti</button>
+                <button type="button" class="btn" onclick="document.getElementById('import-modal').close()">Atšaukti</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+{% endblock %} 

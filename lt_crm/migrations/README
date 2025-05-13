@@ -1,0 +1,19 @@
+Generic single-database configuration for Flask-Migrate.
+
+This directory contains SQLAlchemy database migrations for the application. 
+Migrations are generated using Flask-Migrate (based on Alembic).
+
+To generate a new migration after model changes:
+```
+flask db migrate -m "Description of changes"
+```
+
+To apply migrations:
+```
+flask db upgrade
+```
+
+To downgrade:
+```
+flask db downgrade
+``` 
