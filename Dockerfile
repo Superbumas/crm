@@ -20,20 +20,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# Copy poetry configuration files
-COPY lt_crm/pyproject.toml lt_crm/poetry.lock* ./
+# Copy entire project
+COPY . /app/
 
-# Install dependencies
+# Install dependencies using pip directly (more compatible with Fly.io build)
+COPY lt_crm/requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && \
-    pip install poetry && \
-    poetry install --no-root --only main
-
-# Copy application code
-COPY lt_crm/ .
+    pip install -r requirements.txt
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "app:create_app()"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "lt_crm.app:create_app()"] 

@@ -1,12 +1,17 @@
 # fly.toml app configuration file generated for lt-crm
 app = "lt-crm"
 primary_region = "ams"
+kill_signal = "SIGINT"
+kill_timeout = 5
 
 [build]
   dockerfile = "Dockerfile"
 
+[deploy]
+  strategy = "immediate"
+
 [env]
-  FLASK_APP = "app"
+  FLASK_APP = "lt_crm.app"
   FLASK_ENV = "production"
   BABEL_DEFAULT_LOCALE = "lt_LT"
   BABEL_DEFAULT_TIMEZONE = "Europe/Vilnius"
@@ -46,5 +51,5 @@ primary_region = "ams"
   path = "/metrics"
 
 [[statics]]
-  guest_path = "/app/app/static"
+  guest_path = "/app/lt_crm/app/static"
   url_prefix = "/static/" 
