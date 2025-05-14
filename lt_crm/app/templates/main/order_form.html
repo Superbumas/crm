@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between mb-4">
+        <h1 class="text-2xl font-bold">Naujas užsakymas</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.orders') }}" class="btn btn-outline">Atšaukti</a>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.order_new') }}" class="space-y-6">
+                <!-- Order Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Užsakymo informacija</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Užsakymo šaltinis</span>
+                            </label>
+                            <select name="source" class="select select-bordered" required>
+                                <option value="manual">Rankinis įvedimas</option>
+                                <option value="web">Internetinė parduotuvė</option>
+                                <option value="api">API</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Būsena</span>
+                            </label>
+                            <select name="status" class="select select-bordered" required>
+                                <option value="new">Naujas</option>
+                                <option value="paid">Apmokėtas</option>
+                                <option value="packed">Supakuotas</option>
+                                <option value="shipped">Išsiųstas</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Kliento informacija</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Vardas, pavardė</span>
+                            </label>
+                            <input type="text" name="shipping_name" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">El. paštas</span>
+                            </label>
+                            <input type="email" name="shipping_email" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Telefonas</span>
+                            </label>
+                            <input type="text" name="shipping_phone" class="input input-bordered" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Adresas</span>
+                            </label>
+                            <input type="text" name="shipping_address" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Miestas</span>
+                            </label>
+                            <input type="text" name="shipping_city" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pašto kodas</span>
+                            </label>
+                            <input type="text" name="shipping_postal_code" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Šalis</span>
+                            </label>
+                            <input type="text" name="shipping_country" class="input input-bordered" value="Lietuva" required />
+                        </div>
+                    </div>
+                    
+                    <div class="form-control mt-4">
+                        <label class="label">
+                            <span class="label-text">Pastabos</span>
+                        </label>
+                        <textarea name="shipping_notes" class="textarea textarea-bordered h-24"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Products Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Prekės</h2>
+                    
+                    <div id="order-items">
+                        <div class="grid grid-cols-12 gap-2 mb-2 font-bold">
+                            <div class="col-span-6">Prekė</div>
+                            <div class="col-span-2">Kaina</div>
+                            <div class="col-span-1">Kiekis</div>
+                            <div class="col-span-2">Suma</div>
+                            <div class="col-span-1"></div>
+                        </div>
+                        
+                        <div class="item-row grid grid-cols-12 gap-2 mb-2 items-center">
+                            <div class="col-span-6">
+                                <select name="product_ids[]" class="select select-bordered w-full product-select" required>
+                                    <option value="">Pasirinkite prekę</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-sku="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <input type="number" name="prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required readonly />
+                            </div>
+                            <div class="col-span-1">
+                                <input type="number" name="quantities[]" min="1" value="1" class="input input-bordered w-full quantity-input" required />
+                            </div>
+                            <div class="col-span-2">
+                                <input type="number" name="line_totals[]" step="0.01" min="0" class="input input-bordered w-full line-total" required readonly />
+                            </div>
+                            <div class="col-span-1">
+                                <button type="button" class="btn btn-square btn-sm btn-error remove-row">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="add-item" class="btn btn-sm mt-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Pridėti prekę
+                    </button>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pristatymo būdas</span>
+                            </label>
+                            <select name="shipping_method" class="select select-bordered" required>
+                                <option value="omniva">Omniva paštomatas</option>
+                                <option value="dpd">DPD kurjeris</option>
+                                <option value="lp_express">LP Express paštomatas</option>
+                                <option value="store_pickup">Atsiėmimas parduotuvėje</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pristatymo kaina</span>
+                            </label>
+                            <input type="number" name="shipping_amount" step="0.01" min="0" value="0" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Mokesčiai (PVM)</span>
+                            </label>
+                            <input type="number" name="tax_amount" step="0.01" min="0" value="0" class="input input-bordered" required />
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-right">
+                        <div class="text-lg font-bold">Bendra suma: <span id="order-total">0.00 €</span></div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" class="btn btn-primary">Sukurti užsakymą</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderItems = document.getElementById('order-items');
+    const addItemBtn = document.getElementById('add-item');
+    const orderTotalEl = document.getElementById('order-total');
+    
+    // Initial calculation
+    calculateTotals();
+    
+    // Add new item row
+    addItemBtn.addEventListener('click', function() {
+        const firstRow = orderItems.querySelector('.item-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        // Clear values in the new row
+        newRow.querySelector('.product-select').value = '';
+        newRow.querySelector('.price-input').value = '';
+        newRow.querySelector('.quantity-input').value = '1';
+        newRow.querySelector('.line-total').value = '';
+        
+        // Add event listeners to the new row
+        addRowEventListeners(newRow);
+        
+        // Append the new row
+        orderItems.appendChild(newRow);
+    });
+    
+    // Add event listeners to the initial row
+    addRowEventListeners(orderItems.querySelector('.item-row'));
+    
+    // Function to add event listeners to a row
+    function addRowEventListeners(row) {
+        const productSelect = row.querySelector('.product-select');
+        const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
+        const lineTotalInput = row.querySelector('.line-total');
+        const removeBtn = row.querySelector('.remove-row');
+        
+        // Product selection change
+        productSelect.addEventListener('change', function() {
+            const option = this.options[this.selectedIndex];
+            if (option && option.value) {
+                const price = parseFloat(option.dataset.price);
+                priceInput.value = price.toFixed(2);
+                calculateLineTotal(row);
+            } else {
+                priceInput.value = '';
+                lineTotalInput.value = '';
+            }
+            calculateTotals();
+        });
+        
+        // Quantity change
+        quantityInput.addEventListener('input', function() {
+            calculateLineTotal(row);
+            calculateTotals();
+        });
+        
+        // Remove row
+        removeBtn.addEventListener('click', function() {
+            // Don't remove if it's the only row
+            const rows = orderItems.querySelectorAll('.item-row');
+            if (rows.length > 1) {
+                row.remove();
+                calculateTotals();
+            }
+        });
+    }
+    
+    // Calculate line total for a row
+    function calculateLineTotal(row) {
+        const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
+        const lineTotalInput = row.querySelector('.line-total');
+        
+        if (priceInput.value && quantityInput.value) {
+            const price = parseFloat(priceInput.value);
+            const quantity = parseInt(quantityInput.value);
+            const total = price * quantity;
+            lineTotalInput.value = total.toFixed(2);
+        }
+    }
+    
+    // Calculate order totals
+    function calculateTotals() {
+        const lineTotals = Array.from(document.querySelectorAll('.line-total'))
+            .map(input => parseFloat(input.value) || 0);
+        
+        const shippingAmount = parseFloat(document.querySelector('input[name="shipping_amount"]').value) || 0;
+        const taxAmount = parseFloat(document.querySelector('input[name="tax_amount"]').value) || 0;
+        
+        const subtotal = lineTotals.reduce((sum, value) => sum + value, 0);
+        const total = subtotal + shippingAmount + taxAmount;
+        
+        orderTotalEl.textContent = total.toFixed(2) + ' €';
+    }
+    
+    // Add listeners for shipping and tax inputs
+    document.querySelector('input[name="shipping_amount"]').addEventListener('input', calculateTotals);
+    document.querySelector('input[name="tax_amount"]').addEventListener('input', calculateTotals);
+});
+</script>
+{% endblock %} 

@@ -2,19 +2,19 @@
 from datetime import datetime
 from flask import request, current_app
 from flask_restx import Namespace, Resource, fields
-from app.models.order import Order, OrderItem, OrderStatus
-from app.models.product import Product
-from app.extensions import db
-from app.api.v1.utils import (
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.models.product import Product
+from lt_crm.app.extensions import db
+from lt_crm.app.api.v1.utils import (
     token_required,
     validate_schema,
     get_pagination_params,
     paginate
 )
-from app.services.inventory import adjust_stock, process_order_stock_changes, reserve_stock
-from app.services.accounting import record_order_accounting
-from app.api.v1.schemas import OrderSchema, OrderListSchema, OrderStatusUpdateSchema
-from app.api.v1 import limiter
+from lt_crm.app.services.inventory import adjust_stock, process_order_stock_changes, reserve_stock
+from lt_crm.app.services.accounting import record_order_accounting
+from lt_crm.app.api.v1.schemas import OrderSchema, OrderListSchema, OrderStatusUpdateSchema
+from lt_crm.app.api.v1 import limiter
 
 ns = Namespace("orders", description="Order operations")
 

@@ -2,23 +2,23 @@
 import logging
 from datetime import datetime, timedelta
 from celery.exceptions import MaxRetriesExceededError
-from app.celery_worker import celery
-from app.services.accounting import record_order_accounting
-from app.clients.pigu_client import PiguClient
-from app.clients.varle_client import VarleClient
-from app.clients.allegro_client import AllegroClient
-from app.models.integration import IntegrationSyncLog, IntegrationType, SyncStatus
-from app.models.product import Product
-from app.extensions import db
+from .celery_worker import celery
+from .services.accounting import record_order_accounting
+from .clients.pigu_client import PiguClient
+from .clients.varle_client import VarleClient
+from .clients.allegro_client import AllegroClient
+from .models.integration import IntegrationSyncLog, IntegrationType, SyncStatus
+from .models.product import Product
+from .extensions import db
 
 
-@celery.task(name="app.tasks.example_task")
+@celery.task(name="lt_crm.app.tasks.example_task")
 def example_task(param=None):
     """Example task that can be scheduled via Celery."""
     return f"Task completed with parameter: {param}"
 
 
-@celery.task(name="app.tasks.send_notification")
+@celery.task(name="lt_crm.app.tasks.send_notification")
 def send_notification(user_id, message):
     """Send a notification to a user."""
     # This would connect to a notification service
@@ -26,7 +26,7 @@ def send_notification(user_id, message):
     return f"Notification sent to user {user_id}: {message}"
 
 
-@celery.task(name="app.tasks.process_order_accounting")
+@celery.task(name="lt_crm.app.tasks.process_order_accounting")
 def process_order_accounting(order_id):
     """
     Process accounting entries for an order.
@@ -47,7 +47,7 @@ def process_order_accounting(order_id):
         return f"Error processing accounting for order {order_id}: {str(e)}"
 
 
-@celery.task(bind=True, name="app.tasks.sync_pigu_orders", max_retries=3, default_retry_delay=300)
+@celery.task(bind=True, name="lt_crm.app.tasks.sync_pigu_orders", max_retries=3, default_retry_delay=300)
 def sync_pigu_orders(self):
     """
     Fetch and sync orders from Pigu marketplace.
@@ -96,7 +96,7 @@ def sync_pigu_orders(self):
         return f"Pigu orders sync failed: {str(e)}"
 
 
-@celery.task(bind=True, name="app.tasks.sync_varle_orders", max_retries=3, default_retry_delay=300)
+@celery.task(bind=True, name="lt_crm.app.tasks.sync_varle_orders", max_retries=3, default_retry_delay=300)
 def sync_varle_orders(self):
     """
     Fetch and sync orders from Varle marketplace.
@@ -145,7 +145,7 @@ def sync_varle_orders(self):
         return f"Varle orders sync failed: {str(e)}"
 
 
-@celery.task(bind=True, name="app.tasks.sync_allegro_orders", max_retries=3, default_retry_delay=300)
+@celery.task(bind=True, name="lt_crm.app.tasks.sync_allegro_orders", max_retries=3, default_retry_delay=300)
 def sync_allegro_orders(self):
     """
     Fetch and sync orders from Allegro marketplace.
@@ -194,7 +194,7 @@ def sync_allegro_orders(self):
         return f"Allegro orders sync failed: {str(e)}"
 
 
-@celery.task(bind=True, name="app.tasks.sync_stock_to_channels", max_retries=3, default_retry_delay=300)
+@celery.task(bind=True, name="lt_crm.app.tasks.sync_stock_to_channels", max_retries=3, default_retry_delay=300)
 def sync_stock_to_channels(self):
     """
     Sync product stock levels to all integrated marketplaces.
@@ -273,7 +273,7 @@ def sync_stock_to_channels(self):
         return f"Stock sync failed: {str(e)}"
 
 
-@celery.task(name="app.tasks.cleanup_old_sync_logs")
+@celery.task(name="lt_crm.app.tasks.cleanup_old_sync_logs")
 def cleanup_old_sync_logs(days=30):
     """
     Clean up old integration sync logs.
@@ -282,7 +282,7 @@ def cleanup_old_sync_logs(days=30):
         days (int): Number of days to keep logs for
         
     Returns:
-        str: Cleanup result message
+        int: Number of logs deleted
     """
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)

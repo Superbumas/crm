@@ -2,13 +2,12 @@
 import os
 import sentry_sdk
 from flask import Flask, request, g
-from flask_babel import get_locale
 from flask_talisman import Talisman
 from prometheus_flask_exporter import PrometheusMetrics
 from sentry_sdk.integrations.flask import FlaskIntegration
-from app.extensions import db, migrate, login_manager, babel
-from app.celery_worker import init_celery
-from app.celery_beat import register_beat_schedule
+from .extensions import db, migrate, login_manager, babel
+from .celery_worker import init_celery
+from .celery_beat import register_beat_schedule
 
 
 # Initialize Talisman but defer application until inside create_app
@@ -28,6 +27,17 @@ talisman = Talisman(content_security_policy={
 )
 
 
+def get_locale():
+    """Get the locale for the current request."""
+    # Try to get locale from request arguments
+    locale = request.args.get('locale')
+    if locale:
+        return locale
+    
+    # Use browser's accept-languages header
+    return request.accept_languages.best_match(['en', 'lt'])
+
+
 def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
@@ -39,7 +49,7 @@ def create_app(test_config=None):
             "DATABASE_URL", "postgresql://postgres:password@localhost:5432/lt_crm"
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        BABEL_DEFAULT_LOCALE=os.environ.get("BABEL_DEFAULT_LOCALE", "lt_LT"),
+        BABEL_DEFAULT_LOCALE=os.environ.get("BABEL_DEFAULT_LOCALE", "lt"),
         BABEL_DEFAULT_TIMEZONE=os.environ.get("BABEL_DEFAULT_TIMEZONE", "Europe/Vilnius"),
         JWT_SECRET_KEY=os.environ.get("JWT_SECRET_KEY", "jwt-secret-key"),
         JWT_ACCESS_TOKEN_EXPIRES=int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES", 3600)),  # 1 hour
@@ -75,6 +85,10 @@ def create_app(test_config=None):
     # Configure Babel
     babel.init_app(app, locale_selector=get_locale)
 
+    # Register template context processors
+    from .context_processors import inject_template_globals
+    app.context_processor(inject_template_globals)
+
     # Enable HTTPS security headers in production
     if not app.debug and not app.testing:
         talisman.init_app(app)
@@ -84,10 +98,10 @@ def create_app(test_config=None):
     register_beat_schedule(app)
 
     # Register blueprints
-    from app.auth import bp as auth_bp
-    from app.main import bp as main_bp
-    from app.api import bp as api_bp
-    from app.api.v1 import bp as api_v1_bp
+    from .auth import bp as auth_bp
+    from .main import bp as main_bp
+    from .api import bp as api_bp
+    from .api.v1 import bp as api_v1_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(main_bp)
@@ -95,15 +109,15 @@ def create_app(test_config=None):
     app.register_blueprint(api_v1_bp, url_prefix="/api/v1")
 
     # Initialize limiter for API v1
-    from app.api.v1 import limiter
+    from .api.v1 import limiter
     limiter.init_app(app)
 
     # Register CLI commands
-    from app.cli import register_commands
+    from .cli import register_commands
     register_commands(app)
 
     # Register custom Jinja2 filters
-    from app.filters import register_filters
+    from .filters import register_filters
     register_filters(app)
 
     # Ensure the instance folder exists

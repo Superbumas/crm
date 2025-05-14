@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between mb-4">
+        <h1 class="text-2xl font-bold">{{ title }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.invoices') }}" class="btn btn-outline">Atšaukti</a>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.invoice_new') }}" class="space-y-6">
+                <!-- Invoice Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Sąskaitos faktūros informacija</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Sąskaitos numeris</span>
+                            </label>
+                            <input type="text" name="invoice_number" class="input input-bordered" required placeholder="SF-00001" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Išrašymo data</span>
+                            </label>
+                            <input type="date" name="issue_date" class="input input-bordered" value="{{ now.strftime('%Y-%m-%d') }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Apmokėjimo terminas</span>
+                            </label>
+                            <input type="date" name="due_date" class="input input-bordered" />
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer/Billing Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Klientas</h2>
+                    
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text">Pasirinkite klientą</span>
+                        </label>
+                        <select name="customer_id" class="select select-bordered" id="customer-select">
+                            <option value="">Įvesti rankiniu būdu</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="manual-billing-info">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Pavadinimas / Vardas</span>
+                                </label>
+                                <input type="text" name="billing_name" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">El. paštas</span>
+                                </label>
+                                <input type="email" name="billing_email" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Adresas</span>
+                                </label>
+                                <input type="text" name="billing_address" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Miestas</span>
+                                </label>
+                                <input type="text" name="billing_city" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Pašto kodas</span>
+                                </label>
+                                <input type="text" name="billing_postal_code" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Šalis</span>
+                                </label>
+                                <input type="text" name="billing_country" class="input input-bordered" value="Lietuva" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Įmonės kodas</span>
+                                </label>
+                                <input type="text" name="company_code" class="input input-bordered" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">PVM kodas</span>
+                                </label>
+                                <input type="text" name="vat_code" class="input input-bordered" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Items Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Prekės / Paslaugos</h2>
+                    
+                    <div id="invoice-items">
+                        <div class="grid grid-cols-12 gap-2 mb-2 font-bold">
+                            <div class="col-span-5">Aprašymas</div>
+                            <div class="col-span-2">Kaina</div>
+                            <div class="col-span-1">Kiekis</div>
+                            <div class="col-span-1">PVM %</div>
+                            <div class="col-span-2">Suma</div>
+                            <div class="col-span-1"></div>
+                        </div>
+                        
+                        <div class="item-row grid grid-cols-12 gap-2 mb-2 items-center">
+                            <div class="col-span-5">
+                                <input type="text" name="descriptions[]" class="input input-bordered w-full" required />
+                            </div>
+                            <div class="col-span-2">
+                                <input type="number" name="prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required />
+                            </div>
+                            <div class="col-span-1">
+                                <input type="number" name="quantities[]" min="1" value="1" class="input input-bordered w-full quantity-input" required />
+                            </div>
+                            <div class="col-span-1">
+                                <input type="number" name="tax_rates[]" min="0" max="100" value="21" class="input input-bordered w-full tax-rate" required />
+                            </div>
+                            <div class="col-span-2">
+                                <input type="number" name="line_totals[]" step="0.01" min="0" class="input input-bordered w-full line-total" required readonly />
+                            </div>
+                            <div class="col-span-1">
+                                <button type="button" class="btn btn-square btn-sm btn-error remove-row">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="add-item" class="btn btn-sm mt-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Pridėti eilutę
+                    </button>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pastabos</span>
+                            </label>
+                            <textarea name="notes" class="textarea textarea-bordered h-24"></textarea>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Mokėjimo informacija</span>
+                            </label>
+                            <textarea name="payment_details" class="textarea textarea-bordered h-24" placeholder="Banko sąskaita, gavėjas ir t.t."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-right space-y-1">
+                        <div class="text-md">Suma be PVM: <span id="subtotal-amount">0.00 €</span></div>
+                        <div class="text-md">PVM suma: <span id="tax-amount">0.00 €</span></div>
+                        <div class="text-lg font-bold">Bendra suma: <span id="total-amount">0.00 €</span></div>
+                        <input type="hidden" name="subtotal_amount" id="subtotal-input" value="0">
+                        <input type="hidden" name="tax_amount" id="tax-input" value="0">
+                        <input type="hidden" name="total_amount" id="total-input" value="0">
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button type="submit" name="status" value="draft" class="btn btn-outline">Išsaugoti kaip juodraštį</button>
+                    <button type="submit" name="status" value="issued" class="btn btn-primary">Išrašyti sąskaitą</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const invoiceItems = document.getElementById('invoice-items');
+    const addItemBtn = document.getElementById('add-item');
+    const subtotalEl = document.getElementById('subtotal-amount');
+    const taxEl = document.getElementById('tax-amount');
+    const totalEl = document.getElementById('total-amount');
+    const subtotalInput = document.getElementById('subtotal-input');
+    const taxInput = document.getElementById('tax-input');
+    const totalInput = document.getElementById('total-input');
+    
+    // Initial calculation
+    calculateTotals();
+    
+    // Add new item row
+    addItemBtn.addEventListener('click', function() {
+        const firstRow = invoiceItems.querySelector('.item-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        // Clear values in the new row
+        newRow.querySelectorAll('input[type="text"], input[type="number"]:not(.tax-rate)').forEach(input => {
+            input.value = '';
+        });
+        newRow.querySelector('.quantity-input').value = '1';
+        newRow.querySelector('.tax-rate').value = '21';
+        
+        // Add event listeners to the new row
+        addRowEventListeners(newRow);
+        
+        // Append the new row
+        invoiceItems.appendChild(newRow);
+    });
+    
+    // Add event listeners to the initial row
+    addRowEventListeners(invoiceItems.querySelector('.item-row'));
+    
+    // Function to add event listeners to a row
+    function addRowEventListeners(row) {
+        const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
+        const taxRateInput = row.querySelector('.tax-rate');
+        const lineTotalInput = row.querySelector('.line-total');
+        const removeBtn = row.querySelector('.remove-row');
+        
+        // Price, quantity, or tax rate change
+        [priceInput, quantityInput, taxRateInput].forEach(input => {
+            input.addEventListener('input', function() {
+                calculateLineTotal(row);
+                calculateTotals();
+            });
+        });
+        
+        // Remove row
+        removeBtn.addEventListener('click', function() {
+            // Don't remove if it's the only row
+            const rows = invoiceItems.querySelectorAll('.item-row');
+            if (rows.length > 1) {
+                row.remove();
+                calculateTotals();
+            }
+        });
+    }
+    
+    // Calculate line total for a row
+    function calculateLineTotal(row) {
+        const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
+        const lineTotalInput = row.querySelector('.line-total');
+        
+        if (priceInput.value && quantityInput.value) {
+            const price = parseFloat(priceInput.value);
+            const quantity = parseInt(quantityInput.value);
+            const total = price * quantity;
+            lineTotalInput.value = total.toFixed(2);
+        }
+    }
+    
+    // Calculate totals
+    function calculateTotals() {
+        let subtotal = 0;
+        let taxTotal = 0;
+        
+        invoiceItems.querySelectorAll('.item-row').forEach(row => {
+            const lineTotal = parseFloat(row.querySelector('.line-total').value) || 0;
+            const taxRate = parseFloat(row.querySelector('.tax-rate').value) || 0;
+            
+            subtotal += lineTotal;
+            taxTotal += lineTotal * (taxRate / 100);
+        });
+        
+        const total = subtotal + taxTotal;
+        
+        subtotalEl.textContent = subtotal.toFixed(2) + ' €';
+        taxEl.textContent = taxTotal.toFixed(2) + ' €';
+        totalEl.textContent = total.toFixed(2) + ' €';
+        
+        subtotalInput.value = subtotal.toFixed(2);
+        taxInput.value = taxTotal.toFixed(2);
+        totalInput.value = total.toFixed(2);
+    }
+    
+    // Customer select
+    const customerSelect = document.getElementById('customer-select');
+    const manualBillingInfo = document.getElementById('manual-billing-info');
+    
+    customerSelect.addEventListener('change', function() {
+        if (this.value) {
+            manualBillingInfo.style.display = 'none';
+        } else {
+            manualBillingInfo.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %} 

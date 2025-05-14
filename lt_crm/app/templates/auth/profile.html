@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl">
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl mb-4">Profilis</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="avatar placeholder mb-4">
+                        <div class="bg-neutral-focus text-neutral-content rounded-full w-24">
+                            <span class="text-3xl">{{ current_user.username[:1] }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="font-bold">Vartotojo informacija</h3>
+                        <div class="divider mt-0"></div>
+                        <p><span class="font-medium">Vartotojo vardas:</span> {{ current_user.username }}</p>
+                        <p><span class="font-medium">El. paštas:</span> {{ current_user.email }}</p>
+                        <p><span class="font-medium">Paskutinis prisijungimas:</span> 
+                            {% if current_user.last_login %}
+                                {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                Nežinoma
+                            {% endif %}
+                        </p>
+                        <p><span class="font-medium">Rolė:</span> 
+                            {% if current_user.is_admin %}
+                                Administratorius
+                            {% else %}
+                                Vartotojas
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="mb-4">
+                        <h3 class="font-bold">Keisti slaptažodį</h3>
+                        <div class="divider mt-0"></div>
+                        <form method="post" action="{{ url_for('auth.profile') }}">
+                            <div class="form-control mb-2">
+                                <label class="label">
+                                    <span class="label-text">Dabartinis slaptažodis</span>
+                                </label>
+                                <input type="password" name="current_password" class="input input-bordered" required>
+                            </div>
+                            
+                            <div class="form-control mb-2">
+                                <label class="label">
+                                    <span class="label-text">Naujas slaptažodis</span>
+                                </label>
+                                <input type="password" name="new_password" class="input input-bordered" required>
+                            </div>
+                            
+                            <div class="form-control mb-4">
+                                <label class="label">
+                                    <span class="label-text">Pakartokite naują slaptažodį</span>
+                                </label>
+                                <input type="password" name="confirm_password" class="input input-bordered" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Keisti slaptažodį</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

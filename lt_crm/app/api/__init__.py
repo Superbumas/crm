@@ -11,4 +11,4 @@ api = Api(
     doc="/docs",
 )
 
-from app.api import routes  # noqa 
+from . import routes  # noqa 

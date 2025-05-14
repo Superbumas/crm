@@ -1,7 +1,8 @@
 """Pytest configuration file."""
 import pytest
-from app import create_app, db
-from app.models.user import User
+from lt_crm.app import create_app
+from lt_crm.app.extensions import db
+from lt_crm.app.models.user import User
 
 
 @pytest.fixture

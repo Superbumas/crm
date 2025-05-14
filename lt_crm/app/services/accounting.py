@@ -2,9 +2,9 @@
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.exc import SQLAlchemyError
-from app.extensions import db
-from app.models.order import Order, OrderStatus
-from app.models.base import TimestampMixin
+from lt_crm.app.extensions import db
+from lt_crm.app.models.order import Order, OrderStatus
+from lt_crm.app.models.base import TimestampMixin
 
 
 class Account(TimestampMixin, db.Model):

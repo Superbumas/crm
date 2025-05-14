@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between mb-4">
+        <h1 class="text-2xl font-bold">Užsakymas {{ order.order_number }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.orders') }}" class="btn btn-outline">Grįžti</a>
+            {% if order.status.value == 'new' %}
+            <button class="btn btn-primary">Pažymėti kaip apmokėtą</button>
+            {% elif order.status.value == 'paid' %}
+            <button class="btn btn-primary">Siųsti</button>
+            {% endif %}
+            <a href="{{ url_for('main.invoice_new_from_order', order_id=order.id) }}" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z" />
+                </svg>
+                Sukurti sąskaitą
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Order Info -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Užsakymo informacija</h2>
+                <div class="divider mt-0"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <span class="font-medium">Užsakymo Nr.:</span>
+                    <span>{{ order.order_number }}</span>
+                    
+                    <span class="font-medium">Data:</span>
+                    <span>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    
+                    <span class="font-medium">Būsena:</span>
+                    <span>
+                        <span class="badge
+                            {% if order.status.value == 'new' %}badge-primary
+                            {% elif order.status.value == 'paid' %}badge-success
+                            {% elif order.status.value == 'shipped' %}badge-info
+                            {% elif order.status.value == 'cancelled' %}badge-error
+                            {% else %}badge-ghost{% endif %}">
+                            {{ order.status.value }}
+                        </span>
+                    </span>
+                    
+                    <span class="font-medium">Suma:</span>
+                    <span class="font-bold">{{ order.total_amount|euro }}</span>
+                    
+                    <span class="font-medium">Mokesčiai:</span>
+                    <span>{{ order.tax_amount|euro }}</span>
+                    
+                    <span class="font-medium">Pristatymas:</span>
+                    <span>{{ order.shipping_amount|euro }}</span>
+                    
+                    <span class="font-medium">Kilmė:</span>
+                    <span>{{ order.source or 'Nenurodyta' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Pirkėjo informacija</h2>
+                <div class="divider mt-0"></div>
+                
+                <h3 class="font-medium mb-2">Pristatymo adresas</h3>
+                <p>{{ order.shipping_name }}</p>
+                <p>{{ order.shipping_address }}</p>
+                <p>{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
+                <p>{{ order.shipping_country }}</p>
+                <p>Tel: {{ order.shipping_phone or 'Nenurodyta' }}</p>
+                <p>El. paštas: {{ order.shipping_email }}</p>
+                
+                {% if order.shipping_notes %}
+                <div class="mt-4">
+                    <h3 class="font-medium mb-2">Pastabos</h3>
+                    <p class="text-sm">{{ order.shipping_notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment/Shipping Info -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Mokėjimas ir pristatymas</h2>
+                <div class="divider mt-0"></div>
+                
+                <h3 class="font-medium mb-2">Mokėjimo informacija</h3>
+                <p><span class="font-medium">Mokėjimo būdas:</span> {{ order.payment_method or 'Nenurodyta' }}</p>
+                <p><span class="font-medium">Mokėjimo ID:</span> {{ order.payment_id or 'Nenurodyta' }}</p>
+                
+                <div class="divider"></div>
+                
+                <h3 class="font-medium mb-2">Pristatymo informacija</h3>
+                <p><span class="font-medium">Pristatymo būdas:</span> {{ order.shipping_method or 'Nenurodyta' }}</p>
+                <p><span class="font-medium">Siuntinio numeris:</span> {{ order.tracking_number or 'Nenurodyta' }}</p>
+                
+                {% if order.status.value == 'shipped' and order.shipped_at %}
+                <p><span class="font-medium">Išsiuntimo data:</span> {{ order.shipped_at.strftime('%Y-%m-%d') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="card bg-base-100 shadow-xl mt-6">
+        <div class="card-body">
+            <h2 class="card-title">Užsakytos prekės</h2>
+            <div class="divider mt-0"></div>
+            
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Kodas</th>
+                            <th>Prekė</th>
+                            <th class="text-right">Kaina</th>
+                            <th class="text-right">Kiekis</th>
+                            <th class="text-right">Viso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.product.sku }}</td>
+                            <td>
+                                <div class="font-medium">{{ item.product.name }}</div>
+                                {% if item.variant_info %}
+                                <div class="text-sm opacity-70">{{ item.variant_info }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">{{ item.price|euro }}</td>
+                            <td class="text-right">{{ item.quantity }}</td>
+                            <td class="text-right">{{ item.subtotal|euro }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-right font-medium">Tarpinė suma:</td>
+                            <td class="text-right">{{ (order.total_amount - order.shipping_amount - order.tax_amount)|euro }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right font-medium">Pristatymas:</td>
+                            <td class="text-right">{{ order.shipping_amount|euro }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right font-medium">Mokesčiai:</td>
+                            <td class="text-right">{{ order.tax_amount|euro }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right font-bold text-lg">Viso:</td>
+                            <td class="text-right font-bold text-lg">{{ order.total_amount|euro }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

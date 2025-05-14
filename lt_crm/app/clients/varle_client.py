@@ -2,11 +2,11 @@
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from app.clients.base_client import BaseAPIClient
-from app.exceptions import APIError
-from app.models.order import Order, OrderItem, OrderStatus
-from app.models.product import Product
-from app.extensions import db
+from lt_crm.app.clients.base_client import BaseAPIClient
+from lt_crm.app.exceptions import APIError
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.models.product import Product
+from lt_crm.app.extensions import db
 
 
 class VarleClient(BaseAPIClient):

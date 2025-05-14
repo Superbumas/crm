@@ -3,16 +3,22 @@ import pytest
 import pandas as pd
 from io import StringIO
 from decimal import Decimal
-from app.models.product import Product
-from app.models.stock import StockMovement, MovementReasonCode
-from app.models.order import Order, OrderItem, OrderStatus
-from app.services.inventory import (
+from lt_crm.app.extensions import db
+from lt_crm.app.models.product import Product
+from lt_crm.app.models.stock import StockMovement, MovementReasonCode
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.services.inventory import (
     import_products_from_dataframe,
     adjust_stock,
     reserve_stock,
-    process_order_stock_changes
+    process_order_stock_changes,
+    get_product_stock_levels,
+    update_stock_level,
+    create_stock_movement,
+    allocate_stock_for_order,
+    fulfill_order_stock
 )
-from app.services.import_service import import_products, parse_product_file, validate_product_data
+from lt_crm.app.services.import_service import import_products, parse_product_file, validate_product_data
 
 
 def test_import_products_from_dataframe(app):

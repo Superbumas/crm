@@ -1,7 +1,7 @@
 """Integration models for the CRM application."""
 import enum
-from app.extensions import db
-from app.models.base import TimestampMixin
+from lt_crm.app.extensions import db
+from lt_crm.app.models.base import TimestampMixin
 
 
 class IntegrationType(enum.Enum):

@@ -2,10 +2,10 @@
 import pytest
 from datetime import datetime, date
 from decimal import Decimal
-from app.extensions import db
-from app.models.order import Order, OrderItem, OrderStatus
-from app.models.product import Product
-from app.services.accounting import (
+from lt_crm.app.extensions import db
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.models.product import Product
+from lt_crm.app.services.accounting import (
     Account,
     Transaction,
     Entry,

@@ -4,15 +4,15 @@ import os
 from datetime import datetime
 from flask import request, current_app, send_file
 from flask_restx import Namespace, Resource, fields
-from app.models.invoice import Invoice, InvoiceStatus
-from app.extensions import db
-from app.api.v1.utils import (
+from lt_crm.app.models.invoice import Invoice, InvoiceStatus
+from lt_crm.app.extensions import db
+from lt_crm.app.api.v1.utils import (
     token_required,
     get_pagination_params,
     paginate
 )
-from app.api.v1.schemas import InvoiceSchema
-from app.api.v1 import limiter
+from lt_crm.app.api.v1.schemas import InvoiceSchema
+from lt_crm.app.api.v1 import limiter
 
 ns = Namespace("invoices", description="Invoice operations")
 

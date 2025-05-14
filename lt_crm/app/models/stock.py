@@ -1,7 +1,7 @@
 """Stock movement model for the CRM application."""
 import enum
-from app.extensions import db
-from app.models.base import TimestampMixin
+from lt_crm.app.extensions import db
+from lt_crm.app.models.base import TimestampMixin
 
 
 class MovementReasonCode(enum.Enum):
@@ -37,7 +37,7 @@ class StockMovement(TimestampMixin, db.Model):
     
     def apply_movement(self):
         """Apply the movement to the product's stock quantity."""
-        from app.models.product import Product
+        from lt_crm.app.models.product import Product
         
         product = Product.query.get(self.product_id)
         if product:

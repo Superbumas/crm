@@ -1,0 +1,5 @@
+# Fly.io config to bypass manifest generation
+app = "lt-crm"
+org = "personal"
+builder = "dockerfile"
+dockerfile = "Dockerfile" 

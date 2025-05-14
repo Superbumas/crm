@@ -9,12 +9,15 @@ from tempfile import mkdtemp
 from pathlib import Path
 from flask import current_app
 from flask.cli import with_appcontext
-from app.extensions import db
-from app.models.user import User
-from app.models.order import Order, OrderItem
-from app.models.customer import Customer
-from app.models.invoice import Invoice
-from app.services.accounting import setup_default_accounts
+from lt_crm.app.extensions import db
+from lt_crm.app.models.user import User
+from lt_crm.app.models.order import Order, OrderItem
+from lt_crm.app.models.customer import Customer
+from lt_crm.app.models.invoice import Invoice
+from lt_crm.app.services.accounting import setup_default_accounts
+from lt_crm.app.models.product import Product
+from lt_crm.app.models.customer import Customer
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
 
 
 @click.group()
@@ -295,9 +298,9 @@ def delete_user_data(user_id, export, confirm):
 @with_appcontext
 def seed_demo():
     """Seed database with Lithuanian sample products and orders for demo purposes."""
-    from app.models.product import Product
-    from app.models.customer import Customer
-    from app.models.order import Order, OrderItem, OrderStatus
+    from lt_crm.app.models.product import Product
+    from lt_crm.app.models.customer import Customer
+    from lt_crm.app.models.order import Order, OrderItem, OrderStatus
     
     # Create demo products
     products = [
@@ -386,10 +389,9 @@ def seed_demo():
             email="demo@example.lt",
             phone="+37060012345",
             company="UAB Demo Įmonė",
-            vat_code="LT123456789",
+            notes="VAT code: LT123456789",
             address="Gedimino pr. 1",
             city="Vilnius",
-            postal_code="01103",
             country="Lithuania"
         )
         db.session.add(customer)

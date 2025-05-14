@@ -3,13 +3,13 @@ import json
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
-from app import create_app
-from app.extensions import db
-from app.models.user import User
-from app.models.product import Product
-from app.models.order import Order, OrderItem, OrderStatus
-from app.models.invoice import Invoice, InvoiceStatus
-from app.api.v1.utils import generate_jwt_token
+from lt_crm.app import create_app
+from lt_crm.app.extensions import db
+from lt_crm.app.models.user import User
+from lt_crm.app.models.product import Product
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.models.invoice import Invoice, InvoiceStatus
+from lt_crm.app.api.v1.utils import generate_jwt_token
 
 @pytest.fixture
 def app():

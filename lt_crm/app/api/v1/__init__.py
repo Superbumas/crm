@@ -21,10 +21,10 @@ limiter = Limiter(
 )
 
 # Import namespaces
-from app.api.v1.auth import ns as auth_ns
-from app.api.v1.products import ns as products_ns
-from app.api.v1.orders import ns as orders_ns
-from app.api.v1.invoices import ns as invoices_ns
+from .auth import ns as auth_ns
+from .products import ns as products_ns
+from .orders import ns as orders_ns
+from .invoices import ns as invoices_ns
 
 # Add namespaces
 api.add_namespace(auth_ns, path="/auth")

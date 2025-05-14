@@ -1,8 +1,8 @@
 """Routes for the API blueprint."""
 from flask_restx import Resource
 
-from app.api import api
-from app.models.user import User
+from . import api
+from ..models.user import User
 
 # Define API namespaces
 ns_users = api.namespace("users", description="User operations")

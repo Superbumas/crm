@@ -2,9 +2,10 @@
 import pandas as pd
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
-from app.extensions import db
-from app.models.product import Product
-from app.models.stock import StockMovement, MovementReasonCode
+from lt_crm.app.extensions import db
+from lt_crm.app.models.product import Product
+from lt_crm.app.models.stock import StockMovement, MovementReasonCode
+from lt_crm.app.models.order import OrderStatus
 
 
 def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=None):
@@ -236,8 +237,6 @@ def process_order_stock_changes(order, old_status=None):
     Returns:
         list: List of stock movements created
     """
-    from app.models.order import OrderStatus
-    
     movements = []
     
     # When order is shipped, deduct the stock

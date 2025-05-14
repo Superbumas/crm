@@ -5,18 +5,18 @@ import pandas as pd
 from flask import request, current_app, jsonify, send_file
 from flask_restx import Namespace, Resource, fields
 from werkzeug.utils import secure_filename
-from app.models.product import Product
-from app.extensions import db
-from app.api.v1.utils import (
+from ...models.product import Product
+from ...extensions import db
+from .utils import (
     token_required,
     validate_schema,
     get_pagination_params,
     paginate,
     allowed_file
 )
-from app.services.import_service import import_products, generate_import_template
-from app.api.v1.schemas import ProductSchema, ProductListSchema
-from app.api.v1 import limiter
+from ...services.import_service import import_products, generate_import_template
+from .schemas import ProductSchema, ProductListSchema
+from . import limiter
 
 ns = Namespace("products", description="Product operations")
 

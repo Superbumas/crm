@@ -52,7 +52,9 @@
     <div class="card bg-base-100 shadow-xl lg:col-span-2">
         <div class="card-body">
             <h2 class="card-title text-primary">Pardavimų statistika</h2>
-            <canvas id="salesChart" class="w-full h-64"></canvas>
+            <div style="height: 250px; position: relative;">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -187,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             scales: {
                 y: {
                     beginAtZero: true,

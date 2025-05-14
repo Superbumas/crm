@@ -3,7 +3,7 @@ import datetime
 import functools
 import jwt
 from flask import current_app, request, jsonify
-from app.models.user import User
+from lt_crm.app.models.user import User
 from marshmallow import ValidationError
 
 # JWT utilities

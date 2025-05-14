@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between mb-4">
+        <h1 class="text-2xl font-bold">{{ product.name }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.products') }}" class="btn btn-outline">Grįžti</a>
+            <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-primary">Redaguoti</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Product Info -->
+        <div class="card bg-base-100 shadow-xl md:col-span-2">
+            <div class="card-body">
+                <h2 class="card-title">Produkto informacija</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p><span class="font-medium">Produkto kodas:</span> {{ product.sku }}</p>
+                        <p><span class="font-medium">Barkodas:</span> {{ product.barcode or 'Nenurodyta' }}</p>
+                        <p><span class="font-medium">Kategorija:</span> {{ product.category or 'Nenurodyta' }}</p>
+                        <p><span class="font-medium">Kaina:</span> {{ product.price|euro }}</p>
+                        <p><span class="font-medium">Savikaina:</span> {{ product.cost_price|euro }}</p>
+                    </div>
+                    <div>
+                        <p>
+                            <span class="font-medium">Kiekis sandėlyje:</span>
+                            <span class="badge {{ 'badge-error' if product.quantity <= 5 else 'badge-success' if product.quantity > 10 else 'badge-warning' }}">
+                                {{ product.quantity }} vnt.
+                            </span>
+                        </p>
+                        {% if product.min_stock_level %}
+                        <p><span class="font-medium">Minimalus kiekis:</span> {{ product.min_stock_level }} vnt.</p>
+                        {% endif %}
+                        <p><span class="font-medium">Statusas:</span> 
+                            <span class="badge {{ 'badge-success' if product.is_active else 'badge-error' }}">
+                                {{ 'Aktyvus' if product.is_active else 'Neaktyvus' }}
+                            </span>
+                        </p>
+                        <p><span class="font-medium">Sukurtas:</span> {{ product.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p><span class="font-medium">Atnaujintas:</span> {{ product.updated_at.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                </div>
+                
+                {% if product.description %}
+                <div class="mt-4">
+                    <h3 class="font-medium">Aprašymas</h3>
+                    <p class="mt-2">{{ product.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stock Management -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Atsargų valdymas</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="mb-4 text-center">
+                    <div class="stat-value text-primary">{{ product.quantity }}</div>
+                    <div class="stat-title">Vnt. sandėlyje</div>
+                </div>
+                
+                <div class="flex justify-center space-x-2 mb-4">
+                    <button class="btn btn-primary">+ Papildyti</button>
+                    <button class="btn btn-error">- Nurašyti</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Movement History -->
+    <div class="card bg-base-100 shadow-xl mt-6">
+        <div class="card-body">
+            <h2 class="card-title">Atsargų judėjimo istorija</h2>
+            <div class="divider mt-0"></div>
+            
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipas</th>
+                            <th>Kiekis</th>
+                            <th>Aprašymas</th>
+                            <th>Nuoroda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if stock_movements %}
+                            {% for movement in stock_movements %}
+                            <tr>
+                                <td>{{ movement.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="badge {{ 'badge-success' if movement.quantity > 0 else 'badge-error' }}">
+                                        {{ 'Papildymas' if movement.quantity > 0 else 'Nurašymas' }}
+                                    </span>
+                                </td>
+                                <td>{{ movement.quantity }}</td>
+                                <td>{{ movement.description or '-' }}</td>
+                                <td>
+                                    {% if movement.reference_type == 'order' and movement.reference_id %}
+                                    <a href="{{ url_for('main.order_detail', id=movement.reference_id) }}" class="link link-primary">
+                                        Užsakymas #{{ movement.reference_id }}
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">Nėra atsargų judėjimo įrašų</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

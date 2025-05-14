@@ -3,7 +3,7 @@ import os
 import io
 import pandas as pd
 from werkzeug.utils import secure_filename
-from app.services.inventory import import_products_from_dataframe
+from lt_crm.app.services.inventory import import_products_from_dataframe
 
 
 def parse_product_file(file_obj, file_format=None):

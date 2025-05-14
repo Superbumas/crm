@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <!-- Header and actions -->
+    <div class="flex flex-col md:flex-row justify-between items-start mb-6">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">{{ invoice.invoice_number }}</h1>
+            <div class="text-sm breadcrumbs">
+                <ul>
+                    <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                    <li><a href="{{ url_for('main.invoices') }}">Sąskaitos faktūros</a></li>
+                    <li>{{ invoice.invoice_number }}</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 mt-4 md:mt-0">
+            {% if invoice.status.value == 'draft' %}
+            <button class="btn btn-primary" 
+                    hx-put="{{ url_for('main.invoice_issue', id=invoice.id) }}"
+                    hx-confirm="Ar tikrai norite išrašyti sąskaitą faktūrą?"
+                    hx-target="#invoice-status"
+                    hx-swap="outerHTML">
+                Išrašyti sąskaitą
+            </button>
+            {% endif %}
+            
+            {% if invoice.pdf_url or invoice.status.value in ['issued', 'paid'] %}
+            <a href="{{ url_for('main.invoice_pdf', id=invoice.id) }}" class="btn btn-outline" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Atsisiųsti PDF
+            </a>
+            {% endif %}
+            
+            {% if invoice.status.value == 'draft' %}
+            <a href="#" class="btn btn-outline">Redaguoti</a>
+            {% endif %}
+            
+            <a href="{{ url_for('main.invoices') }}" class="btn btn-ghost">Grįžti į sąrašą</a>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Left column: Invoice info -->
+        <div class="col-span-2">
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Sąskaitos faktūros informacija</h2>
+                    
+                    <div class="stats stats-vertical lg:stats-horizontal shadow mt-4">
+                        <div class="stat">
+                            <div class="stat-title">Sąskaitos numeris</div>
+                            <div class="stat-value text-xl">{{ invoice.invoice_number }}</div>
+                        </div>
+                        
+                        <div class="stat">
+                            <div class="stat-title">Būsena</div>
+                            <div class="stat-value text-xl">
+                                <span id="invoice-status" class="badge 
+                                    {% if invoice.status.value == 'draft' %}badge-ghost
+                                    {% elif invoice.status.value == 'issued' %}badge-info
+                                    {% elif invoice.status.value == 'paid' %}badge-success
+                                    {% elif invoice.status.value == 'cancelled' %}badge-error
+                                    {% endif %}">
+                                    {{ invoice.status.value }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat">
+                            <div class="stat-title">Suma</div>
+                            <div class="stat-value text-xl">{{ invoice.total_amount|euro }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <p><strong>Išrašymo data:</strong> {{ invoice.issue_date.strftime('%Y-%m-%d') if invoice.issue_date else 'Nenurodyta' }}</p>
+                            <p><strong>Mokėjimo terminas:</strong> {{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else 'Nenurodyta' }}</p>
+                            {% if invoice.order_id %}
+                            <p><strong>Užsakymas:</strong> <a href="{{ url_for('main.order_detail', id=invoice.order_id) }}" class="link">Peržiūrėti užsakymą</a></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Items -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Prekės ir paslaugos</h2>
+                    
+                    <div class="overflow-x-auto mt-4">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>Aprašymas</th>
+                                    <th class="text-right">Kaina</th>
+                                    <th class="text-right">Kiekis</th>
+                                    <th class="text-right">PVM</th>
+                                    <th class="text-right">Suma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if invoice.items %}
+                                    {% for item in invoice.items %}
+                                    <tr>
+                                        <td>{{ item.description }}</td>
+                                        <td class="text-right">{{ item.price|euro }}</td>
+                                        <td class="text-right">{{ item.quantity }}</td>
+                                        <td class="text-right">{{ item.tax_rate }}%</td>
+                                        <td class="text-right">{{ item.subtotal|euro }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">Nėra prekių ar paslaugų</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right font-semibold">Suma be PVM:</td>
+                                    <td class="text-right">{{ invoice.subtotal_amount|euro }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right font-semibold">PVM suma:</td>
+                                    <td class="text-right">{{ invoice.tax_amount|euro }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right font-bold">Bendra suma:</td>
+                                    <td class="text-right font-bold">{{ invoice.total_amount|euro }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes and payment info -->
+            {% if invoice.notes or invoice.payment_details %}
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    {% if invoice.notes %}
+                    <div class="mb-4">
+                        <h3 class="font-bold mb-2">Pastabos</h3>
+                        <p class="whitespace-pre-line">{{ invoice.notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if invoice.payment_details %}
+                    <div>
+                        <h3 class="font-bold mb-2">Mokėjimo informacija</h3>
+                        <p class="whitespace-pre-line">{{ invoice.payment_details }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right column: Customer info -->
+        <div class="col-span-1">
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Kliento informacija</h2>
+                    
+                    {% if invoice.customer %}
+                    <div class="mt-4">
+                        <h3 class="font-bold text-lg mb-2">
+                            <a href="{{ url_for('main.customer_detail', id=invoice.customer_id) }}" class="link">
+                                {{ invoice.customer.name }}
+                            </a>
+                        </h3>
+                        
+                        {% if invoice.customer.email %}
+                        <p class="mb-1">{{ invoice.customer.email }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.customer.phone %}
+                        <p class="mb-1">{{ invoice.customer.phone }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.customer.address %}
+                        <p class="mb-1">{{ invoice.customer.address }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.customer.city or invoice.customer.postal_code %}
+                        <p class="mb-1">
+                            {% if invoice.customer.city %}{{ invoice.customer.city }}{% endif %}
+                            {% if invoice.customer.postal_code %}{{ invoice.customer.postal_code }}{% endif %}
+                        </p>
+                        {% endif %}
+                        
+                        {% if invoice.customer.country %}
+                        <p class="mb-1">{{ invoice.customer.country }}</p>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="mt-4">
+                        <h3 class="font-bold text-lg mb-2">{{ invoice.billing_name }}</h3>
+                        
+                        {% if invoice.billing_email %}
+                        <p class="mb-1">{{ invoice.billing_email }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.billing_address %}
+                        <p class="mb-1">{{ invoice.billing_address }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.billing_city or invoice.billing_postal_code %}
+                        <p class="mb-1">
+                            {% if invoice.billing_city %}{{ invoice.billing_city }}{% endif %}
+                            {% if invoice.billing_postal_code %}, {{ invoice.billing_postal_code }}{% endif %}
+                        </p>
+                        {% endif %}
+                        
+                        {% if invoice.billing_country %}
+                        <p class="mb-1">{{ invoice.billing_country }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.company_code %}
+                        <p class="mb-1"><strong>Įmonės kodas:</strong> {{ invoice.company_code }}</p>
+                        {% endif %}
+                        
+                        {% if invoice.vat_code %}
+                        <p class="mb-1"><strong>PVM mokėtojo kodas:</strong> {{ invoice.vat_code }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Įvykiai</h2>
+                    
+                    <ul class="timeline timeline-vertical mt-4">
+                        <li>
+                            <div class="timeline-start">{{ invoice.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            <div class="timeline-middle">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div class="timeline-end timeline-box">Sąskaita sukurta</div>
+                            <hr/>
+                        </li>
+                        
+                        {% if invoice.status.value != 'draft' and invoice.issue_date %}
+                        <li>
+                            <div class="timeline-start">{{ invoice.issue_date.strftime('%Y-%m-%d') }}</div>
+                            <div class="timeline-middle">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-primary"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div class="timeline-end timeline-box">Sąskaita išrašyta</div>
+                            <hr/>
+                        </li>
+                        {% endif %}
+                        
+                        {% if invoice.status.value == 'paid' %}
+                        <li>
+                            <div class="timeline-start">{{ invoice.updated_at.strftime('%Y-%m-%d') }}</div>
+                            <div class="timeline-middle">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-success"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div class="timeline-end timeline-box">Sąskaita apmokėta</div>
+                        </li>
+                        {% endif %}
+                        
+                        {% if invoice.status.value == 'cancelled' %}
+                        <li>
+                            <div class="timeline-start">{{ invoice.updated_at.strftime('%Y-%m-%d') }}</div>
+                            <div class="timeline-middle">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-error"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div class="timeline-end timeline-box">Sąskaita atšaukta</div>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

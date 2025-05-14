@@ -2,16 +2,16 @@
 from datetime import datetime
 from flask import request, current_app
 from flask_restx import Namespace, Resource, fields
-from app.models.user import User
-from app.extensions import db
-from app.api.v1.utils import (
+from ...models.user import User
+from ...extensions import db
+from .utils import (
     generate_jwt_token, 
     decode_jwt_token, 
     get_token_from_header, 
     token_required,
     validate_schema
 )
-from app.api.v1.schemas import UserLoginSchema, TokenSchema
+from .schemas import UserLoginSchema, TokenSchema
 
 ns = Namespace("auth", description="Authentication operations")
 
