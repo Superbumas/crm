@@ -1,288 +1,196 @@
-{% extends "main/base.html" %}
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .chart-container {
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
-        <div>
-            <a href="{{ url_for('main.export_report', report_type='inventory_status', category=selected_category, stock_status=selected_stock_filter) }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-                <i class="fas fa-download fa-sm text-white-50"></i> Eksportuoti CSV
+<div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-primary mb-4 md:mb-0">{{ title }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.export_report', report_type='inventory_status', category=selected_category, stock_status=selected_stock_filter) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-download mr-2"></i> Eksportuoti CSV
             </a>
-            <a href="{{ url_for('main.reports') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm ml-2">
-                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Grįžti
+            <a href="{{ url_for('main.reports') }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Grįžti
             </a>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Filtrai</h6>
-        </div>
+    <div class="card bg-base-100 shadow-xl mb-6">
         <div class="card-body">
-            <form method="get" class="form-inline">
-                <div class="form-group mr-3">
-                    <label for="category" class="mr-2">Kategorija:</label>
-                    <select class="form-control" id="category" name="category">
+            <h2 class="card-title text-primary mb-4">Filtrai</h2>
+            <form method="get" class="flex flex-wrap items-end gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Kategorija:</span>
+                    </label>
+                    <select class="select select-bordered" name="category">
                         <option value="">Visos kategorijos</option>
                         {% for category in categories %}
                         <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="form-group mr-3">
-                    <label for="stock_status" class="mr-2">Likutis:</label>
-                    <select class="form-control" id="stock_status" name="stock_status">
-                        <option value="">Visi likučiai</option>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Likutis:</span>
+                    </label>
+                    <select class="select select-bordered" name="stock_status">
+                        <option value="">Visi produktai</option>
                         <option value="in_stock" {% if selected_stock_filter == 'in_stock' %}selected{% endif %}>Pakankamas kiekis</option>
                         <option value="low_stock" {% if selected_stock_filter == 'low_stock' %}selected{% endif %}>Mažas kiekis</option>
                         <option value="out_of_stock" {% if selected_stock_filter == 'out_of_stock' %}selected{% endif %}>Nėra sandėlyje</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Filtruoti</button>
+                <div class="form-control">
+                    <button type="submit" class="btn btn-primary">Filtruoti</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Inventory Summary Cards -->
-    <div class="row">
-        <!-- Total Products -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Produktų skaičius
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ products|length }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-box fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <!-- Total Inventory Value -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Bendra inventoriaus vertė
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(total_inventory_value) }} €</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
-                        </div>
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-primary">Bendra vertė</h2>
+                        <p class="text-3xl font-bold mt-2">{{ "%.2f"|format(total_inventory_value) }} €</p>
+                    </div>
+                    <div class="text-3xl text-primary opacity-50">
+                        <i class="fas fa-euro-sign"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Out of Stock -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Nėra sandėlyje
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ out_of_stock_products|length }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
+        <!-- Total Products -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-success">Produktų skaičius</h2>
+                        <p class="text-3xl font-bold mt-2">{{ products|length }}</p>
+                    </div>
+                    <div class="text-3xl text-success opacity-50">
+                        <i class="fas fa-boxes"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Low Stock -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Mažas kiekis
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_products|length }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-box-open fa-2x text-gray-300"></i>
-                        </div>
+        <!-- Low Stock Products -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-warning">Mažas kiekis</h2>
+                        <p class="text-3xl font-bold mt-2">{{ low_stock_products|length }}</p>
+                    </div>
+                    <div class="text-3xl text-warning opacity-50">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Out of Stock Products -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-error">Nėra sandėlyje</h2>
+                        <p class="text-3xl font-bold mt-2">{{ out_of_stock_products|length }}</p>
+                    </div>
+                    <div class="text-3xl text-error opacity-50">
+                        <i class="fas fa-times-circle"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Category Value Chart -->
-    <div class="row">
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Inventoriaus vertė pagal kategorijas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-bar">
-                        <canvas id="categoryValueChart" style="height: 300px;"></canvas>
-                    </div>
+    <!-- Charts and Data -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <!-- Value by Category Chart -->
+        <div class="lg:col-span-6 card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Vertė pagal kategorijas</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="categoryValueChart"></canvas>
                 </div>
             </div>
         </div>
-        
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Produktų skaičius pagal kategorijas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie">
-                        <canvas id="categoryProductsChart" style="height: 300px;"></canvas>
-                    </div>
+
+        <!-- Quantity by Category Chart -->
+        <div class="lg:col-span-6 card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Kiekis pagal kategorijas</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="categoryQtyChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Low Stock Alert -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-warning">Produktai su mažu kiekiu</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Pavadinimas</th>
-                                    <th>Kategorija</th>
-                                    <th>Likutis</th>
-                                    <th>Kaina</th>
-                                    <th>Vertė</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for product in low_stock_products %}
-                                <tr>
-                                    <td>{{ product.sku }}</td>
-                                    <td><a href="{{ url_for('main.product_detail', id=product.id) }}">{{ product.name }}</a></td>
-                                    <td>{{ product.category }}</td>
-                                    <td><span class="badge badge-warning">{{ product.quantity }}</span></td>
-                                    <td>{{ "%.2f"|format(product.price_final) }} €</td>
-                                    <td>{{ "%.2f"|format(product.quantity * product.price_final) }} €</td>
-                                </tr>
+    <!-- Inventory Table -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-primary mb-4">Inventoriaus sąrašas</h2>
+            <div class="overflow-x-auto">
+                <table id="inventoryTable" class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Pavadinimas</th>
+                            <th>Kategorija</th>
+                            <th class="text-right">Kiekis</th>
+                            <th class="text-right">Kaina</th>
+                            <th class="text-right">Vertė</th>
+                            <th>Būsena</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.sku }}</td>
+                            <td>
+                                <a href="{{ url_for('main.product_detail', id=product.id) }}" class="hover:underline text-primary">
+                                    {{ product.name }}
+                                </a>
+                            </td>
+                            <td>{{ product.category or 'Nepriskirta' }}</td>
+                            <td class="text-right">{{ product.quantity }}</td>
+                            <td class="text-right">{{ "%.2f"|format(product.price_final) }} €</td>
+                            <td class="text-right">{{ "%.2f"|format(product.quantity * product.price_final) }} €</td>
+                            <td>
+                                {% if product.quantity == 0 %}
+                                <span class="badge badge-error">Nėra</span>
+                                {% elif product.quantity <= 10 %}
+                                <span class="badge badge-warning">Mažai</span>
                                 {% else %}
-                                <tr>
-                                    <td colspan="6" class="text-center">Nėra produktų su mažu kiekiu</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Summary Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Inventoriaus suvestinė pagal kategorijas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Kategorija</th>
-                                    <th>Produktų skaičius</th>
-                                    <th>Bendras kiekis</th>
-                                    <th>Inventoriaus vertė</th>
-                                    <th>% nuo bendros vertės</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for category, totals in category_totals.items() %}
-                                <tr>
-                                    <td>{{ category }}</td>
-                                    <td>{{ totals.count }}</td>
-                                    <td>{{ totals.qty }}</td>
-                                    <td>{{ "%.2f"|format(totals.value) }} €</td>
-                                    <td>{{ "%.1f"|format((totals.value / total_inventory_value * 100) if total_inventory_value > 0 else 0) }}%</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center">Nėra duomenų</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Full Inventory Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <a href="#collapseInventory" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="collapseInventory">
-                    <h6 class="m-0 font-weight-bold text-primary">Pilnas inventoriaus sąrašas</h6>
-                </a>
-                <div class="collapse" id="collapseInventory">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="inventoryTable" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>SKU</th>
-                                        <th>Pavadinimas</th>
-                                        <th>Kategorija</th>
-                                        <th>Kiekis</th>
-                                        <th>Kaina</th>
-                                        <th>Vertė</th>
-                                        <th>Statusas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for product in products %}
-                                    <tr>
-                                        <td>{{ product.sku }}</td>
-                                        <td><a href="{{ url_for('main.product_detail', id=product.id) }}">{{ product.name }}</a></td>
-                                        <td>{{ product.category or 'Nepriskirta' }}</td>
-                                        <td>{{ product.quantity }}</td>
-                                        <td>{{ "%.2f"|format(product.price_final) }} €</td>
-                                        <td>{{ "%.2f"|format(product.quantity * product.price_final) }} €</td>
-                                        <td>
-                                            {% if product.quantity == 0 %}
-                                            <span class="badge badge-danger">Nėra sandėlyje</span>
-                                            {% elif product.quantity <= 10 %}
-                                            <span class="badge badge-warning">Mažas kiekis</span>
-                                            {% else %}
-                                            <span class="badge badge-success">Pakankamas kiekis</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                                <span class="badge badge-success">Pakankamas</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">Nėra duomenų</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -292,10 +200,154 @@
 {% block scripts %}
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
-    // Initialize Chart.js with defaults
-    Chart.defaults.font.family = "'Nunito', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-    Chart.defaults.color = "#858796";
+    // Parse data from server
+    const categoryTotals = JSON.parse('{{ category_totals|tojson|safe }}');
+    
+    // Function to create category value chart
+    function createCategoryValueChart() {
+        const ctx = document.getElementById('categoryValueChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColors = [
+            '#005FB8', '#1cc88a', '#f6c23e', '#36b9cc', '#6f42c1', 
+            '#2ecc71', '#e74a3b', '#fd7e14', '#4e73df', '#1e7e34'
+        ];
+        
+        // Sort categories by value
+        const sortedCategories = Object.entries(categoryTotals)
+            .sort((a, b) => b[1].value - a[1].value);
+        
+        // Get top categories and group the rest as "Other"
+        const topCategories = sortedCategories.slice(0, 7);
+        const otherCategories = sortedCategories.slice(7);
+        
+        // Add top categories
+        topCategories.forEach((item, index) => {
+            const [category, details] = item;
+            labels.push(category);
+            data.push(details.value);
+        });
+        
+        // Add "Other" if needed
+        if (otherCategories.length > 0) {
+            const otherValue = otherCategories.reduce((sum, item) => sum + item[1].value, 0);
+            labels.push('Kita');
+            data.push(otherValue);
+        }
+        
+        // Create a color array of the right size
+        const colors = backgroundColors.slice(0, labels.length);
+        
+        // Create pie chart
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    hoverBackgroundColor: colors.map(function(color) {
+                        return color.replace('rgb', 'rgba').replace(')', ', 0.8)');
+                    }),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toFixed(2)} € (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to create category quantity chart
+    function createCategoryQtyChart() {
+        const ctx = document.getElementById('categoryQtyChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColors = [
+            '#005FB8', '#1cc88a', '#f6c23e', '#36b9cc', '#6f42c1', 
+            '#2ecc71', '#e74a3b', '#fd7e14', '#4e73df', '#1e7e34'
+        ];
+        
+        // Sort categories by quantity
+        const sortedCategories = Object.entries(categoryTotals)
+            .sort((a, b) => b[1].qty - a[1].qty);
+        
+        // Get top categories and group the rest as "Other"
+        const topCategories = sortedCategories.slice(0, 7);
+        const otherCategories = sortedCategories.slice(7);
+        
+        // Add top categories
+        topCategories.forEach((item, index) => {
+            const [category, details] = item;
+            labels.push(category);
+            data.push(details.qty);
+        });
+        
+        // Add "Other" if needed
+        if (otherCategories.length > 0) {
+            const otherQty = otherCategories.reduce((sum, item) => sum + item[1].qty, 0);
+            labels.push('Kita');
+            data.push(otherQty);
+        }
+        
+        // Create a color array of the right size
+        const colors = backgroundColors.slice(0, labels.length);
+        
+        // Create bar chart
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vnt.',
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
     
     // Initialize DataTables for inventory table
     $(document).ready(function() {
@@ -305,93 +357,10 @@
                 "pageLength": 25
             });
         }
-    });
-    
-    // Function to create category value chart
-    document.addEventListener('DOMContentLoaded', function() {
-        // Category value chart data
-        var categoryData = {{ category_totals|tojson }};
-        var categories = Object.keys(categoryData);
-        var values = categories.map(function(cat) { return categoryData[cat].value; });
-        var counts = categories.map(function(cat) { return categoryData[cat].count; });
         
-        // Create bar chart for category values
-        var ctx = document.getElementById('categoryValueChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: categories,
-                    datasets: [{
-                        label: 'Vertė (€)',
-                        data: values,
-                        backgroundColor: 'rgba(78, 115, 223, 0.8)',
-                        borderColor: 'rgba(78, 115, 223, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(2) + ' €';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' €';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Create pie chart for product counts by category
-        var ctxPie = document.getElementById('categoryProductsChart');
-        if (ctxPie) {
-            new Chart(ctxPie, {
-                type: 'pie',
-                data: {
-                    labels: categories,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: [
-                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
-                            '#fd7e14', '#6f42c1', '#20c9a6', '#27a844', '#e83e8c'
-                        ],
-                        hoverBackgroundColor: [
-                            '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617',
-                            '#ee6c0a', '#5a32ad', '#169b80', '#1f8c36', '#d62a72'
-                        ],
-                        hoverBorderColor: "rgba(234, 236, 244, 1)"
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    var value = context.parsed;
-                                    var total = context.dataset.data.reduce(function(acc, val) { return acc + val; }, 0);
-                                    var percentage = Math.round((value / total) * 100);
-                                    return context.label + ': ' + value + ' (' + percentage + '%)';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // Initialize charts
+        createCategoryValueChart();
+        createCategoryQtyChart();
     });
 </script>
 {% endblock %} 

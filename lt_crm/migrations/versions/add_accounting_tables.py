@@ -1,7 +1,8 @@
 """Add accounting tables
 
-Revision ID: 2023a1b2c3d5
-Create Date: 2023-12-01 10:00:00.000000
+Revision ID: 57a7a1aeb8e3
+Revises: 2023d5e6f7g8
+Create Date: 2021-01-19 16:57:03.099594
 
 """
 from alembic import op
@@ -9,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '2023a1b2c3d5'
-down_revision = '2023a1b2c3d4'  # This should match your initial migration ID
+revision = '57a7a1aeb8e3'
+down_revision = '2023d5e6f7g8'  # This should match the add_name_to_users migration ID
 branch_labels = None
 depends_on = None
 

@@ -9,6 +9,16 @@ from flask_wtf.csrf import CSRFProtect
 from .extensions import db, migrate, login_manager, babel, minify
 from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
+import json
+from decimal import Decimal
+
+
+# Custom JSON encoder to handle Decimal objects
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(CustomJSONEncoder, self).default(obj)
 
 
 # Initialize Talisman but defer application until inside create_app
@@ -46,6 +56,9 @@ def get_locale():
 def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
+
+    # Set the custom JSON encoder
+    app.json_encoder = CustomJSONEncoder
 
     # Load configuration
     app.config.from_mapping(

@@ -7,6 +7,7 @@ A comprehensive CRM system for Lithuanian businesses, featuring product manageme
 ## Features
 
 - **Product Management**: Add, edit, and manage products with pricing, stock levels, and variants
+  - **Customizable Columns**: Personalize the product list view by selecting which columns to display
 - **Order Processing**: Create and track customer orders from placement to fulfillment
 - **Invoice Generation**: Automatically generate invoices for orders and track payment status
 - **Customer Database**: Manage customer information and communication history

@@ -13,6 +13,9 @@ import uuid
 import os
 import csv
 from sqlalchemy import func, text
+from decimal import Decimal
+import json
+import logging
 
 from . import bp
 from lt_crm.app.models.user import User
@@ -36,79 +39,79 @@ def index():
 @login_required
 def dashboard():
     """Dashboard page with sales chart and low stock alerts."""
-    # Get monthly sales data
-    current_month = datetime.now().month
-    current_year = datetime.now().year
+    # Get date range parameters from request
+    date_from_str = request.args.get('date_from')
+    date_to_str = request.args.get('date_to')
     
-    # Calculate monthly sales for the current year
-    monthly_sales_data = db.session.query(
-        func.extract('month', Order.created_at).label('month'),
+    # Set default dates if not provided
+    today = datetime.now().date()
+    if date_from_str:
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except ValueError:
+            date_from = today.replace(day=1)  # First day of current month
+    else:
+        date_from = today.replace(day=1)  # First day of current month
+        
+    if date_to_str:
+        try:
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except ValueError:
+            date_to = today
+    else:
+        date_to = today
+    
+    # Generate daily sales data for last 30 days
+    sales_data = [0] * 30
+    thirty_days_ago = today - timedelta(days=29)
+    
+    # Query to get sales per day for the last 30 days
+    daily_sales = db.session.query(
+        func.date(Order.created_at).label('date'),
         func.sum(Order.total_amount).label('total')
     ).filter(
-        func.extract('year', Order.created_at) == current_year,
+        func.date(Order.created_at) >= thirty_days_ago,
+        func.date(Order.created_at) <= today,
         Order.status != OrderStatus.CANCELLED
     ).group_by(
-        func.extract('month', Order.created_at)
+        func.date(Order.created_at)
     ).all()
     
-    # Create a list of sales by month (for the chart)
-    sales_data = [0] * 12
-    for month, total in monthly_sales_data:
-        sales_data[int(month) - 1] = float(total or 0)
+    # Fill in the sales data array
+    for day_date, total in daily_sales:
+        # Calculate position in the array (0 to 29)
+        days_ago = (today - day_date).days
+        if 0 <= days_ago < 30:  # Ensure it's within our 30-day window
+            sales_data[29 - days_ago] = float(total or 0)
     
-    # Calculate weekly sales data (for the past 7 days)
-    today = datetime.now().date()
+    # Generate daily sales data for last 7 days (subset of the 30-day data)
+    weekly_data = sales_data[-7:]
     
-    # Query to get sales per day for the last 7 days
-    # This is more database-agnostic than using dow extraction
-    weekly_sales_data = []
-    for i in range(6, -1, -1):  # Count backwards from 6 to 0 to get oldest to newest days
-        day = today - timedelta(days=i)
-        day_start = datetime.combine(day, datetime.min.time())
-        day_end = datetime.combine(day, datetime.max.time())
-        
-        # Get sales for this day
-        day_sales = db.session.query(
-            func.sum(Order.total_amount)
-        ).filter(
-            Order.created_at >= day_start,
-            Order.created_at <= day_end,
-            Order.status != OrderStatus.CANCELLED
-        ).scalar() or 0
-        
-        # Use position in array (0-6) rather than weekday
-        weekly_sales_data.append((6-i, float(day_sales)))
-    
-    # Create list of sales by day of week (in order from 7 days ago to today)
-    weekly_data = [0] * 7
-    for position, total in weekly_sales_data:
-        weekly_data[position] = total
-    
-    # Get current month sales
-    monthly_sales = db.session.query(
+    # Get filtered sales
+    filtered_sales = db.session.query(
         func.sum(Order.total_amount)
     ).filter(
-        func.extract('month', Order.created_at) == current_month,
-        func.extract('year', Order.created_at) == current_year,
+        func.date(Order.created_at) >= date_from,
+        func.date(Order.created_at) <= date_to,
         Order.status != OrderStatus.CANCELLED
     ).scalar() or 0
     
-    # Calculate growth from previous month
-    prev_month = current_month - 1 if current_month > 1 else 12
-    prev_year = current_year if current_month > 1 else current_year - 1
+    # Calculate growth from previous period
+    prev_date_from = date_from - (date_to - date_from + timedelta(days=1))
+    prev_date_to = date_from - timedelta(days=1)
     
-    prev_month_sales = db.session.query(
+    prev_period_sales = db.session.query(
         func.sum(Order.total_amount)
     ).filter(
-        func.extract('month', Order.created_at) == prev_month,
-        func.extract('year', Order.created_at) == prev_year,
+        func.date(Order.created_at) >= prev_date_from,
+        func.date(Order.created_at) <= prev_date_to,
         Order.status != OrderStatus.CANCELLED
     ).scalar() or 0
     
-    if prev_month_sales > 0:
-        sales_growth = round(((monthly_sales - prev_month_sales) / prev_month_sales) * 100)
+    if prev_period_sales > 0:
+        sales_growth = round(((filtered_sales - prev_period_sales) / prev_period_sales) * 100)
     else:
-        sales_growth = 100 if monthly_sales > 0 else 0
+        sales_growth = 100 if filtered_sales > 0 else 0
     
     # Get low stock products
     low_stock_products = Product.query.filter(Product.quantity <= 10).order_by(Product.quantity).limit(5).all()
@@ -120,19 +123,104 @@ def dashboard():
     # Get pending orders
     pending_orders = Order.query.filter(Order.status.in_([OrderStatus.PAID, OrderStatus.PACKED])).count()
     
-    # Recent orders
-    recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    # Recent orders with date filter
+    recent_orders = Order.query.filter(
+        func.date(Order.created_at) >= date_from,
+        func.date(Order.created_at) <= date_to
+    ).order_by(Order.created_at.desc()).limit(10).all()
     
     # Count orders by status for chart
     status_counts = {}
     for status in OrderStatus:
-        count = Order.query.filter(Order.status == status).count()
+        count = Order.query.filter(
+            Order.status == status,
+            func.date(Order.created_at) >= date_from,
+            func.date(Order.created_at) <= date_to
+        ).count()
         status_counts[status.name.lower()] = count
+    
+    # Get top selling products for the period
+    top_products_query = db.session.query(
+        Product.id,
+        Product.name,
+        Product.sku,
+        func.sum(OrderItem.quantity).label('quantity'),
+        func.sum((OrderItem.price * OrderItem.quantity)).label('total')
+    ).join(
+        OrderItem, OrderItem.product_id == Product.id
+    ).join(
+        Order, Order.id == OrderItem.order_id
+    ).filter(
+        func.date(Order.created_at) >= date_from,
+        func.date(Order.created_at) <= date_to,
+        Order.status != OrderStatus.CANCELLED
+    ).group_by(
+        Product.id
+    ).order_by(
+        func.sum((OrderItem.price * OrderItem.quantity)).desc()
+    ).limit(5).all()
+    
+    # Convert SQLAlchemy objects to dictionaries
+    top_products = []
+    for product in top_products_query:
+        top_products.append({
+            'id': product.id,
+            'name': product.name,
+            'sku': product.sku,
+            'quantity': product.quantity,
+            'total': product.total
+        })
+    
+    # Mock recent activities (in a real app, this would come from a database)
+    recent_activities = []
+    # Get some actual data to make the activities more realistic
+    recent_order = Order.query.order_by(Order.created_at.desc()).first()
+    recent_product = Product.query.order_by(Product.updated_at.desc()).first()
+    
+    if recent_order:
+        recent_activities.append({
+            'type': 'order_created',
+            'timestamp': recent_order.created_at,
+            'title': f'Naujas užsakymas #{recent_order.order_number}',
+            'description': f'Klientas: {recent_order.shipping_name}, Suma: {recent_order.total_amount} €'
+        })
+        
+        # Add order status change if it's not NEW
+        if recent_order.status != OrderStatus.NEW:
+            recent_activities.append({
+                'type': 'order_status',
+                'timestamp': recent_order.updated_at or recent_order.created_at,
+                'title': f'Užsakymo #{recent_order.order_number} statusas pakeistas',
+                'description': f'Statusas pakeistas į {recent_order.status.name}'
+            })
+    
+    if recent_product:
+        recent_activities.append({
+            'type': 'product_updated',
+            'timestamp': recent_product.updated_at or datetime.now(),
+            'title': f'Produktas atnaujintas: {recent_product.name}',
+            'description': f'Kaina: {recent_product.price_final} €, Likutis: {recent_product.quantity} vnt.'
+        })
+    
+    # Add a mock invoice activity
+    invoice = Invoice.query.order_by(Invoice.created_at.desc()).first()
+    if invoice:
+        recent_activities.append({
+            'type': 'invoice_created',
+            'timestamp': invoice.created_at,
+            'title': f'Sukurta sąskaita #{invoice.invoice_number}',
+            'description': f'Klientas: {invoice.billing_name}, Suma: {invoice.total_amount} €'
+        })
+    
+    # Sort activities by timestamp, newest first
+    recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    # Limit to last 5 activities
+    recent_activities = recent_activities[:5]
     
     return render_template(
         "main/dashboard.html", 
         title="Skydelis",
-        monthly_sales=monthly_sales,
+        monthly_sales=filtered_sales,
         sales_growth=sales_growth,
         sales_data=sales_data,
         weekly_data=weekly_data,
@@ -141,6 +229,12 @@ def dashboard():
         pending_orders=pending_orders,
         recent_orders=recent_orders,
         status_counts=status_counts,
+        top_products=top_products,
+        recent_activities=recent_activities,
+        today=today,
+        timedelta=timedelta,
+        date_from=date_from,
+        date_to=date_to
     )
 
 
@@ -181,12 +275,24 @@ def products():
     categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
     categories = [c[0] for c in categories if c[0]]
     
+    # Import columns data at the beginning to make sure it's properly loaded
+    from lt_crm.app.models.product import PRODUCT_COLUMNS
+    
+    # Get selected columns or default
+    if hasattr(current_user, 'get_product_columns'):
+        selected_columns = current_user.get_product_columns()
+    else:
+        # Fallback to default columns if user preferences not available
+        selected_columns = [k for k, v in PRODUCT_COLUMNS.items() if v.get('default', False)]
+    
     return render_template(
         "main/products.html",
         title="Produktai",
         products=products,
         pagination=pagination,
         categories=categories,
+        product_columns=PRODUCT_COLUMNS,
+        selected_columns=selected_columns,
     )
 
 
@@ -2236,7 +2342,9 @@ def sales_summary_report():
         growth_percentage=growth_percentage,
         top_products=top_products,
         payment_methods=payment_methods,
-        avg_order_value=total_sales / len(orders) if orders else 0
+        avg_order_value=total_sales / len(orders) if orders else 0,
+        today=today,
+        timedelta=timedelta
     )
 
 
@@ -2715,3 +2823,76 @@ def export_report(report_type):
         current_app.logger.exception(f"Error exporting report: {str(e)}")
         flash(f"Error exporting report: {str(e)}", "error")
         return redirect(url_for(f'main.{report_type}_report'))
+
+
+# Add this route after the product routes
+@bp.route("/api/product-columns", methods=["GET", "POST"])
+@login_required
+def product_columns_api():
+    """API endpoint for product columns preferences."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    from lt_crm.app.models.product import PRODUCT_COLUMNS
+    
+    # GET returns all available columns and user's current selection
+    if request.method == "GET":
+        # Get user's current column preferences
+        user_columns = current_user.get_product_columns()
+        logger.info(f"GET request - user columns: {user_columns}")
+        
+        # Create a response with only the necessary data
+        response = {
+            "available_columns": {},
+            "selected_columns": user_columns
+        }
+        
+        # Add each column's info
+        for col_id, col_info in PRODUCT_COLUMNS.items():
+            response["available_columns"][col_id] = {
+                "name": str(col_info.get("name", "")),
+                "description": str(col_info.get("description", "")),
+                "default": bool(col_info.get("default", False))
+            }
+        
+        return response
+    
+    # POST updates user's column preferences
+    if request.method == "POST":
+        try:
+            # Parse JSON data from request
+            data = request.get_json()
+            if not data or "columns" not in data:
+                logger.error("Missing column data in request")
+                return {"error": "Missing column data"}, 400
+            
+            # Get column preferences
+            columns = data["columns"]
+            logger.info(f"POST request - received columns: {columns}")
+            
+            # Save using the improved User model method
+            success = current_user.set_product_columns(columns)
+            
+            # Get the updated columns
+            saved_columns = current_user.get_product_columns()
+            logger.info(f"POST response - columns after saving: {saved_columns}")
+            
+            # Check if all columns were saved
+            missing = [col for col in columns if col in PRODUCT_COLUMNS and col not in saved_columns]
+            
+            # Create response
+            response = {"success": success, "columns": saved_columns}
+            
+            if success:
+                response["message"] = "Stulpelių nustatymai išsaugoti"
+                if missing:
+                    logger.error(f"Some columns not saved: {missing}")
+                    response["warning"] = f"Kai kurie stulpeliai ({', '.join(missing)}) nebuvo išsaugoti."
+            else:
+                response["error"] = "Nepavyko išsaugoti nustatymų"
+                
+            return response
+            
+        except Exception as e:
+            logger.exception(f"Error in product_columns_api: {e}")
+            return {"error": str(e), "success": False}, 500

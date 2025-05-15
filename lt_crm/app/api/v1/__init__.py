@@ -3,6 +3,27 @@ from flask import Blueprint
 from flask_restx import Api
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import json
+from decimal import Decimal
+
+
+# Custom function to handle Decimal serialization in flask-restx
+def output_json(data, code, headers=None):
+    """Make a Flask response with a JSON encoded body.
+    
+    This custom encoder properly handles Decimal values by converting them to floats.
+    """
+    class DecimalEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, Decimal):
+                return float(o)
+            return super(DecimalEncoder, self).default(o)
+    
+    resp = json.dumps(data, cls=DecimalEncoder) + "\n"
+    resp_headers = headers or {}
+    resp_headers["Content-Type"] = "application/json"
+    return resp, code, resp_headers
+
 
 bp = Blueprint("api_v1", __name__, url_prefix="/v1")
 api = Api(
@@ -12,6 +33,9 @@ api = Api(
     description="Lithuanian CRM REST API - Version 1",
     doc="/docs",
 )
+
+# Set the custom output_json function
+api.representation('application/json')(output_json)
 
 # Rate limiter
 limiter = Limiter(

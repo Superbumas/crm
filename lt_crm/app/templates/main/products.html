@@ -5,6 +5,19 @@
 {% block styles %}
 <style>
     [x-cloak] { display: none !important; }
+    
+    /* Toast styling */
+    #toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+    }
+    
+    #toast-container .alert {
+        margin-bottom: 0.5rem;
+        transition: opacity 0.3s ease-in-out;
+    }
 </style>
 {% endblock %}
 
@@ -87,6 +100,33 @@
 <!-- Products Table -->
 <div class="card bg-base-100 shadow-xl overflow-hidden">
     <div class="card-body p-0">
+        <div class="flex justify-end p-4">
+            <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-sm btn-outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Stulpeliai
+                </label>
+                <div tabindex="0" id="column-selector" class="dropdown-content z-[1] menu p-4 bg-base-100 shadow rounded-box w-64">
+                    <h3 class="font-bold mb-2">Rodomi stulpeliai</h3>
+                    <div class="form-control">
+                        {% for col_id, col_info in product_columns.items() %}
+                        <label class="label cursor-pointer justify-start">
+                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mr-2" 
+                                   data-column-id="{{ col_id }}" 
+                                   {% if col_id in selected_columns %}checked{% endif %}
+                                   {% if col_id in ['sku', 'name'] %}disabled{% endif %} />
+                            <span class="label-text">{{ col_info.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4">
+                        <button id="save-columns" class="btn btn-primary btn-sm w-full">Išsaugoti</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="table table-zebra w-full">
                 <thead>
@@ -94,9 +134,11 @@
                         <th>SKU</th>
                         <th>Nuotrauka</th>
                         <th>Pavadinimas</th>
-                        <th>Kategorija</th>
-                        <th>Kaina</th>
-                        <th>Likutis</th>
+                        {% for col in selected_columns %}
+                        {% if col not in ['sku', 'name'] %}
+                        <th>{{ product_columns[col]['name'] }}</th>
+                        {% endif %}
+                        {% endfor %}
                         <th>Veiksmai</th>
                     </tr>
                 </thead>
@@ -124,22 +166,43 @@
                                 <a href="{{ url_for('main.product_detail', id=product.id) }}" class="font-medium hover:underline">
                                     {{ product.name }}
                                 </a>
-                                {% if product.barcode %}
+                                {% if product.barcode and 'barcode' not in selected_columns %}
                                 <div class="text-xs opacity-60">EAN: {{ product.barcode }}</div>
                                 {% endif %}
                             </td>
-                            <td>{{ product.category or '-' }}</td>
+                            
+                            {% for col in selected_columns %}
+                            {% if col not in ['sku', 'name'] %}
                             <td>
-                                <div class="font-semibold">{{ product.price_final|euro }}</div>
-                                {% if product.price_old %}
-                                <div class="text-xs line-through opacity-60">{{ product.price_old|euro }}</div>
+                                {% if col == 'category' %}
+                                    {{ product.category or '-' }}
+                                {% elif col == 'barcode' %}
+                                    {{ product.barcode or '-' }}
+                                {% elif col == 'price_final' %}
+                                    <div class="font-semibold">{{ product.price_final|euro }}</div>
+                                {% elif col == 'price_old' %}
+                                    <div class="text-xs line-through opacity-60">{{ product.price_old|euro if product.price_old else '-' }}</div>
+                                {% elif col == 'quantity' %}
+                                    <span class="badge {% if product.quantity > 10 %}badge-success{% elif product.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
+                                        {{ product.quantity }} vnt.
+                                    </span>
+                                {% elif col == 'manufacturer' %}
+                                    {{ product.manufacturer or '-' }}
+                                {% elif col == 'model' %}
+                                    {{ product.model or '-' }}
+                                {% elif col == 'delivery_days' %}
+                                    {{ product.delivery_days or '-' }} d.
+                                {% elif col == 'warranty_months' %}
+                                    {{ product.warranty_months or '-' }} mėn.
+                                {% elif col == 'weight_kg' %}
+                                    {{ product.weight_kg or '-' }} kg
+                                {% else %}
+                                    {{ getattr(product, col, '-') }}
                                 {% endif %}
                             </td>
-                            <td>
-                                <span class="badge {% if product.quantity > 10 %}badge-success{% elif product.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
-                                    {{ product.quantity }} vnt.
-                                </span>
-                            </td>
+                            {% endif %}
+                            {% endfor %}
+                            
                             <td>
                                 <div class="flex space-x-1">
                                     <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-square btn-sm btn-ghost">
@@ -162,7 +225,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-8">
+                            <td colspan="{{ selected_columns|length + 3 }}" class="text-center py-8">
                                 {% if request.args.get('q') or request.args.get('category') or request.args.get('stock') %}
                                     Nerasta produktų pagal pasirinktus filtrus.
                                     <a href="{{ url_for('main.products') }}" class="btn btn-sm btn-ghost mt-2">Išvalyti filtrus</a>
@@ -478,6 +541,142 @@
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Column preferences handler
+        const saveColumnsBtn = document.getElementById('save-columns');
+        if (saveColumnsBtn) {
+            saveColumnsBtn.addEventListener('click', function() {
+                // Show loading indicator on the button
+                const originalBtnText = saveColumnsBtn.innerHTML;
+                saveColumnsBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Saugoma...';
+                saveColumnsBtn.disabled = true;
+                
+                // Get all checked columns
+                const checkboxes = document.querySelectorAll('#column-selector input[type="checkbox"]');
+                const selectedColumns = [];
+                
+                // Always include required columns (sku, name)
+                if (!Array.from(checkboxes).some(cb => cb.getAttribute('data-column-id') === 'sku' && cb.checked)) {
+                    selectedColumns.push('sku');
+                }
+                
+                if (!Array.from(checkboxes).some(cb => cb.getAttribute('data-column-id') === 'name' && cb.checked)) {
+                    selectedColumns.push('name');
+                }
+                
+                // Add all checked columns
+                checkboxes.forEach(checkbox => {
+                    const columnId = checkbox.getAttribute('data-column-id');
+                    if (checkbox.checked) {
+                        selectedColumns.push(columnId);
+                    }
+                });
+                
+                console.log('Saving columns:', selectedColumns);
+                
+                // Save preferences via API
+                fetch('/api/product-columns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        columns: selectedColumns
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Server response:', data);
+                    
+                    if (data.success) {
+                        // Show success message
+                        showToast(data.message || 'Stulpelių nustatymai išsaugoti!', 'success');
+                        
+                        // If there's a warning about columns that couldn't be saved, show it
+                        if (data.warning) {
+                            setTimeout(() => {
+                                showToast(data.warning, 'warning');
+                            }, 500);
+                        }
+                        
+                        // Restore button state
+                        saveColumnsBtn.innerHTML = originalBtnText;
+                        saveColumnsBtn.disabled = false;
+                        
+                        // Reload page to apply changes after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        // Show error message
+                        showToast('Klaida išsaugant nustatymus: ' + (data.error || 'Nežinoma klaida'), 'error');
+                        
+                        // Restore button state
+                        saveColumnsBtn.innerHTML = originalBtnText;
+                        saveColumnsBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving column preferences:', error);
+                    showToast('Klaida išsaugant nustatymus: ' + error.message, 'error');
+                    
+                    // Restore button state
+                    saveColumnsBtn.innerHTML = originalBtnText;
+                    saveColumnsBtn.disabled = false;
+                });
+            });
+        }
+        
+        // Helper function to get CSRF token
+        function getCsrfToken() {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') || '' : '';
+        }
+        
+        // Toast notification helper
+        function showToast(message, type = 'info') {
+            // Check if the toast container exists, create if not
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'toast toast-top toast-end z-50';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            
+            // Set alert class based on type
+            let alertClass = 'alert-info';
+            if (type === 'success') alertClass = 'alert-success';
+            else if (type === 'error') alertClass = 'alert-error';
+            else if (type === 'warning') alertClass = 'alert-warning';
+            
+            toast.className = `alert ${alertClass}`;
+            
+            // Set toast content
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+            
+            // Add to container
+            toastContainer.appendChild(toast);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    toastContainer.removeChild(toast);
+                }, 300);
+            }, 5000);  // Show warnings and errors longer
+        }
+        
         // If needed, you could add custom JavaScript here
         // Check if Alpine.js is loaded
         if (typeof Alpine === 'undefined') {
@@ -532,6 +731,50 @@
                     console.error('Error getting JWT token:', error);
                     this.previewError = 'Autentifikacijos klaida. Bandykite atnaujinti puslapį.';
                 }
+            },
+            
+            // Helper function to safely get CSRF token
+            getCsrfToken() {
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                return metaTag ? metaTag.getAttribute('content') || '' : '';
+            },
+            
+            showToast(message, type = 'info') {
+                // Check if the toast container exists, create if not
+                let toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.id = 'toast-container';
+                    toastContainer.className = 'toast toast-top toast-end z-50';
+                    document.body.appendChild(toastContainer);
+                }
+                
+                // Create toast element
+                const toast = document.createElement('div');
+                
+                // Set alert class based on type
+                let alertClass = 'alert-info';
+                if (type === 'success') alertClass = 'alert-success';
+                else if (type === 'error') alertClass = 'alert-error';
+                else if (type === 'warning') alertClass = 'alert-warning';
+                
+                toast.className = `alert ${alertClass}`;
+                
+                // Set toast content
+                toast.innerHTML = `
+                    <span>${message}</span>
+                `;
+                
+                // Add to container
+                toastContainer.appendChild(toast);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                    setTimeout(() => {
+                        toastContainer.removeChild(toast);
+                    }, 300);
+                }, 5000);  // Show warnings and errors longer
             },
             
             fields: [
@@ -602,12 +845,6 @@
             goToFieldMapping() {
                 this.updateColumnMap();
                 this.step = 2;
-            },
-            
-            // Helper function to safely get CSRF token
-            getCsrfToken() {
-                const metaTag = document.querySelector('meta[name="csrf-token"]');
-                return metaTag ? metaTag.getAttribute('content') || '' : '';
             },
             
             async generatePreview() {
@@ -758,29 +995,6 @@
                 document.body.removeChild(form);
                 
                 this.showToast('Eksportas pradėtas!', 'success');
-            },
-            
-            showToast(message, type = 'info') {
-                const toastContainer = document.getElementById('toast-container');
-                if (!toastContainer) return;
-                
-                const toast = document.createElement('div');
-                toast.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg mb-4 animate__animated animate__fadeIn`;
-                toast.innerHTML = `
-                    <div>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span>${message}</span>
-                    </div>
-                    <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
-                `;
-                
-                toastContainer.appendChild(toast);
-                
-                // Auto-remove after 5 seconds
-                setTimeout(() => {
-                    toast.classList.add('animate__fadeOut');
-                    setTimeout(() => toast.remove(), 500);
-                }, 5000);
             },
             
             resetModal() {

@@ -4,6 +4,23 @@ from lt_crm.app.extensions import db
 from lt_crm.app.models.base import TimestampMixin
 
 
+# Define available columns that can be displayed in product listings
+PRODUCT_COLUMNS = {
+    "sku": {"name": "SKU", "description": "Produkto kodas", "default": True},
+    "name": {"name": "Pavadinimas", "description": "Produkto pavadinimas", "default": True},
+    "category": {"name": "Kategorija", "description": "Produkto kategorija", "default": True},
+    "barcode": {"name": "Barkodas", "description": "Produkto brūkšninis kodas", "default": False},
+    "price_final": {"name": "Kaina", "description": "Galutinė kaina", "default": True},
+    "price_old": {"name": "Sena kaina", "description": "Ankstesnė kaina", "default": False},
+    "quantity": {"name": "Likutis", "description": "Kiekis sandėlyje", "default": True},
+    "model": {"name": "Modelis", "description": "Produkto modelis", "default": False},
+    "manufacturer": {"name": "Gamintojas", "description": "Produkto gamintojas", "default": False},
+    "delivery_days": {"name": "Pristatymo laikas", "description": "Pristatymo laikas dienomis", "default": False},
+    "warranty_months": {"name": "Garantija", "description": "Garantijos laikotarpis", "default": False},
+    "weight_kg": {"name": "Svoris", "description": "Produkto svoris (kg)", "default": False}
+}
+
+
 class Product(TimestampMixin, db.Model):
     """Product model representing products in the CRM."""
 

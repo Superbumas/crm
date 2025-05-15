@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .chart-container {
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-primary mb-4 md:mb-0">{{ title }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.export_report', report_type='invoice_status', start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-download mr-2"></i> Eksportuoti CSV
+            </a>
+            <a href="{{ url_for('main.reports') }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Grįžti
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-primary mb-4">Laikotarpio pasirinkimas</h2>
+            <form method="get" class="flex flex-wrap items-end gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Nuo:</span>
+                    </label>
+                    <input type="date" class="input input-bordered" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Iki:</span>
+                    </label>
+                    <input type="date" class="input input-bordered" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-control">
+                    <button type="submit" class="btn btn-primary">Filtruoti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Total Invoices -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-primary">Sąskaitų skaičius</h2>
+                        <p class="text-3xl font-bold mt-2">{{ total_count }}</p>
+                    </div>
+                    <div class="text-3xl text-primary opacity-50">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Amount -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-success">Bendra suma</h2>
+                        <p class="text-3xl font-bold mt-2">{{ "%.2f"|format(total_amount) }} €</p>
+                    </div>
+                    <div class="text-3xl text-success opacity-50">
+                        <i class="fas fa-euro-sign"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Invoices -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-error">Vėluojančios sąskaitos</h2>
+                        <p class="text-3xl font-bold mt-2">{{ overdue_invoices|length }}</p>
+                        <div class="text-sm mt-1 opacity-70">
+                            {{ "%.1f"|format((overdue_invoices|length / total_count * 100) if total_count > 0 else 0) }}% vėluoja
+                        </div>
+                    </div>
+                    <div class="text-3xl text-error opacity-50">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Days to Payment -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-info">Vid. apmokėjimo laikas</h2>
+                        <p class="text-3xl font-bold mt-2">{{ "%.1f"|format(avg_days_to_payment) }} d.</p>
+                    </div>
+                    <div class="text-3xl text-info opacity-50">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <!-- Status Distribution Chart -->
+        <div class="lg:col-span-6 card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Sąskaitų statusai</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Amounts by Status Chart -->
+        <div class="lg:col-span-6 card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Sumų pasiskirstymas pagal statusą</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="amountsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="grid grid-cols-1 gap-6 mb-6">
+        <!-- Status Summary Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary mb-4">Sąskaitų statusų suvestinė</h2>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>Statusas</th>
+                                <th class="text-right">Sąskaitų skaičius</th>
+                                <th class="text-right">Bendra suma</th>
+                                <th class="text-right">% nuo visų sąskaitų</th>
+                                <th class="text-right">% nuo visos sumos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for status, data in status_totals.items() %}
+                            <tr>
+                                <td>{{ status }}</td>
+                                <td class="text-right">{{ data.count }}</td>
+                                <td class="text-right">{{ "%.2f"|format(data.total) }} €</td>
+                                <td class="text-right">{{ "%.1f"|format((data.count / total_count * 100) if total_count > 0 else 0) }}%</td>
+                                <td class="text-right">{{ "%.1f"|format((data.total / total_amount * 100) if total_amount > 0 else 0) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Invoices Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-error mb-4">Vėluojančios sąskaitos</h2>
+                <div class="overflow-x-auto">
+                    <table id="overdueInvoicesTable" class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>SF Nr.</th>
+                                <th>Klientas</th>
+                                <th>Išrašymo data</th>
+                                <th>Terminas</th>
+                                <th class="text-right">Vėluoja (d.)</th>
+                                <th class="text-right">Suma</th>
+                                <th>Statusas</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in overdue_invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ invoice.customer.name if invoice.customer else invoice.billing_name }}</td>
+                                <td>{{ invoice.issue_date.strftime('%Y-%m-%d') if invoice.issue_date else '' }}</td>
+                                <td>{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else '' }}</td>
+                                <td class="text-right {% if (today - invoice.due_date).days > 30 %}text-error font-bold{% elif (today - invoice.due_date).days > 14 %}text-warning font-bold{% endif %}">
+                                    {{ (today - invoice.due_date).days if invoice.due_date else '' }}
+                                </td>
+                                <td class="text-right">{{ "%.2f"|format(invoice.total_amount) }} €</td>
+                                <td>
+                                    {% if invoice.status.name == 'DRAFT' %}
+                                    <span class="badge badge-secondary">Juodraštis</span>
+                                    {% elif invoice.status.name == 'ISSUED' %}
+                                    <span class="badge badge-primary">Išrašyta</span>
+                                    {% elif invoice.status.name == 'PAID' %}
+                                    <span class="badge badge-success">Apmokėta</span>
+                                    {% elif invoice.status.name == 'OVERDUE' %}
+                                    <span class="badge badge-error">Vėluoja</span>
+                                    {% elif invoice.status.name == 'CANCELLED' %}
+                                    <span class="badge badge-ghost">Atšaukta</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    <a href="{{ url_for('main.invoice_detail', id=invoice.id) }}" class="btn btn-sm btn-outline btn-circle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">Nėra vėluojančių sąskaitų</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    // Parse data from server
+    const statusTotals = JSON.parse('{{ status_totals|tojson|safe }}');
+    
+    // Function to create status distribution chart
+    function createStatusChart() {
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColors = {
+            'DRAFT': '#6c757d',    // Secondary
+            'ISSUED': '#005FB8',   // Primary
+            'PAID': '#1cc88a',     // Success
+            'OVERDUE': '#e74a3b',  // Error
+            'CANCELLED': '#858796' // Ghost
+        };
+        
+        const colors = [];
+        
+        // Add data for each status
+        for (const [status, details] of Object.entries(statusTotals)) {
+            if (details.count > 0) {
+                labels.push(status);
+                data.push(details.count);
+                colors.push(backgroundColors[status] || '#858796');
+            }
+        }
+        
+        // Create pie chart
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    hoverBackgroundColor: colors.map(color => {
+                        return color.replace('rgb', 'rgba').replace(')', ', 0.8)');
+                    }),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+    
+    // Function to create amounts by status chart
+    function createAmountsChart() {
+        const ctx = document.getElementById('amountsChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColors = {
+            'DRAFT': '#6c757d',    // Secondary
+            'ISSUED': '#005FB8',   // Primary
+            'PAID': '#1cc88a',     // Success
+            'OVERDUE': '#e74a3b',  // Error
+            'CANCELLED': '#858796' // Ghost
+        };
+        
+        const colors = [];
+        
+        // Add data for each status
+        for (const [status, details] of Object.entries(statusTotals)) {
+            if (details.total > 0) {
+                labels.push(status);
+                data.push(details.total);
+                colors.push(backgroundColors[status] || '#858796');
+            }
+        }
+        
+        // Create bar chart
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Suma (€)',
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                return `${value.toFixed(2)} €`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2) + ' €';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initialize DataTables for invoice table
+    $(document).ready(function() {
+        if ($.fn.dataTable) {
+            $('#overdueInvoicesTable').DataTable({
+                "order": [[4, "desc"]], // Sort by days overdue descending
+                "pageLength": 10
+            });
+        }
+        
+        // Initialize charts
+        createStatusChart();
+        createAmountsChart();
+    });
+</script>
+{% endblock %} 

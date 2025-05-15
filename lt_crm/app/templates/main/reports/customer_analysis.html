@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .chart-container {
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-primary mb-4 md:mb-0">{{ title }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.export_report', report_type='customer_analysis', start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-download mr-2"></i> Eksportuoti CSV
+            </a>
+            <a href="{{ url_for('main.reports') }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Grįžti
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-primary mb-4">Laikotarpio pasirinkimas</h2>
+            <form method="get" class="flex flex-wrap items-end gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Nuo:</span>
+                    </label>
+                    <input type="date" class="input input-bordered" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Iki:</span>
+                    </label>
+                    <input type="date" class="input input-bordered" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-control">
+                    <button type="submit" class="btn btn-primary">Filtruoti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Total Customers -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-primary">Aktyvūs klientai</h2>
+                        <p class="text-3xl font-bold mt-2">{{ total_customers }}</p>
+                    </div>
+                    <div class="text-3xl text-primary opacity-50">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Customers -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-success">Nauji klientai</h2>
+                        <p class="text-3xl font-bold mt-2">{{ new_customers }}</p>
+                        <div class="text-sm mt-1 opacity-70">
+                            {{ "%.1f"|format((new_customers / total_customers * 100) if total_customers > 0 else 0) }}% nuo visų klientų
+                        </div>
+                    </div>
+                    <div class="text-3xl text-success opacity-50">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Returning Customers -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between">
+                    <div>
+                        <h2 class="card-title text-info">Grįžtantys klientai</h2>
+                        <p class="text-3xl font-bold mt-2">{{ returning_customers }}</p>
+                        <div class="text-sm mt-1 opacity-70">
+                            {{ "%.1f"|format((returning_customers / total_customers * 100) if total_customers > 0 else 0) }}% nuo visų klientų
+                        </div>
+                    </div>
+                    <div class="text-3xl text-info opacity-50">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- New vs Returning Chart -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Nauji vs Grįžtantys klientai</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="customerTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Geographic Distribution Chart -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Geografinis pasiskirstymas</h2>
+                <div class="chart-container mt-4">
+                    <canvas id="geoDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Customers Table -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-primary mb-4">Geriausi klientai pagal išleistas sumas</h2>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Klientas</th>
+                            <th>El. paštas</th>
+                            <th class="text-right">Užsakymų skaičius</th>
+                            <th class="text-right">Bendra išleista suma</th>
+                            <th class="text-right">Vid. užsakymo suma</th>
+                            <th>Pirmas užsakymas</th>
+                            <th>Paskutinis užsakymas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer_data in top_customers %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('main.customer_detail', id=customer_data.customer.id) }}" class="hover:underline text-primary">
+                                    {{ customer_data.customer.name }}
+                                </a>
+                            </td>
+                            <td>{{ customer_data.customer.email }}</td>
+                            <td class="text-right">{{ customer_data.orders_count }}</td>
+                            <td class="text-right">{{ "%.2f"|format(customer_data.total_spent) }} €</td>
+                            <td class="text-right">{{ "%.2f"|format(customer_data.average_order_value) }} €</td>
+                            <td>{{ customer_data.first_order_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ customer_data.last_order_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">Nėra duomenų</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Initialize charts when the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart 1: New vs Returning Customers
+        const ctxCustomerType = document.getElementById('customerTypeChart').getContext('2d');
+        new Chart(ctxCustomerType, {
+            type: 'doughnut',
+            data: {
+                labels: ['Nauji klientai', 'Grįžtantys klientai'],
+                datasets: [{
+                    data: [{{ new_customers }}, {{ returning_customers }}],
+                    backgroundColor: ['#1cc88a', '#36b9cc'],
+                    hoverBackgroundColor: ['#17a673', '#2c9faf'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)"
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = {{ total_customers }};
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Chart 2: Geographic Distribution
+        // Prepare geographical data
+        const geoData = {
+            labels: [],
+            values: [],
+            colors: []
+        };
+
+        {% for country, data in geo_distribution.items() %}
+        geoData.labels.push("{{ country }}");
+        geoData.values.push({{ data.count }});
+        {% endfor %}
+
+        // Generate colors for each country
+        const colorPalette = [
+            '#005FB8', '#1cc88a', '#f6c23e', '#36b9cc', '#6f42c1', 
+            '#2ecc71', '#e74a3b', '#fd7e14', '#4e73df', '#1e7e34'
+        ];
+
+        geoData.labels.forEach((_, index) => {
+            geoData.colors.push(colorPalette[index % colorPalette.length]);
+        });
+
+        // Create the geo distribution chart
+        const ctxGeo = document.getElementById('geoDistributionChart').getContext('2d');
+        if (geoData.labels.length > 0) {
+            new Chart(ctxGeo, {
+                type: 'pie',
+                data: {
+                    labels: geoData.labels,
+                    datasets: [{
+                        data: geoData.values,
+                        backgroundColor: geoData.colors,
+                        hoverBackgroundColor: geoData.colors.map(color => {
+                            return color.replace('rgb', 'rgba').replace(')', ', 0.8)');
+                        }),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = geoData.values.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('geoDistributionChart').parentNode.innerHTML = 
+                '<div class="flex items-center justify-center h-full text-gray-500">Nėra geografinių duomenų</div>';
+        }
+    });
+</script>
+{% endblock %} 
