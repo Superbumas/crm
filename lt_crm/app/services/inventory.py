@@ -169,7 +169,7 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                                 product_id=product.id,
                                 qty_delta=qty_delta,
                                 reason_code=MovementReasonCode.IMPORT,
-                                note=f"Import update: {initial_qty} → {quantity}",
+                                note=f"Importo atnaujinimas: {initial_qty} → {quantity}",
                                 channel=channel,
                                 reference_id=reference_id,
                                 user_id=user_id
@@ -214,7 +214,7 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                             product_id=product.id,
                             qty_delta=qty,
                             reason_code=MovementReasonCode.IMPORT,
-                            note=f"Initial import: {qty}",
+                            note=f"Pradinis importas: {qty}",
                             channel=channel,
                             reference_id=reference_id,
                             user_id=user_id
@@ -325,7 +325,7 @@ def reserve_stock(product_id, quantity, order_id, user_id=None):
         product_id=product_id,
         qty_delta=0,  # No actual change yet
         reason_code=MovementReasonCode.SALE,
-        note=f"Stock reserved for order #{order_id}",
+        note=f"Atsargos rezervuotos užsakymui #{order_id}",
         reference_id=str(order_id),
         user_id=user_id
     )
@@ -351,47 +351,83 @@ def process_order_stock_changes(order, old_status=None):
     Returns:
         list: List of stock movements created
     """
+    from flask import current_app
+    
     movements = []
+    
+    # Debug logging
+    current_app.logger.info(f"Processing stock changes for order {order.id} (#{order.order_number})")
+    current_app.logger.info(f"Order status change: {old_status} -> {order.status}")
+    
+    # Ensure order items are loaded
+    if not hasattr(order, 'items') or not order.items:
+        current_app.logger.warning(f"Order {order.id} has no items to process")
+        return movements
+    
+    # Get item count for debugging
+    item_count = len(list(order.items))
+    current_app.logger.info(f"Order has {item_count} items to process")
     
     # When order is shipped, deduct the stock
     if order.status == OrderStatus.SHIPPED and (old_status is None or old_status != OrderStatus.SHIPPED):
+        current_app.logger.info(f"Order {order.id} is marked as SHIPPED - deducting stock")
+        
         for item in order.items:
-            # Deduct stock for each item
-            movement = adjust_stock(
-                product_id=item.product_id,
-                qty_delta=-item.quantity,
-                reason_code=MovementReasonCode.SALE,
-                reference_id=order.order_number,
-                note=f"Order {order.order_number} shipped",
-                channel="order"
-            )
-            movements.append(movement)
+            try:
+                # Deduct stock for each item
+                current_app.logger.info(f"Processing item product_id: {item.product_id}, quantity: {item.quantity}")
+                
+                movement = adjust_stock(
+                    product_id=item.product_id,
+                    qty_delta=-item.quantity,
+                    reason_code=MovementReasonCode.SALE,
+                    reference_id=str(order.id),
+                    note=f"Užsakymas {order.order_number} išsiųstas",
+                    channel="order"
+                )
+                movements.append(movement)
+                current_app.logger.info(f"Created stock movement: {movement.id} for product {item.product_id}")
+            except Exception as e:
+                current_app.logger.error(f"Error processing item {item.id}: {str(e)}")
     
     # When order is returned, add stock back
-    elif order.status == OrderStatus.RETURNED and old_status != OrderStatus.RETURNED:
+    elif order.status == OrderStatus.RETURNED and (old_status is None or old_status != OrderStatus.RETURNED):
+        current_app.logger.info(f"Order {order.id} is marked as RETURNED - adding stock back")
+        
         for item in order.items:
-            # Add stock back for each item
-            movement = adjust_stock(
-                product_id=item.product_id,
-                qty_delta=item.quantity,
-                reason_code=MovementReasonCode.RETURN,
-                reference_id=order.order_number,
-                note=f"Order {order.order_number} returned",
-                channel="order"
-            )
-            movements.append(movement)
+            try:
+                # Add stock back for each item
+                movement = adjust_stock(
+                    product_id=item.product_id,
+                    qty_delta=item.quantity,
+                    reason_code=MovementReasonCode.RETURN,
+                    reference_id=str(order.id),
+                    note=f"Užsakymas {order.order_number} grąžintas",
+                    channel="order"
+                )
+                movements.append(movement)
+                current_app.logger.info(f"Created stock movement: {movement.id} for product {item.product_id}")
+            except Exception as e:
+                current_app.logger.error(f"Error processing item {item.id}: {str(e)}")
     
     # When order is cancelled, add stock back if it was previously shipped
     elif order.status == OrderStatus.CANCELLED and old_status == OrderStatus.SHIPPED:
+        current_app.logger.info(f"Order {order.id} is cancelled after shipping - adding stock back")
+        
         for item in order.items:
-            movement = adjust_stock(
-                product_id=item.product_id,
-                qty_delta=item.quantity,
-                reason_code=MovementReasonCode.RETURN,
-                reference_id=order.order_number,
-                note=f"Order {order.order_number} cancelled after shipping",
-                channel="order"
-            )
-            movements.append(movement)
+            try:
+                movement = adjust_stock(
+                    product_id=item.product_id,
+                    qty_delta=item.quantity,
+                    reason_code=MovementReasonCode.RETURN,
+                    reference_id=str(order.id),
+                    note=f"Užsakymas {order.order_number} atšauktas po išsiuntimo",
+                    channel="order"
+                )
+                movements.append(movement)
+                current_app.logger.info(f"Created stock movement: {movement.id} for product {item.product_id}")
+            except Exception as e:
+                current_app.logger.error(f"Error processing item {item.id}: {str(e)}")
     
+    current_app.logger.info(f"Completed processing for order {order.id}, created {len(movements)} stock movements")
     return movements 

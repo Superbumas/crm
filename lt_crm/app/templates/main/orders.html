@@ -83,6 +83,7 @@
                         <th>Būsena</th>
                         <th>Suma</th>
                         <th>Siunčiama į</th>
+                        <th>Dokumentai</th>
                         <th>Veiksmai</th>
                     </tr>
                 </thead>
@@ -115,18 +116,34 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <select class="select select-bordered select-sm w-full max-w-xs" 
-                                        hx-put="{{ url_for('main.order_update_status', id=order.id) }}"
-                                        hx-trigger="change"
-                                        hx-swap="none"
-                                        name="status">
-                                    <option value="new" {% if order.status.value == 'new' %}selected{% endif %}>Naujas</option>
-                                    <option value="paid" {% if order.status.value == 'paid' %}selected{% endif %}>Apmokėtas</option>
-                                    <option value="packed" {% if order.status.value == 'packed' %}selected{% endif %}>Supakuotas</option>
-                                    <option value="shipped" {% if order.status.value == 'shipped' %}selected{% endif %}>Išsiųstas</option>
-                                    <option value="returned" {% if order.status.value == 'returned' %}selected{% endif %}>Grąžintas</option>
-                                    <option value="cancelled" {% if order.status.value == 'cancelled' %}selected{% endif %}>Atšauktas</option>
-                                </select>
+                                <div class="status-control" data-order-id="{{ order.id }}">
+                                    <div class="flex items-center space-x-2">
+                                        <select class="select select-bordered select-sm w-full max-w-xs status-select" 
+                                                data-original-value="{{ order.status.value }}"
+                                                name="status">
+                                            <option value="new" {% if order.status.value == 'new' %}selected{% endif %}>Naujas</option>
+                                            <option value="paid" {% if order.status.value == 'paid' %}selected{% endif %}>Apmokėtas</option>
+                                            <option value="packed" {% if order.status.value == 'packed' %}selected{% endif %}>Supakuotas</option>
+                                            <option value="shipped" {% if order.status.value == 'shipped' %}selected{% endif %}>Išsiųstas</option>
+                                            <option value="returned" {% if order.status.value == 'returned' %}selected{% endif %}>Grąžintas</option>
+                                            <option value="cancelled" {% if order.status.value == 'cancelled' %}selected{% endif %}>Atšauktas</option>
+                                        </select>
+                                        <div class="status-actions hidden">
+                                            <button class="btn btn-square btn-xs btn-success confirm-status-btn" 
+                                                    title="Išsaugoti">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </button>
+                                            <button class="btn btn-square btn-xs btn-error cancel-status-btn" 
+                                                    title="Atšaukti">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                             <td>{{ order.total_amount|euro }}</td>
                             <td>
@@ -137,6 +154,37 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {% if order_invoices and order.id in order_invoices %}
+                                    {% for invoice in order_invoices[order.id] %}
+                                    <div class="flex items-center mb-1 last:mb-0">
+                                        <span class="badge badge-sm mr-2
+                                            {% if invoice.status.value == 'draft' %}badge-ghost
+                                            {% elif invoice.status.value == 'issued' %}badge-info
+                                            {% elif invoice.status.value == 'paid' %}badge-success
+                                            {% elif invoice.status.value == 'cancelled' %}badge-error
+                                            {% endif %}">
+                                            SF
+                                        </span>
+                                        <a href="{{ url_for('main.invoice_detail', id=invoice.id) }}" 
+                                           class="text-xs link link-hover" 
+                                           title="{{ invoice.created_at.strftime('%Y-%m-%d %H:%M') }}">
+                                            {{ invoice.invoice_number }}
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <a href="{{ url_for('main.invoice_new_from_order', order_id=order.id) }}" 
+                                       class="tooltip tooltip-left" 
+                                       data-tip="Sukurti sąskaitą faktūrą">
+                                        <button class="btn btn-ghost btn-xs">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                            </svg>
+                                        </button>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <div class="flex space-x-1">
                                     <a href="{{ url_for('main.order_detail', id=order.id) }}" class="btn btn-square btn-sm btn-ghost">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,18 +192,23 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
                                     </a>
-                                    <a href="{{ url_for('main.invoice_new_from_order', order_id=order.id) }}" class="btn btn-square btn-sm btn-ghost">
+                                    <a href="#" class="btn btn-square btn-sm btn-ghost edit-btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </a>
+                                    <button class="btn btn-square btn-sm btn-ghost delete-order-btn" data-order-id="{{ order.id }}" data-order-number="{{ order.order_number }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-8">
+                            <td colspan="8" class="text-center py-8">
                                 {% if request.args.get('q') or request.args.get('status') or request.args.get('source') %}
                                     Nerasta užsakymų pagal pasirinktus filtrus.
                                     <a href="{{ url_for('main.orders') }}" class="btn btn-sm btn-ghost mt-2">Išvalyti filtrus</a>
@@ -223,61 +276,235 @@
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Status change notifications
-        document.body.addEventListener('htmx:afterRequest', function(evt) {
-            if (evt.detail.path.includes('order_update_status')) {
-                const statusSelect = evt.detail.elt;
-                const row = statusSelect.closest('tr');
+        // Restore saved statuses from session storage
+        try {
+            const savedOrders = JSON.parse(sessionStorage.getItem('orderStatuses') || '{}');
+            console.log('Restored saved order statuses:', savedOrders);
+            
+            // Apply saved statuses to selects
+            document.querySelectorAll('.status-control').forEach(control => {
+                const orderId = control.getAttribute('data-order-id');
+                if (orderId && savedOrders[orderId]) {
+                    const select = control.querySelector('.status-select');
+                    const savedStatus = savedOrders[orderId];
+                    console.log(`Restoring status for order ${orderId}: ${savedStatus}`);
+                    
+                    // Update select and data attribute
+                    select.value = savedStatus;
+                    select.setAttribute('data-original-value', savedStatus);
+                }
+            });
+        } catch (e) {
+            console.error('Error restoring saved statuses:', e);
+        }
+        
+        // Status change controls
+        document.querySelectorAll('.status-select').forEach(select => {
+            // Store the original value
+            const originalValue = select.getAttribute('data-original-value');
+            
+            // Add change event listener
+            select.addEventListener('change', function() {
+                const statusControl = this.closest('.status-control');
+                const statusActions = statusControl.querySelector('.status-actions');
                 
-                if (evt.detail.xhr.status === 200) {
-                    // Show success notification
-                    const toast = document.createElement('div');
-                    toast.className = 'alert alert-success shadow-lg mb-4 animate__animated animate__fadeIn';
-                    toast.innerHTML = `
-                        <div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span>Užsakymo būsena pakeista</span>
-                        </div>
-                        <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
-                    `;
+                // Show the action buttons when status changes
+                if (this.value !== originalValue) {
+                    statusActions.classList.remove('hidden');
+                } else {
+                    statusActions.classList.add('hidden');
+                }
+            });
+        });
+        
+        // Cancel status change button
+        document.querySelectorAll('.cancel-status-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const statusControl = this.closest('.status-control');
+                const select = statusControl.querySelector('.status-select');
+                const statusActions = statusControl.querySelector('.status-actions');
+                
+                // Revert to original value
+                select.value = select.getAttribute('data-original-value');
+                
+                // Hide the action buttons
+                statusActions.classList.add('hidden');
+            });
+        });
+        
+        // Confirm status change button
+        document.querySelectorAll('.confirm-status-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const statusControl = this.closest('.status-control');
+                const select = statusControl.querySelector('.status-select');
+                const statusActions = statusControl.querySelector('.status-actions');
+                const orderId = statusControl.getAttribute('data-order-id');
+                
+                // Hide the action buttons
+                statusActions.classList.add('hidden');
+                
+                // Show loading indicator
+                select.classList.add('select-disabled');
+                select.disabled = true;
+                
+                // Save the new value via AJAX
+                fetch(`/orders/${orderId}/update-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `status=${select.value}`
+                })
+                .then(response => {
+                    console.log('Status update response status:', response.status);
+                    // Check if the response is OK
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Status update response data:', data);
+                    // Show success message
+                    if (data.message) {
+                        // Show toast message
+                        let toast = document.createElement('div');
+                        toast.className = 'toast toast-center toast-success';
+                        toast.innerHTML = `<div class="alert alert-success"><span>${data.message}</span></div>`;
+                        document.querySelector('.toast-container').appendChild(toast);
+                        
+                        // Remove the toast after 3 seconds
+                        setTimeout(() => {
+                            toast.remove();
+                        }, 3000);
+                    }
                     
-                    // Add to toast container
-                    document.querySelector('#toast-container').appendChild(toast);
+                    // Set new original value from the response
+                    if (data.new_status) {
+                        console.log('Server returned new status:', data.new_status);
+                        // Ensure select value matches server's value
+                        select.value = data.new_status;
+                        // Update the data attribute to match
+                        console.log('Updating data-original-value to', data.new_status);
+                        select.setAttribute('data-original-value', data.new_status);
+                    } else {
+                        // Fallback to using select.value
+                        console.log('No new_status in response, using select.value:', select.value);
+                        select.setAttribute('data-original-value', select.value);
+                    }
                     
-                    // Auto-remove after 3 seconds
+                    // Save status in session storage to prevent page refresh issues
+                    try {
+                        // Get or initialize orders storage
+                        let savedOrders = JSON.parse(sessionStorage.getItem('orderStatuses') || '{}');
+                        // Save this order's status
+                        savedOrders[orderId] = select.value;
+                        // Store back in session storage
+                        sessionStorage.setItem('orderStatuses', JSON.stringify(savedOrders));
+                        console.log('Saved order status in session storage:', orderId, select.value);
+                    } catch (e) {
+                        console.error('Error saving to session storage:', e);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show error message
+                    let toast = document.createElement('div');
+                    toast.className = 'toast toast-center toast-error';
+                    toast.innerHTML = `<div class="alert alert-error"><span>Klaida atnaujinant būseną</span></div>`;
+                    document.querySelector('.toast-container').appendChild(toast);
+                    
+                    // Remove the toast after 3 seconds
                     setTimeout(() => {
-                        toast.classList.add('animate__fadeOut');
-                        setTimeout(() => toast.remove(), 500);
+                        toast.remove();
                     }, 3000);
                     
-                    // Highlight the row briefly
-                    row.classList.add('bg-success', 'bg-opacity-10');
-                    setTimeout(() => {
-                        row.classList.remove('bg-success', 'bg-opacity-10');
-                    }, 1500);
-                } else {
-                    // Show error notification
-                    const toast = document.createElement('div');
-                    toast.className = 'alert alert-error shadow-lg mb-4 animate__animated animate__fadeIn';
-                    toast.innerHTML = `
-                        <div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span>Klaida keičiant būseną</span>
-                        </div>
-                        <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
-                    `;
-                    
-                    // Add to toast container
-                    document.querySelector('#toast-container').appendChild(toast);
-                    
-                    // Auto-remove after 5 seconds
-                    setTimeout(() => {
-                        toast.classList.add('animate__fadeOut');
-                        setTimeout(() => toast.remove(), 500);
-                    }, 5000);
-                }
-            }
+                    // Revert to original value
+                    select.value = select.getAttribute('data-original-value');
+                })
+                .finally(() => {
+                    // Enable the select again
+                    select.classList.remove('select-disabled');
+                    select.disabled = false;
+                });
+            });
         });
+        
+        // Edit buttons - Link to order edit page
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const row = this.closest('tr');
+                const orderId = row.getAttribute('data-order-id');
+                window.location.href = `/orders/${orderId}/edit`;
+            });
+        });
+
+        // Delete order handlers
+        document.querySelectorAll('.delete-order-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const orderId = this.getAttribute('data-order-id');
+                const orderNumber = this.getAttribute('data-order-number');
+                
+                if (confirm(`Ar tikrai norite ištrinti užsakymą ${orderNumber}? Šio veiksmo negalima bus atšaukti.`)) {
+                    // Show loading state
+                    this.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
+                    this.disabled = true;
+                    
+                    // Delete order via API
+                    fetch(`/orders/${orderId}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the row from the table
+                            this.closest('tr').remove();
+                            showToast(data.message, 'success');
+                        } else {
+                            showToast(data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('Klaida trinant užsakymą', 'error');
+                        console.error('Error deleting order:', error);
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        this.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>';
+                        this.disabled = false;
+                    });
+                }
+            });
+        });
+        
+        // Helper function to show toast notifications
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg mb-4 animate__animated animate__fadeIn`;
+            
+            toast.innerHTML = `
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>${message}</span>
+                </div>
+                <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('animate__fadeOut');
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
     });
 </script>
 {% endblock %} 

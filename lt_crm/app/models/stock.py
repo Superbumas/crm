@@ -8,11 +8,11 @@ from lt_crm.app.models.base import TimestampMixin
 class MovementReasonCode(enum.Enum):
     """Movement reason code enum."""
     
-    IMPORT = "import"
-    SALE = "sale"
-    RETURN = "return"
-    MANUAL_ADJ = "manual_adj"
-    SHIPMENT = "shipment"  # Added for shipment arrivals
+    IMPORT = "IMPORT"
+    SALE = "SALE"
+    RETURN = "RETURN"
+    MANUAL_ADJ = "MANUAL_ADJ"
+    SHIPMENT = "SHIPMENT"
     
     def __str__(self):
         """Return string representation of the enum value."""
@@ -64,23 +64,36 @@ class Shipment(TimestampMixin, db.Model):
     
     def receive_shipment(self):
         """Process the shipment arrival and update stock quantities."""
+        from sqlalchemy import text
+        from lt_crm.app.models.product import Product
+        
         if self.status == ShipmentStatus.RECEIVED:
             return False  # Already received
             
         for item in self.shipment_items:
-            # Create stock movement for each item
-            movement = StockMovement(
-                product_id=item.product_id,
-                qty_delta=item.quantity,
-                reason_code=MovementReasonCode.SHIPMENT,
-                note=f"Shipment arrival: {self.shipment_number}",
-                reference_id=str(self.id),
-                user_id=self.user_id
-            )
-            
-            # Apply the stock movement
-            movement.apply_movement()
-            db.session.add(movement)
+            product = Product.query.get(item.product_id)
+            if product:
+                # Update product quantity directly
+                product.quantity += item.quantity
+                db.session.add(product)
+                
+                # Insert stock movement using raw SQL to avoid enum issues
+                now = datetime.now()
+                sql = text("""
+                    INSERT INTO stock_movements 
+                    (product_id, qty_delta, reason_code, note, reference_id, user_id, created_at, updated_at) 
+                    VALUES (:product_id, :qty_delta, 'SHIPMENT', :note, :reference_id, :user_id, :created_at, :updated_at)
+                """)
+                
+                db.session.execute(sql, {
+                    'product_id': item.product_id,
+                    'qty_delta': item.quantity,
+                    'note': f"Siuntos gavimas: {self.shipment_number}",
+                    'reference_id': str(self.id),
+                    'user_id': self.user_id,
+                    'created_at': now,
+                    'updated_at': now
+                })
             
         # Update shipment status and arrival date
         self.status = ShipmentStatus.RECEIVED

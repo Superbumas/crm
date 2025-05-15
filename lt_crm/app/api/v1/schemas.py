@@ -117,6 +117,7 @@ class OrderSchema(Schema):
     payment_reference = fields.Str(allow_none=True)
     shipping_method = fields.Str(allow_none=True)
     tracking_number = fields.Str(allow_none=True)
+    shipped_at = fields.DateTime(dump_only=True)
     notes = fields.Str(allow_none=True)
     
     items = fields.List(fields.Nested(OrderItemSchema))

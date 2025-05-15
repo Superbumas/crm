@@ -217,11 +217,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% if invoice.items %}
-                    {% for item in invoice.items %}
+                {% if invoice_items and invoice_items|length > 0 %}
+                    {% for item in invoice_items %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td class="item-description">{{ item.description }}</td>
+                        <td class="item-description">
+                            {% if item.product %}
+                            <strong>{{ item.product.name }}</strong><br>
+                            <span style="font-size: 8pt;">{{ item.description }}</span><br>
+                            <span style="font-size: 7pt; color: #666;">SKU: {{ item.product.sku }}</span>
+                            {% else %}
+                            <strong>{{ item.description }}</strong>
+                            {% if item.product_id %}
+                            <br><span style="font-size: 7pt; color: #c30;">Product ID: {{ item.product_id }} (not found)</span>
+                            {% endif %}
+                            {% endif %}
+                        </td>
                         <td class="text-right">{{ item.quantity }}</td>
                         <td class="text-right">{{ "%.2f"|format(item.price) }} €</td>
                         <td class="text-right">{{ item.tax_rate }}</td>

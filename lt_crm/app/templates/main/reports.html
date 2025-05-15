@@ -1,0 +1,131 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-4">{{ title }}</h1>
+            <p class="text-muted">Pasirinkite ataskaitos tipą iš žemiau esančių variantų.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sales Summary Report -->
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-primary shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center no-gutters">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Pardavimų ataskaita</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Pardavimų analizė</div>
+                            <p class="mt-2 mb-1 text-gray-600 small">
+                                Pardavimų apžvalga, pajamos pagal laikotarpius, lyginamoji analizė, geriausiai parduodami produktai
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('main.sales_summary_report') }}" class="btn btn-sm btn-primary">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Status Report -->
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-success shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center no-gutters">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Inventoriaus ataskaita</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Prekių likučiai</div>
+                            <p class="mt-2 mb-1 text-gray-600 small">
+                                Prekių likučių apžvalga, nesančios/mažo kiekio prekės, sandėlio vertė pagal kategorijas
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('main.inventory_status_report') }}" class="btn btn-sm btn-success">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Analysis Report -->
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-info shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center no-gutters">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Klientų analizė</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Klientų pirkimai</div>
+                            <p class="mt-2 mb-1 text-gray-600 small">
+                                Geriausi klientai, naujų/esamų klientų santykis, pirkimo dažnumas, geografinė analizė
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('main.customer_analysis_report') }}" class="btn btn-sm btn-info">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Status Report -->
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-warning shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center no-gutters">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Sąskaitų faktūrų ataskaita</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Mokėjimų statusas</div>
+                            <p class="mt-2 mb-1 text-gray-600 small">
+                                Sąskaitų statusai, negauti mokėjimai, vidutinis apmokėjimo laikas, mokesčių analizė
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('main.invoice_status_report') }}" class="btn btn-sm btn-warning">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ataskaitų informacija</h6>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Naudokite šias ataskaitas įmonės veiklos analizei, pardavimų stebėjimui, inventoriaus kontrolei ir klientų elgsenos analizei.
+                        Visos ataskaitos gali būti filtruojamos pagal laikotarpį ir eksportuojamos CSV formatu.
+                    </p>
+                    <div class="mt-3">
+                        <h6 class="font-weight-bold">Poreikio atveju galima sukurti papildomas ataskaitas:</h6>
+                        <ul class="text-muted">
+                            <li>Pelno ir nuostolio ataskaita</li>
+                            <li>Užsakymų vykdymo efektyvumo ataskaita</li>
+                            <li>Pardavimų kanalų efektyvumo ataskaita</li>
+                            <li>Sezoninė pardavimų analizė</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

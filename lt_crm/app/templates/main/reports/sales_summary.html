@@ -1,0 +1,448 @@
+{% extends "main/base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <div>
+            <a href="{{ url_for('main.export_report', report_type='sales_summary', start_date=start_date, end_date=end_date) }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-download fa-sm text-white-50"></i> Eksportuoti CSV
+            </a>
+            <a href="{{ url_for('main.reports') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm ml-2">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Grįžti
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Laikotarpio pasirinkimas</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3">
+                    <label for="start_date" class="mr-2">Nuo:</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-group mr-3">
+                    <label for="end_date" class="mr-2">Iki:</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <button type="submit" class="btn btn-primary">Filtruoti</button>
+                
+                <!-- Quick date filters -->
+                <div class="ml-auto">
+                    <a href="?start_date={{ (today - timedelta(days=6)).strftime('%Y-%m-%d') }}&end_date={{ today.strftime('%Y-%m-%d') }}" class="btn btn-sm btn-outline-secondary">7 dienos</a>
+                    <a href="?start_date={{ (today.replace(day=1)).strftime('%Y-%m-%d') }}&end_date={{ today.strftime('%Y-%m-%d') }}" class="btn btn-sm btn-outline-secondary">Šis mėnuo</a>
+                    <a href="?start_date={{ (today.replace(month=1, day=1)).strftime('%Y-%m-%d') }}&end_date={{ today.strftime('%Y-%m-%d') }}" class="btn btn-sm btn-outline-secondary">Šie metai</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Row - Key Metrics -->
+    <div class="row">
+        <!-- Total Sales -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 metric-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Pardavimų suma
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(total_sales) }} €</div>
+                            <div class="mt-2 text-xs">
+                                {% if growth_percentage > 0 %}
+                                <span class="text-success"><i class="fas fa-arrow-up"></i> {{ "%.1f"|format(growth_percentage) }}%</span> lyginant su ankstesniu laikotarpiu
+                                {% elif growth_percentage < 0 %}
+                                <span class="text-danger"><i class="fas fa-arrow-down"></i> {{ "%.1f"|format(growth_percentage*-1) }}%</span> lyginant su ankstesniu laikotarpiu
+                                {% else %}
+                                <span class="text-warning"><i class="fas fa-equals"></i> 0%</span> pokyčio
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Count -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 metric-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Užsakymų skaičius
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ orders_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Order Value -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 metric-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Vidutinė užsakymo vertė
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.2f"|format(avg_order_value) }} €
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Previous Period -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 metric-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Ankstesnis laikotarpis
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.2f"|format(prev_total_sales) }} €
+                            </div>
+                            <div class="mt-2 text-xs">
+                                {{ prev_start_date.strftime('%Y-%m-%d') }} - {{ prev_end_date.strftime('%Y-%m-%d') }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-history fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row - Charts -->
+    <div class="row">
+        <!-- Daily Sales Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Pardavimai pagal dienas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="dailySalesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Distribution Chart -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Užsakymų statusai</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row - Tables -->
+    <div class="row">
+        <!-- Top Selling Products -->
+        <div class="col-xl-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Geriausiai parduodami produktai</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Produktas</th>
+                                    <th>Kiekis</th>
+                                    <th>Suma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.quantity }}</td>
+                                    <td>{{ "%.2f"|format(product.total) }} €</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Nėra duomenų</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="col-xl-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Mokėjimo metodai</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Mokėjimo metodas</th>
+                                    <th>Užsakymų skaičius</th>
+                                    <th>Suma</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for method, data in payment_methods.items() %}
+                                <tr>
+                                    <td>{{ method }}</td>
+                                    <td>{{ data.count }}</td>
+                                    <td>{{ "%.2f"|format(data.total) }} €</td>
+                                    <td>{{ "%.1f"|format((data.total / total_sales * 100) if total_sales > 0 else 0) }}%</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nėra duomenų</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Details Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Pardavimai pagal statusą</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Statusas</th>
+                                    <th>Užsakymų skaičius</th>
+                                    <th>Suma</th>
+                                    <th>% nuo visų užsakymų</th>
+                                    <th>% nuo visos sumos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for status, data in sales_by_status.items() %}
+                                <tr>
+                                    <td>{{ status }}</td>
+                                    <td>{{ data.count }}</td>
+                                    <td>{{ "%.2f"|format(data.total) }} €</td>
+                                    <td>{{ "%.1f"|format((data.count / orders_count * 100) if orders_count > 0 else 0) }}%</td>
+                                    <td>{{ "%.1f"|format((data.total / total_sales * 100) if total_sales > 0 else 0) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Initialize Chart.js with sane defaults for our design
+    Chart.defaults.font.family = "'Nunito', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+    Chart.defaults.color = "#858796";
+    
+    // Get today's date for the quick filters
+    const today = new Date();
+    document.querySelectorAll('.form-inline a').forEach(link => {
+        const href = new URL(link.href);
+        if (href.searchParams.has('end_date') && href.searchParams.get('end_date') === 'today') {
+            href.searchParams.set('end_date', today.toISOString().split('T')[0]);
+            link.href = href.toString();
+        }
+    });
+
+    // Function to create sales chart
+    function createDailySalesChart() {
+        const ctx = document.getElementById('dailySalesChart').getContext('2d');
+        
+        // Format dates for display
+        const dates = {{ sorted_days|tojson }};
+        const formattedDates = dates.map(date => {
+            const dateObj = new Date(date);
+            return dateObj.toLocaleDateString('lt-LT', {month: 'short', day: 'numeric'});
+        });
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: formattedDates,
+                datasets: [{
+                    label: 'Pardavimai (€)',
+                    data: {{ daily_sales_data|tojson }},
+                    backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverBorderColor: '#fff',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y.toFixed(2)} €`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2) + ' €';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Function to create status distribution chart
+    function createStatusDistributionChart() {
+        const ctx = document.getElementById('statusDistributionChart').getContext('2d');
+        
+        // Extract status data
+        const statusData = {{ sales_by_status|tojson }};
+        
+        // Define colors for different statuses
+        const statusColors = {
+            'NEW': '#4e73df',
+            'PAID': '#1cc88a', 
+            'PROCESSING': '#f6c23e',
+            'PACKED': '#36b9cc',
+            'SHIPPED': '#6f42c1',
+            'DELIVERED': '#2ecc71',
+            'CANCELLED': '#e74a3b',
+            'RETURNED': '#fd7e14'
+        };
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColor = [];
+        
+        for (const [status, details] of Object.entries(statusData)) {
+            if (details.count > 0) {
+                labels.push(status);
+                data.push(details.count);
+                backgroundColor.push(statusColors[status] || '#858796');
+            }
+        }
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColor,
+                    hoverBackgroundColor: backgroundColor.map(function(color) {
+                        return color.replace('rgb', 'rgba').replace(')', ', 0.9)');
+                    }),
+                    hoverBorderColor: 'rgba(234, 236, 244, 1)'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+
+    // Initialize charts when the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        createDailySalesChart();
+        createStatusDistributionChart();
+    });
+</script>
+{% endblock %} 

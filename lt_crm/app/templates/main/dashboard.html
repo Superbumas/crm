@@ -236,17 +236,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const labels = ['Sau', 'Vas', 'Kov', 'Bal', 'Geg', 'Bir', 'Lie', 'Rgp', 'Rgs', 'Spa', 'Lap', 'Gru'];
     const salesData = {{ sales_data|default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])|tojson }};
     
-    // Weekly data (simplified for demo - would be dynamic in real implementation)
-    const weeklyLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
-    const weeklySalesData = [
-        Math.round(salesData[new Date().getMonth()] * 0.2),
-        Math.round(salesData[new Date().getMonth()] * 0.14),
-        Math.round(salesData[new Date().getMonth()] * 0.17),
-        Math.round(salesData[new Date().getMonth()] * 0.16),
-        Math.round(salesData[new Date().getMonth()] * 0.13),
-        Math.round(salesData[new Date().getMonth()] * 0.1),
-        Math.round(salesData[new Date().getMonth()] * 0.1)
-    ];
+    // Generate the last 7 days' date labels
+    const weeklyLabels = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const day = new Date(today);
+        day.setDate(today.getDate() - i);
+        // Format as dd.MM
+        const formattedDate = `${String(day.getDate()).padStart(2, '0')}.${String(day.getMonth() + 1).padStart(2, '0')}`;
+        weeklyLabels.push(formattedDate);
+    }
+    
+    // Weekly data from backend - actual sales per day for the last 7 days
+    const weeklySalesData = {{ weekly_data|default([0, 0, 0, 0, 0, 0, 0])|tojson }};
     
     // Sales chart
     const ctx = document.getElementById('salesChart').getContext('2d');

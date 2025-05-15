@@ -303,7 +303,8 @@
                                 <td>{{ movement.qty_delta }}</td>
                                 <td>{{ movement.note or '-' }}</td>
                                 <td>
-                                    {% if movement.reason_code.value == 'sale' and movement.reference_id %}
+                                    {% if (movement.reason_code.value is defined and movement.reason_code.value in ('sale', 'SALE')) or 
+                                           (movement.reason_code is string and movement.reason_code in ('sale', 'SALE')) %}
                                     <a href="{{ url_for('main.order_detail', id=movement.reference_id) }}" class="link link-primary">
                                         Užsakymas #{{ movement.reference_id }}
                                     </a>

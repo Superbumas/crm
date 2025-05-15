@@ -153,8 +153,8 @@
                             <div class="col-span-1"></div>
                         </div>
                         
-                        {% if edit_mode and invoice.items.count() > 0 %}
-                            {% for item in invoice.items %}
+                        {% if edit_mode and invoice_items and invoice_items|length > 0 %}
+                            {% for item in invoice_items %}
                             <div class="item-row grid grid-cols-12 gap-2 mb-2 items-center">
                                 <div class="col-span-5">
                                     <input type="hidden" name="product_ids[]" class="product-id-input" value="{{ item.product_id if item.product_id else '' }}" />

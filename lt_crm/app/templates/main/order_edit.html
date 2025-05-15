@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between mb-4">
+        <h1 class="text-2xl font-bold">Redaguoti užsakymą {{ order.order_number }}</h1>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('main.order_detail', id=order.id) }}" class="btn btn-outline">Atšaukti</a>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.order_edit', id=order.id) }}" class="space-y-6">
+                <!-- Order Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Užsakymo informacija</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Užsakymo numeris</span>
+                            </label>
+                            <input type="text" value="{{ order.order_number }}" class="input input-bordered" disabled />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Būsena</span>
+                            </label>
+                            <select name="status" class="select select-bordered">
+                                <option value="new" {% if order.status.value == 'new' %}selected{% endif %}>Naujas</option>
+                                <option value="paid" {% if order.status.value == 'paid' %}selected{% endif %}>Apmokėtas</option>
+                                <option value="packed" {% if order.status.value == 'packed' %}selected{% endif %}>Supakuotas</option>
+                                <option value="shipped" {% if order.status.value == 'shipped' %}selected{% endif %}>Išsiųstas</option>
+                                <option value="returned" {% if order.status.value == 'returned' %}selected{% endif %}>Grąžintas</option>
+                                <option value="cancelled" {% if order.status.value == 'cancelled' %}selected{% endif %}>Atšauktas</option>
+                            </select>
+                            <label class="label">
+                                <span class="label-text-alt text-warning">Pastaba: būsenos keitimas gali įtakoti prekių kiekį sandėlyje</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Kliento informacija</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Vardas, pavardė</span>
+                            </label>
+                            <input type="text" name="shipping_name" value="{{ order.shipping_name }}" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">El. paštas</span>
+                            </label>
+                            <input type="email" name="shipping_email" value="{{ order.shipping_email }}" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Telefonas</span>
+                            </label>
+                            <input type="text" name="shipping_phone" value="{{ order.shipping_phone }}" class="input input-bordered" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Adresas</span>
+                            </label>
+                            <input type="text" name="shipping_address" value="{{ order.shipping_address }}" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Miestas</span>
+                            </label>
+                            <input type="text" name="shipping_city" value="{{ order.shipping_city }}" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pašto kodas</span>
+                            </label>
+                            <input type="text" name="shipping_postal_code" value="{{ order.shipping_postal_code }}" class="input input-bordered" required />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Šalis</span>
+                            </label>
+                            <input type="text" name="shipping_country" value="{{ order.shipping_country|default('Lietuva') }}" class="input input-bordered" required />
+                        </div>
+                    </div>
+                    
+                    <div class="form-control mt-4">
+                        <label class="label">
+                            <span class="label-text">Pastabos</span>
+                        </label>
+                        <textarea name="shipping_notes" class="textarea textarea-bordered h-24">{{ order.notes }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- Shipping & Payment Section -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Pristatymas ir mokėjimas</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Pristatymo būdas</span>
+                            </label>
+                            <select name="shipping_method" class="select select-bordered" required>
+                                <option value="omniva" {% if order.shipping_method == 'omniva' %}selected{% endif %}>Omniva paštomatas</option>
+                                <option value="dpd" {% if order.shipping_method == 'dpd' %}selected{% endif %}>DPD kurjeris</option>
+                                <option value="lp_express" {% if order.shipping_method == 'lp_express' %}selected{% endif %}>LP Express paštomatas</option>
+                                <option value="store_pickup" {% if order.shipping_method == 'store_pickup' %}selected{% endif %}>Atsiėmimas parduotuvėje</option>
+                                {% if order.shipping_method and order.shipping_method not in ['omniva', 'dpd', 'lp_express', 'store_pickup'] %}
+                                <option value="{{ order.shipping_method }}" selected>{{ order.shipping_method }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Siuntinio numeris</span>
+                            </label>
+                            <input type="text" name="tracking_number" value="{{ order.tracking_number }}" class="input input-bordered" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Mokėjimo būdas</span>
+                            </label>
+                            <select name="payment_method" class="select select-bordered">
+                                <option value="" {% if not order.payment_method %}selected{% endif %}>Nepasirinkta</option>
+                                <option value="credit_card" {% if order.payment_method == 'credit_card' %}selected{% endif %}>Banko kortelė</option>
+                                <option value="bank_transfer" {% if order.payment_method == 'bank_transfer' %}selected{% endif %}>Banko pavedimas</option>
+                                <option value="cash" {% if order.payment_method == 'cash' %}selected{% endif %}>Grynais</option>
+                                {% if order.payment_method and order.payment_method not in ['credit_card', 'bank_transfer', 'cash'] %}
+                                <option value="{{ order.payment_method }}" selected>{{ order.payment_method }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Užsakymo informacija</h2>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Kodas</th>
+                                    <th>Prekė</th>
+                                    <th class="text-right">Kaina</th>
+                                    <th class="text-right">Kiekis</th>
+                                    <th class="text-right">Viso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.product.sku }}</td>
+                                    <td>{{ item.product.name }}</td>
+                                    <td class="text-right">{{ item.price|euro }}</td>
+                                    <td class="text-right">{{ item.quantity }}</td>
+                                    <td class="text-right">{{ item.subtotal|euro }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right font-bold">Iš viso:</td>
+                                    <td class="text-right font-bold">{{ order.total_amount|euro }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">
+                        <p>* Prekių kiekio ir kainos redagavimas negalimas.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" class="btn btn-primary">Išsaugoti pakeitimus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

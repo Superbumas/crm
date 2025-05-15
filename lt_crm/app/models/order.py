@@ -1,5 +1,6 @@
 """Order models for the CRM application."""
 import enum
+from datetime import datetime
 from lt_crm.app.extensions import db
 from lt_crm.app.models.base import TimestampMixin
 from sqlalchemy import func
@@ -47,6 +48,7 @@ class Order(TimestampMixin, db.Model):
     payment_reference = db.Column(db.String(100), nullable=True)
     shipping_method = db.Column(db.String(50), nullable=True)
     tracking_number = db.Column(db.String(100), nullable=True)
+    shipped_at = db.Column(db.DateTime, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
     # Relationships
