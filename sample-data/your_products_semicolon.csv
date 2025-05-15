@@ -1,0 +1,5 @@
+sku;name;description_html;barcode;quantity;price_final;price_old;category;manufacturer;model
+P_50002;Prototipinis produktas testams;<p>Produkto aprašymas</p>;7345678123456;50;49,99;59,99;Testinė kategorija;Gamintojas;T-500
+P_50003;Prototipinis produktas testams 2;<p>Aprašymas</p>;7345678123457;30;44,99;55,99;Testinė kategorija;Gamintojas;T-500
+P_50004;Prototipinis produktas testams 3;<p>Aprašymas</p>;7345678123458;40;45,99;56,99;Testinė kategorija;Gamintojas;T-500
+P_50005;Prototipinis produktas testams 4;<p>Aprašymas</p>;7345678123459;75;42,99;55,99;Testinė kategorija;Gamintojas;T-500 

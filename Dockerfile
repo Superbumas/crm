@@ -12,6 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    # Dependencies for WeasyPrint
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    # Dependencies for lxml
+    libxml2-dev \
+    libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
@@ -33,4 +43,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "app:app"] 
+# The create_app() function is inside lt_crm.app.__init__.py
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "lt_crm.app:create_app()"] 

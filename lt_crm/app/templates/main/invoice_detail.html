@@ -38,7 +38,7 @@
             {% endif %}
             
             {% if invoice.status.value == 'draft' %}
-            <a href="#" class="btn btn-outline">Redaguoti</a>
+            <a href="{{ url_for('main.invoice_edit', id=invoice.id) }}" class="btn btn-outline">Redaguoti</a>
             {% endif %}
             
             <a href="{{ url_for('main.invoices') }}" class="btn btn-ghost">Grįžti į sąrašą</a>
@@ -68,7 +68,11 @@
                                     {% elif invoice.status.value == 'paid' %}badge-success
                                     {% elif invoice.status.value == 'cancelled' %}badge-error
                                     {% endif %}">
-                                    {{ invoice.status.value }}
+                                    {% if invoice.status.value == 'draft' %}Juodraštis
+                                    {% elif invoice.status.value == 'issued' %}Išrašyta
+                                    {% elif invoice.status.value == 'paid' %}Apmokėta
+                                    {% elif invoice.status.value == 'cancelled' %}Atšaukta
+                                    {% else %}{{ _(invoice.status.value) }}{% endif %}
                                 </span>
                             </div>
                         </div>
@@ -288,4 +292,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
 {% endblock %} 

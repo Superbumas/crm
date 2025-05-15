@@ -2,17 +2,20 @@
 import os
 import io
 import pandas as pd
+import chardet
 from werkzeug.utils import secure_filename
 from lt_crm.app.services.inventory import import_products_from_dataframe
 
 
-def parse_product_file(file_obj, file_format=None):
+def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=','):
     """
     Parse product file (CSV or XLSX) and return a pandas DataFrame.
     
     Args:
         file_obj: File object or file path
         file_format (str, optional): Format override ('csv' or 'xlsx')
+        encoding (str, optional): File encoding (auto-detected if None)
+        delimiter (str, optional): CSV delimiter, defaults to comma
         
     Returns:
         DataFrame: Parsed data
@@ -25,27 +28,67 @@ def parse_product_file(file_obj, file_format=None):
         filename = file_obj.filename.lower()
         if filename.endswith('.csv'):
             file_format = 'csv'
-        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+        elif filename.endswith(('.xlsx', '.xls')):
             file_format = 'xlsx'
+        elif filename.endswith('.tsv') or filename.endswith('.txt'):
+            file_format = 'csv'
+            delimiter = '\t'
         else:
-            raise ValueError("Unsupported file format. Use CSV or XLSX")
+            raise ValueError("Unsupported file format. Use CSV, TSV, XLS or XLSX")
     
-    # Handle different input types
-    if isinstance(file_obj, str):  # File path
-        if file_format == 'csv':
-            return pd.read_csv(file_obj)
-        elif file_format == 'xlsx':
-            return pd.read_excel(file_obj)
-    elif hasattr(file_obj, 'read'):  # File-like object
-        if file_format == 'csv':
-            return pd.read_csv(file_obj)
-        elif file_format == 'xlsx':
-            return pd.read_excel(file_obj)
+    # Auto-detect encoding if not specified for CSV files
+    if file_format == 'csv' and not encoding:
+        try:
+            # Get file content for detection
+            if hasattr(file_obj, 'read'):
+                # Save original position
+                if hasattr(file_obj, 'tell'):
+                    pos = file_obj.tell()
+                
+                # Read sample for encoding detection
+                sample = file_obj.read(min(1024 * 1024, file_obj.content_length if hasattr(file_obj, 'content_length') else 1024 * 1024))
+                
+                # Return to original position
+                if hasattr(file_obj, 'seek'):
+                    file_obj.seek(pos)
+                    
+                # Detect encoding from sample
+                if isinstance(sample, str):
+                    # If already decoded, assume utf-8
+                    encoding = 'utf-8'
+                else:
+                    detected = chardet.detect(sample)
+                    encoding = detected['encoding'] or 'utf-8'
+            else:
+                encoding = 'utf-8'  # Fallback
+        except Exception:
+            encoding = 'utf-8'  # Fallback to UTF-8 on error
+    
+    # Handle different input types with error handling
+    try:
+        if isinstance(file_obj, str):  # File path
+            if file_format == 'csv':
+                return pd.read_csv(file_obj, encoding=encoding or 'utf-8', delimiter=delimiter, 
+                                  on_bad_lines='skip', dtype=str)
+            elif file_format == 'xlsx':
+                return pd.read_excel(file_obj, dtype=str)
+        elif hasattr(file_obj, 'read'):  # File-like object
+            if file_format == 'csv':
+                # For streaming file objects
+                content = file_obj.read()
+                if isinstance(content, bytes):
+                    content = content.decode(encoding or 'utf-8')
+                return pd.read_csv(io.StringIO(content), delimiter=delimiter, 
+                                  on_bad_lines='skip', dtype=str)
+            elif file_format == 'xlsx':
+                return pd.read_excel(file_obj, dtype=str)
+    except Exception as e:
+        raise ValueError(f"Failed to parse file: {str(e)}")
     
     raise ValueError("Could not parse file. Unsupported format or invalid file")
 
 
-def import_products(file_obj, channel=None, reference_id=None, user_id=None):
+def import_products(file_obj, channel=None, reference_id=None, user_id=None, encoding=None, delimiter=',', has_header=True):
     """
     Import products from file and create/update products in database.
     
@@ -54,6 +97,9 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None):
         channel (str, optional): Import channel name
         reference_id (str, optional): Reference ID for tracking
         user_id (int, optional): User ID who initiated the import
+        encoding (str, optional): File encoding (auto-detected if None)
+        delimiter (str, optional): CSV delimiter character
+        has_header (bool, optional): Whether the file has a header row
         
     Returns:
         dict: Summary of import operation
@@ -63,7 +109,21 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None):
     """
     try:
         # Parse the file
-        df = parse_product_file(file_obj)
+        df = parse_product_file(file_obj, encoding=encoding, delimiter=delimiter)
+        
+        # If no header, assign default column names
+        if not has_header and len(df.columns) > 0:
+            default_columns = ['sku', 'name', 'description_html', 'barcode', 'quantity', 
+                              'price_final', 'price_old', 'category', 'manufacturer', 'model']
+            df.columns = default_columns[:len(df.columns)]
+        
+        # Clean and convert data types
+        df = clean_product_dataframe(df)
+        
+        # Validate data
+        is_valid, error_msg = validate_product_data(df)
+        if not is_valid:
+            raise ValueError(error_msg)
         
         # Process products and create stock movements
         summary = import_products_from_dataframe(
@@ -77,6 +137,78 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None):
     
     except Exception as e:
         raise ValueError(f"Error importing products: {str(e)}")
+
+
+def clean_product_dataframe(df):
+    """
+    Clean and prepare a product DataFrame for import.
+    
+    Args:
+        df (DataFrame): Raw DataFrame from file
+        
+    Returns:
+        DataFrame: Cleaned DataFrame with appropriate data types
+    """
+    # Make a copy to avoid modifying the original
+    df = df.copy()
+    
+    # Strip whitespace from string columns
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].str.strip() if hasattr(df[col], 'str') else df[col]
+    
+    # Replace empty strings with None/NaN
+    df = df.replace(r'^\s*$', pd.NA, regex=True)
+    
+    # Handle SKU column - ensure it's a string and non-empty
+    if 'sku' in df.columns:
+        df['sku'] = df['sku'].astype(str)
+        # Remove rows with empty SKUs
+        df = df[df['sku'].notna() & (df['sku'] != '')]
+    
+    # Convert numeric columns
+    numeric_cols = {
+        'price_final': 0.0,
+        'price_old': None,
+        'quantity': 0,
+        'delivery_days': None,
+        'warranty_months': None,
+        'weight_kg': None
+    }
+    
+    for col, default in numeric_cols.items():
+        if col in df.columns:
+            try:
+                # Try to convert to numeric, coerce errors to NaN
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                # Replace NaN with default values for required fields
+                if default is not None:
+                    df[col] = df[col].fillna(default)
+            except:
+                # If conversion completely fails, set all to default
+                if default is not None:
+                    df[col] = default
+    
+    # Convert JSON fields if they're strings
+    json_cols = ['extra_image_urls', 'parameters', 'variants', 'delivery_options']
+    for col in json_cols:
+        if col in df.columns:
+            # If strings that look like JSON, parse them
+            df[col] = df[col].apply(lambda x: 
+                                   pd.NA if pd.isna(x) else
+                                   (try_parse_json(x) if isinstance(x, str) else x))
+    
+    return df
+
+
+def try_parse_json(value):
+    """Try to parse a string as JSON, return original string if fails."""
+    import json
+    try:
+        return json.loads(value)
+    except:
+        return value
 
 
 def validate_product_data(df):
@@ -101,22 +233,16 @@ def validate_product_data(df):
     if empty_skus > 0:
         return False, f"Found {empty_skus} rows with empty SKU values"
     
-    # Validate price is numeric
-    try:
-        df['price_final'] = pd.to_numeric(df['price_final'])
-    except:
-        return False, "Price values must be numeric"
+    # Note: We no longer check for duplicate SKUs as we'll handle them during import
     
-    # Check for negative prices
-    if (df['price_final'] < 0).any():
-        return False, "Found negative price values"
+    # Validate price is numeric and not negative
+    price_errors = (df['price_final'].isnull() | (df['price_final'] < 0)).sum()
+    if price_errors > 0:
+        return False, f"Found {price_errors} rows with missing or negative price values"
     
-    # If quantity is present, ensure it's numeric
-    if 'quantity' in df.columns:
-        try:
-            df['quantity'] = pd.to_numeric(df['quantity'])
-        except:
-            return False, "Quantity values must be numeric"
+    # If quantity is present, ensure it's not negative
+    if 'quantity' in df.columns and (df['quantity'] < 0).any():
+        return False, "Found negative quantity values"
     
     return True, "Validation passed"
 

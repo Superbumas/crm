@@ -25,9 +25,11 @@ from .auth import ns as auth_ns
 from .products import ns as products_ns
 from .orders import ns as orders_ns
 from .invoices import ns as invoices_ns
+from .exports import ns as exports_ns
 
 # Add namespaces
 api.add_namespace(auth_ns, path="/auth")
 api.add_namespace(products_ns, path="/products")
 api.add_namespace(orders_ns, path="/orders")
-api.add_namespace(invoices_ns, path="/invoices") 
+api.add_namespace(invoices_ns, path="/invoices")
+api.add_namespace(exports_ns, path="/exports") 

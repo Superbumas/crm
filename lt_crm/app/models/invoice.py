@@ -48,6 +48,31 @@ class Invoice(TimestampMixin, db.Model):
     payment_details = db.Column(db.Text, nullable=True)
     pdf_url = db.Column(db.String(255), nullable=True)
     
+    # Relationships
+    items = db.relationship("InvoiceItem", backref="invoice", lazy="dynamic", cascade="all, delete-orphan")
+    
     def __repr__(self):
         """Return string representation of the invoice."""
-        return f"<Invoice {self.invoice_number} - {self.status.value}>" 
+        return f"<Invoice {self.invoice_number} - {self.status.value}>"
+
+
+class InvoiceItem(TimestampMixin, db.Model):
+    """InvoiceItem model representing items in an invoice."""
+
+    __tablename__ = "invoice_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
+    description = db.Column(db.String(255), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    price = db.Column(db.Numeric(12, 2), nullable=False)
+    tax_rate = db.Column(db.Numeric(5, 2), nullable=True)
+    subtotal = db.Column(db.Numeric(12, 2), nullable=False)
+    
+    # Relationship with Product
+    product = db.relationship("Product", backref="invoice_items", lazy=True)
+    
+    def __repr__(self):
+        """Return string representation of the invoice item."""
+        return f"<InvoiceItem {self.id} - Invoice {self.invoice_id}>" 

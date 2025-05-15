@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <!-- Header and actions -->
+    <div class="flex flex-col md:flex-row justify-between items-start mb-6">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">{{ customer.name }}</h1>
+            <div class="text-sm breadcrumbs">
+                <ul>
+                    <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                    <li><a href="{{ url_for('main.orders') }}">Užsakymai</a></li>
+                    <li>{{ customer.name }}</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 mt-4 md:mt-0">
+            <button class="btn btn-primary">Redaguoti klientą</button>
+            <button class="btn btn-outline">Pridėti užsakymą</button>
+            <button class="btn btn-outline">Pridėti kontaktą</button>
+            <a href="{{ url_for('main.orders') }}" class="btn btn-ghost">Grįžti į sąrašą</a>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Left column -->
+        <div class="col-span-2">
+            <!-- Customer info card -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Kliento informacija</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            {% if customer.email %}
+                            <p class="mb-2"><strong>El. paštas:</strong> <a href="mailto:{{ customer.email }}" class="link">{{ customer.email }}</a></p>
+                            {% endif %}
+                            
+                            {% if customer.phone %}
+                            <p class="mb-2"><strong>Telefonas:</strong> <a href="tel:{{ customer.phone }}" class="link">{{ customer.phone }}</a></p>
+                            {% endif %}
+                            
+                            {% if customer.address %}
+                            <p class="mb-2"><strong>Adresas:</strong> {{ customer.address }}</p>
+                            {% endif %}
+                            
+                            {% if customer.city or customer.postal_code %}
+                            <p class="mb-2">
+                                <strong>Miestas, pašto kodas:</strong> 
+                                {% if customer.city %}{{ customer.city }}{% endif %}
+                                {% if customer.postal_code %}, {{ customer.postal_code }}{% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if customer.country %}
+                            <p class="mb-2"><strong>Šalis:</strong> {{ customer.country }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {% if customer.company_code %}
+                            <p class="mb-2"><strong>Įmonės kodas:</strong> {{ customer.company_code }}</p>
+                            {% endif %}
+                            
+                            {% if customer.vat_code %}
+                            <p class="mb-2"><strong>PVM mokėtojo kodas:</strong> {{ customer.vat_code }}</p>
+                            {% endif %}
+                            
+                            <p class="mb-2"><strong>Klientas nuo:</strong> {{ customer.created_at.strftime('%Y-%m-%d') }}</p>
+                            
+                            {% if customer.notes %}
+                            <p class="mb-2"><strong>Pastabos:</strong> <span class="whitespace-pre-line">{{ customer.notes }}</span></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orders tab -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Užsakymai</h2>
+                    
+                    <div class="overflow-x-auto mt-4">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>Nr.</th>
+                                    <th>Data</th>
+                                    <th>Būsena</th>
+                                    <th class="text-right">Suma</th>
+                                    <th>Veiksmai</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if orders %}
+                                    {% for order in orders %}
+                                    <tr>
+                                        <td>{{ order.order_number }}</td>
+                                        <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if order.status.value == 'new' %}badge-primary
+                                                {% elif order.status.value == 'processing' %}badge-secondary
+                                                {% elif order.status.value == 'paid' %}badge-accent
+                                                {% elif order.status.value == 'packed' %}badge-info
+                                                {% elif order.status.value == 'shipped' %}badge-success
+                                                {% elif order.status.value == 'delivered' %}badge-success
+                                                {% elif order.status.value == 'cancelled' %}badge-error
+                                                {% endif %}">
+                                                {{ order.status.value }}
+                                            </span>
+                                        </td>
+                                        <td class="text-right">{{ order.total_amount|euro }}</td>
+                                        <td>
+                                            <a href="{{ url_for('main.order_detail', id=order.id) }}" class="btn btn-xs btn-ghost">Peržiūrėti</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">Nėra užsakymų</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Invoices tab -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title">Sąskaitos faktūros</h2>
+                    
+                    <div class="overflow-x-auto mt-4">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>Nr.</th>
+                                    <th>Data</th>
+                                    <th>Būsena</th>
+                                    <th class="text-right">Suma</th>
+                                    <th>Veiksmai</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if invoices %}
+                                    {% for invoice in invoices %}
+                                    <tr>
+                                        <td>{{ invoice.invoice_number }}</td>
+                                        <td>{{ invoice.issue_date.strftime('%Y-%m-%d') if invoice.issue_date else 'Nenurodyta' }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if invoice.status.value == 'draft' %}badge-ghost
+                                                {% elif invoice.status.value == 'issued' %}badge-info
+                                                {% elif invoice.status.value == 'paid' %}badge-success
+                                                {% elif invoice.status.value == 'cancelled' %}badge-error
+                                                {% endif %}">
+                                                {% if invoice.status.value == 'draft' %}Juodraštis
+                                                {% elif invoice.status.value == 'issued' %}Išrašyta
+                                                {% elif invoice.status.value == 'paid' %}Apmokėta
+                                                {% elif invoice.status.value == 'cancelled' %}Atšaukta
+                                                {% else %}{{ invoice.status.value }}{% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="text-right">{{ invoice.total_amount|euro }}</td>
+                                        <td>
+                                            <a href="{{ url_for('main.invoice_detail', id=invoice.id) }}" class="btn btn-xs btn-ghost">Peržiūrėti</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">Nėra sąskaitų faktūrų</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right column -->
+        <div class="col-span-1">
+            <!-- Contacts -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <h2 class="card-title">Kontaktai</h2>
+                        <button class="btn btn-xs btn-outline">+ Pridėti</button>
+                    </div>
+                    
+                    {% if contacts %}
+                        <div class="mt-4">
+                            {% for contact in contacts %}
+                            <div class="mb-4 border-b pb-4">
+                                <h3 class="font-bold text-lg">{{ contact.name }}</h3>
+                                
+                                {% if contact.position %}
+                                <p class="text-sm text-gray-500">{{ contact.position }}</p>
+                                {% endif %}
+                                
+                                {% if contact.email %}
+                                <p class="mb-1">
+                                    <a href="mailto:{{ contact.email }}" class="link">{{ contact.email }}</a>
+                                </p>
+                                {% endif %}
+                                
+                                {% if contact.phone %}
+                                <p class="mb-1">
+                                    <a href="tel:{{ contact.phone }}" class="link">{{ contact.phone }}</a>
+                                </p>
+                                {% endif %}
+                                
+                                {% if contact.notes %}
+                                <p class="text-sm mt-2">{{ contact.notes }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 mt-4">
+                            <p>Nėra kontaktų</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Tasks -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <h2 class="card-title">Užduotys</h2>
+                        <button class="btn btn-xs btn-outline">+ Pridėti</button>
+                    </div>
+                    
+                    {% if tasks %}
+                        <div class="mt-4">
+                            {% for task in tasks %}
+                            <div class="flex items-start gap-2 mb-4 pb-4 border-b">
+                                <input type="checkbox" class="checkbox" {% if task.completed %}checked{% endif %}>
+                                <div>
+                                    <h3 class="font-bold{% if task.completed %} line-through opacity-50{% endif %}">{{ task.title }}</h3>
+                                    
+                                    {% if task.due_date %}
+                                    <p class="text-sm text-gray-500">
+                                        <span class="{% if task.due_date < now.date() and not task.completed %}text-error{% endif %}">
+                                            Terminas: {{ task.due_date.strftime('%Y-%m-%d') }}
+                                        </span>
+                                    </p>
+                                    {% endif %}
+                                    
+                                    {% if task.description %}
+                                    <p class="text-sm mt-2{% if task.completed %} line-through opacity-50{% endif %}">{{ task.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 mt-4">
+                            <p>Nėra užduočių</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Statistika</h2>
+                    
+                    <div class="stats stats-vertical shadow mt-4">
+                        <div class="stat">
+                            <div class="stat-title">Užsakymų</div>
+                            <div class="stat-value">{{ orders|length }}</div>
+                        </div>
+                        
+                        <div class="stat">
+                            <div class="stat-title">Sąskaitų faktūrų</div>
+                            <div class="stat-value">{{ invoices|length }}</div>
+                        </div>
+                        
+                        <div class="stat">
+                            <div class="stat-title">Bendra suma</div>
+                            <div class="stat-value">{{ orders|sum(attribute='total_amount')|euro }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

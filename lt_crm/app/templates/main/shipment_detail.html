@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Siunta {{ shipment.shipment_number }} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="mb-6">
+        <div class="text-sm breadcrumbs mb-2">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.shipments') }}">Siuntos</a></li>
+                <li>{{ shipment.shipment_number }}</li>
+            </ul>
+        </div>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <h1 class="text-3xl font-bold mb-2 md:mb-0">Siunta {{ shipment.shipment_number }}</h1>
+            <div class="flex space-x-2">
+                <a href="{{ url_for('main.shipments') }}" class="btn btn-outline">Grįžti</a>
+                {% if shipment.status != ShipmentStatus.RECEIVED %}
+                <a href="{{ url_for('main.shipment_edit', id=shipment.id) }}" class="btn btn-primary">Redaguoti</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipment Info -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Shipment Details -->
+        <div class="card bg-base-100 shadow-xl md:col-span-2">
+            <div class="card-body">
+                <h2 class="card-title text-xl">Siuntos informacija</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Basic Information -->
+                    <div class="space-y-3">
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Siuntos numeris</span>
+                            <span class="font-medium">{{ shipment.shipment_number }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Tiekėjas</span>
+                            <span class="font-medium">{{ shipment.supplier or 'Nenurodyta' }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Būsena</span>
+                            <span class="badge 
+                                {% if shipment.status.value == 'pending' %}badge-primary
+                                {% elif shipment.status.value == 'received' %}badge-success
+                                {% elif shipment.status.value == 'cancelled' %}badge-error
+                                {% endif %} badge-lg">
+                                {% if shipment.status.value == 'pending' %}Laukiama
+                                {% elif shipment.status.value == 'received' %}Gauta
+                                {% elif shipment.status.value == 'cancelled' %}Atšaukta
+                                {% else %}{{ shipment.status.value }}{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Details -->
+                    <div class="space-y-3">
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Numatoma gavimo data</span>
+                            <span class="font-medium">{{ shipment.expected_date.strftime('%Y-%m-%d') if shipment.expected_date else 'Nenurodyta' }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Gavimo data</span>
+                            <span class="font-medium">{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment.arrival_date else 'Dar negauta' }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-sm opacity-70">Sukurta</span>
+                            <span class="font-medium">{{ shipment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if shipment.notes %}
+                <div class="mt-6">
+                    <h3 class="font-medium text-lg mb-2">Pastabos</h3>
+                    <div class="bg-base-200 p-4 rounded-lg">
+                        <p>{{ shipment.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Siuntos valdymas</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <div class="stat-value text-2xl 
+                            {% if shipment.status.value == 'pending' %}text-primary
+                            {% elif shipment.status.value == 'received' %}text-success
+                            {% elif shipment.status.value == 'cancelled' %}text-error
+                            {% endif %}">
+                            {% if shipment.status.value == 'pending' %}Laukiama
+                            {% elif shipment.status.value == 'received' %}Gauta
+                            {% elif shipment.status.value == 'cancelled' %}Atšaukta
+                            {% else %}{{ shipment.status.value }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if shipment.status == ShipmentStatus.PENDING %}
+                    <div class="flex flex-col gap-2">
+                        <button id="receive-shipment" class="btn btn-success btn-lg w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Pažymėti kaip gautą
+                        </button>
+                        
+                        <button id="cancel-shipment" class="btn btn-outline btn-error">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Atšaukti siuntą
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipment Items -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Siuntos prekės</h2>
+            <div class="divider mt-0"></div>
+            
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Prekė</th>
+                            <th class="text-right">Kiekis</th>
+                            <th class="text-right">Savikaina</th>
+                            <th>Pastabos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if shipment.shipment_items.count() > 0 %}
+                            {% for item in shipment.shipment_items %}
+                            <tr>
+                                <td>{{ item.product.sku }}</td>
+                                <td>
+                                    <a href="{{ url_for('main.product_detail', id=item.product.id) }}" class="font-medium hover:underline">
+                                        {{ item.product.name }}
+                                    </a>
+                                </td>
+                                <td class="text-right">{{ item.quantity }}</td>
+                                <td class="text-right">{% if item.cost_price %}{{ item.cost_price|euro }}{% else %}-{% endif %}</td>
+                                <td>{{ item.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">Siuntoje nėra prekių</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle receive shipment button
+        const receiveBtn = document.getElementById('receive-shipment');
+        if (receiveBtn) {
+            receiveBtn.addEventListener('click', function() {
+                if (confirm('Ar tikrai norite pažymėti siuntą kaip gautą? Ši operacija atnaujins prekių kiekį sandėlyje.')) {
+                    fetch('{{ url_for("main.shipment_receive", id=shipment.id) }}', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Error:', data.error);
+                            alert('Klaida: ' + data.error);
+                        } else {
+                            console.log('Success:', data);
+                            alert('Siunta sėkmingai pažymėta kaip gauta.');
+                            window.location.reload();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('Įvyko klaida. Bandykite dar kartą.');
+                    });
+                }
+            });
+        }
+        
+        // Handle cancel shipment button
+        const cancelBtn = document.getElementById('cancel-shipment');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                if (confirm('Ar tikrai norite atšaukti šią siuntą?')) {
+                    fetch('{{ url_for("main.shipment_edit", id=shipment.id) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            'shipment_number': '{{ shipment.shipment_number }}',
+                            'supplier': '{{ shipment.supplier or "" }}',
+                            'status': '{{ ShipmentStatus.CANCELLED.value }}',
+                            'notes': '{{ shipment.notes or "" }}'
+                        })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Įvyko klaida. Bandykite dar kartą.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Įvyko klaida. Bandykite dar kartą.');
+                    });
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %} 

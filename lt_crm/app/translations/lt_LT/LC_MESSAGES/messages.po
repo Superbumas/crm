@@ -17,6 +17,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
+# Invoice status translations
+msgid "draft"
+msgstr "Juodraštis"
+
+msgid "issued"
+msgstr "Išrašyta"
+
+msgid "paid"
+msgstr "Apmokėta"
+
+msgid "cancelled"
+msgstr "Atšaukta"
+
+# Order status translations
+msgid "new"
+msgstr "Naujas"
+
+msgid "processing"
+msgstr "Apdorojamas"
+
+msgid "packed"
+msgstr "Supakuotas"
+
+msgid "shipped"
+msgstr "Išsiųstas"
+
+msgid "delivered"
+msgstr "Pristatytas"
+
+msgid "returned"
+msgstr "Grąžintas"
+
 #: app/templates/base.html:18
 msgid "Dashboard"
 msgstr "Valdymo skydelis"

@@ -7,13 +7,21 @@
     <div class="flex justify-between mb-4">
         <h1 class="text-2xl font-bold">{{ title }}</h1>
         <div class="flex space-x-2">
+            {% if edit_mode %}
+            <a href="{{ url_for('main.invoice_detail', id=invoice.id) }}" class="btn btn-outline">Atšaukti</a>
+            {% else %}
             <a href="{{ url_for('main.invoices') }}" class="btn btn-outline">Atšaukti</a>
+            {% endif %}
         </div>
     </div>
 
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
+            {% if edit_mode %}
+            <form method="POST" action="{{ url_for('main.invoice_edit', id=invoice.id) }}" class="space-y-6">
+            {% else %}
             <form method="POST" action="{{ url_for('main.invoice_new') }}" class="space-y-6">
+            {% endif %}
                 <!-- Invoice Info Section -->
                 <div>
                     <h2 class="text-xl font-bold mb-4">Sąskaitos faktūros informacija</h2>
@@ -22,21 +30,24 @@
                             <label class="label">
                                 <span class="label-text">Sąskaitos numeris</span>
                             </label>
-                            <input type="text" name="invoice_number" class="input input-bordered" required placeholder="SF-00001" />
+                            <input type="text" name="invoice_number" class="input input-bordered" required placeholder="SF-00001" 
+                                value="{{ invoice.invoice_number if edit_mode else invoice_number }}" />
                         </div>
                         
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text">Išrašymo data</span>
                             </label>
-                            <input type="date" name="issue_date" class="input input-bordered" value="{{ now.strftime('%Y-%m-%d') }}" />
+                            <input type="date" name="issue_date" class="input input-bordered" 
+                                value="{% if edit_mode %}{{ issue_date }}{% else %}{{ now.strftime('%Y-%m-%d') }}{% endif %}" />
                         </div>
                         
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text">Apmokėjimo terminas</span>
                             </label>
-                            <input type="date" name="due_date" class="input input-bordered" />
+                            <input type="date" name="due_date" class="input input-bordered" 
+                                value="{% if edit_mode %}{{ due_date }}{% else %}{{ due_date.strftime('%Y-%m-%d') if due_date else '' }}{% endif %}" />
                         </div>
                     </div>
                 </div>
@@ -52,67 +63,77 @@
                         <select name="customer_id" class="select select-bordered" id="customer-select">
                             <option value="">Įvesti rankiniu būdu</option>
                             {% for customer in customers %}
-                            <option value="{{ customer.id }}">{{ customer.name }}</option>
+                            <option value="{{ customer.id }}" {% if edit_mode and invoice.customer_id == customer.id %}selected{% endif %}>
+                                {{ customer.name }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
                     
-                    <div id="manual-billing-info">
+                    <div id="manual-billing-info" {% if edit_mode and invoice.customer_id %}style="display: none;"{% endif %}>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Pavadinimas / Vardas</span>
                                 </label>
-                                <input type="text" name="billing_name" class="input input-bordered" />
+                                <input type="text" name="billing_name" class="input input-bordered" 
+                                    value="{{ invoice.billing_name if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">El. paštas</span>
                                 </label>
-                                <input type="email" name="billing_email" class="input input-bordered" />
+                                <input type="email" name="billing_email" class="input input-bordered" 
+                                    value="{{ invoice.billing_email if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Adresas</span>
                                 </label>
-                                <input type="text" name="billing_address" class="input input-bordered" />
+                                <input type="text" name="billing_address" class="input input-bordered" 
+                                    value="{{ invoice.billing_address if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Miestas</span>
                                 </label>
-                                <input type="text" name="billing_city" class="input input-bordered" />
+                                <input type="text" name="billing_city" class="input input-bordered" 
+                                    value="{{ invoice.billing_city if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Pašto kodas</span>
                                 </label>
-                                <input type="text" name="billing_postal_code" class="input input-bordered" />
+                                <input type="text" name="billing_postal_code" class="input input-bordered" 
+                                    value="{{ invoice.billing_postal_code if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Šalis</span>
                                 </label>
-                                <input type="text" name="billing_country" class="input input-bordered" value="Lietuva" />
+                                <input type="text" name="billing_country" class="input input-bordered" 
+                                    value="{{ invoice.billing_country if edit_mode else 'Lietuva' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">Įmonės kodas</span>
                                 </label>
-                                <input type="text" name="company_code" class="input input-bordered" />
+                                <input type="text" name="company_code" class="input input-bordered" 
+                                    value="{{ invoice.company_code if edit_mode else '' }}" />
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text">PVM kodas</span>
                                 </label>
-                                <input type="text" name="vat_code" class="input input-bordered" />
+                                <input type="text" name="vat_code" class="input input-bordered" 
+                                    value="{{ invoice.vat_code if edit_mode else '' }}" />
                             </div>
                         </div>
                     </div>
@@ -124,7 +145,7 @@
                     
                     <div id="invoice-items">
                         <div class="grid grid-cols-12 gap-2 mb-2 font-bold">
-                            <div class="col-span-5">Aprašymas</div>
+                            <div class="col-span-5">Prekė / Aprašymas</div>
                             <div class="col-span-2">Kaina</div>
                             <div class="col-span-1">Kiekis</div>
                             <div class="col-span-1">PVM %</div>
@@ -132,18 +153,62 @@
                             <div class="col-span-1"></div>
                         </div>
                         
+                        {% if edit_mode and invoice.items.count() > 0 %}
+                            {% for item in invoice.items %}
+                            <div class="item-row grid grid-cols-12 gap-2 mb-2 items-center">
+                                <div class="col-span-5">
+                                    <input type="hidden" name="product_ids[]" class="product-id-input" value="{{ item.product_id if item.product_id else '' }}" />
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" name="item_descriptions[]" class="input input-bordered w-full description-input" required value="{{ item.description }}" />
+                                        <button type="button" class="btn btn-square btn-sm btn-outline product-select-btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-span-2">
+                                    <input type="number" name="item_prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required value="{{ item.price }}" />
+                                </div>
+                                <div class="col-span-1">
+                                    <input type="number" name="item_quantities[]" min="1" class="input input-bordered w-full quantity-input" required value="{{ item.quantity }}" />
+                                </div>
+                                <div class="col-span-1">
+                                    <input type="number" name="item_tax_rates[]" min="0" max="100" class="input input-bordered w-full tax-rate" required value="{{ item.tax_rate }}" />
+                                </div>
+                                <div class="col-span-2">
+                                    <input type="number" name="line_totals[]" step="0.01" min="0" class="input input-bordered w-full line-total" required readonly value="{{ item.subtotal }}" />
+                                </div>
+                                <div class="col-span-1">
+                                    <button type="button" class="btn btn-square btn-sm btn-error remove-row">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
                         <div class="item-row grid grid-cols-12 gap-2 mb-2 items-center">
                             <div class="col-span-5">
-                                <input type="text" name="descriptions[]" class="input input-bordered w-full" required />
+                                <input type="hidden" name="product_ids[]" class="product-id-input" value="" />
+                                <div class="flex items-center gap-2">
+                                    <input type="text" name="item_descriptions[]" class="input input-bordered w-full description-input" required />
+                                    <button type="button" class="btn btn-square btn-sm btn-outline product-select-btn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-span-2">
-                                <input type="number" name="prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required />
+                                <input type="number" name="item_prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required />
                             </div>
                             <div class="col-span-1">
-                                <input type="number" name="quantities[]" min="1" value="1" class="input input-bordered w-full quantity-input" required />
+                                <input type="number" name="item_quantities[]" min="1" value="1" class="input input-bordered w-full quantity-input" required />
                             </div>
                             <div class="col-span-1">
-                                <input type="number" name="tax_rates[]" min="0" max="100" value="21" class="input input-bordered w-full tax-rate" required />
+                                <input type="number" name="item_tax_rates[]" min="0" max="100" value="21" class="input input-bordered w-full tax-rate" required />
                             </div>
                             <div class="col-span-2">
                                 <input type="number" name="line_totals[]" step="0.01" min="0" class="input input-bordered w-full line-total" required readonly />
@@ -156,6 +221,7 @@
                                 </button>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     
                     <button type="button" id="add-item" class="btn btn-sm mt-2">
@@ -172,24 +238,24 @@
                             <label class="label">
                                 <span class="label-text">Pastabos</span>
                             </label>
-                            <textarea name="notes" class="textarea textarea-bordered h-24"></textarea>
+                            <textarea name="notes" class="textarea textarea-bordered h-24">{{ invoice.notes if edit_mode else '' }}</textarea>
                         </div>
                         
                         <div class="form-control">
                             <label class="label">
                                 <span class="label-text">Mokėjimo informacija</span>
                             </label>
-                            <textarea name="payment_details" class="textarea textarea-bordered h-24" placeholder="Banko sąskaita, gavėjas ir t.t."></textarea>
+                            <textarea name="payment_details" class="textarea textarea-bordered h-24" placeholder="Banko sąskaita, gavėjas ir t.t.">{{ invoice.payment_details if edit_mode else '' }}</textarea>
                         </div>
                     </div>
                     
                     <div class="mt-4 text-right space-y-1">
-                        <div class="text-md">Suma be PVM: <span id="subtotal-amount">0.00 €</span></div>
-                        <div class="text-md">PVM suma: <span id="tax-amount">0.00 €</span></div>
-                        <div class="text-lg font-bold">Bendra suma: <span id="total-amount">0.00 €</span></div>
-                        <input type="hidden" name="subtotal_amount" id="subtotal-input" value="0">
-                        <input type="hidden" name="tax_amount" id="tax-input" value="0">
-                        <input type="hidden" name="total_amount" id="total-input" value="0">
+                        <div class="text-md">Suma be PVM: <span id="subtotal-amount">{{ invoice.subtotal_amount|euro if edit_mode else '0.00 €' }}</span></div>
+                        <div class="text-md">PVM suma: <span id="tax-amount">{{ invoice.tax_amount|euro if edit_mode else '0.00 €' }}</span></div>
+                        <div class="text-lg font-bold">Bendra suma: <span id="total-amount">{{ invoice.total_amount|euro if edit_mode else '0.00 €' }}</span></div>
+                        <input type="hidden" name="subtotal_amount" id="subtotal-input" value="{{ invoice.subtotal_amount if edit_mode else '0' }}">
+                        <input type="hidden" name="tax_amount" id="tax-input" value="{{ invoice.tax_amount if edit_mode else '0' }}">
+                        <input type="hidden" name="total_amount" id="total-input" value="{{ invoice.total_amount if edit_mode else '0' }}">
                     </div>
                 </div>
                 
@@ -201,11 +267,43 @@
         </div>
     </div>
 </div>
+
+<!-- Product Selection Modal -->
+<div id="product-modal" class="modal">
+    <div class="modal-box max-w-4xl">
+        <h3 class="font-bold text-lg mb-4">Pasirinkite prekę</h3>
+        
+        <div class="form-control mb-4">
+            <div class="input-group">
+                <input type="text" id="modal-product-search" placeholder="Ieškoti pagal pavadinimą, SKU ar kodą..." class="input input-bordered w-full" />
+                <button type="button" id="modal-search-btn" class="btn btn-square">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 max-h-96 overflow-y-auto">
+            <!-- Products will be loaded here -->
+        </div>
+        
+        <div class="mt-4 text-center" id="loading-products">
+            <progress class="progress w-56"></progress>
+            <p>Kraunami produktai...</p>
+        </div>
+        
+        <div class="modal-action">
+            <button type="button" class="btn" onclick="closeProductModal()">Uždaryti</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
     const invoiceItems = document.getElementById('invoice-items');
     const addItemBtn = document.getElementById('add-item');
     const subtotalEl = document.getElementById('subtotal-amount');
@@ -214,6 +312,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const subtotalInput = document.getElementById('subtotal-input');
     const taxInput = document.getElementById('tax-input');
     const totalInput = document.getElementById('total-input');
+    const productModal = document.getElementById('product-modal');
+    const productGrid = document.getElementById('product-grid');
+    const modalProductSearch = document.getElementById('modal-product-search');
+    const modalSearchBtn = document.getElementById('modal-search-btn');
+    const loadingProducts = document.getElementById('loading-products');
+    
+    // Current row being edited (for product selection)
+    let currentEditingRow = null;
     
     // Initial calculation
     calculateTotals();
@@ -229,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         newRow.querySelector('.quantity-input').value = '1';
         newRow.querySelector('.tax-rate').value = '21';
+        newRow.querySelector('.product-id-input').value = '';
         
         // Add event listeners to the new row
         addRowEventListeners(newRow);
@@ -237,15 +344,19 @@ document.addEventListener('DOMContentLoaded', function() {
         invoiceItems.appendChild(newRow);
     });
     
-    // Add event listeners to the initial row
-    addRowEventListeners(invoiceItems.querySelector('.item-row'));
+    // Add event listeners to all existing rows
+    const rows = invoiceItems.querySelectorAll('.item-row');
+    rows.forEach(row => {
+        addRowEventListeners(row);
+        calculateLineTotal(row);  // Calculate line totals for existing items
+    });
     
     // Function to add event listeners to a row
     function addRowEventListeners(row) {
         const priceInput = row.querySelector('.price-input');
         const quantityInput = row.querySelector('.quantity-input');
         const taxRateInput = row.querySelector('.tax-rate');
-        const lineTotalInput = row.querySelector('.line-total');
+        const productSelectBtn = row.querySelector('.product-select-btn');
         const removeBtn = row.querySelector('.remove-row');
         
         // Price, quantity, or tax rate change
@@ -254,6 +365,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 calculateLineTotal(row);
                 calculateTotals();
             });
+        });
+        
+        // Product selection button click
+        productSelectBtn.addEventListener('click', function() {
+            currentEditingRow = row;
+            openProductModal();
         });
         
         // Remove row
@@ -316,6 +433,85 @@ document.addEventListener('DOMContentLoaded', function() {
             manualBillingInfo.style.display = 'block';
         }
     });
+    
+    // Product Modal Functions
+    function openProductModal() {
+        productGrid.innerHTML = '';
+        loadingProducts.style.display = 'block';
+        productModal.classList.add('modal-open');
+        modalProductSearch.value = '';
+        loadProducts();
+    }
+    
+    window.closeProductModal = function() {
+        productModal.classList.remove('modal-open');
+    };
+    
+    // Load products for the modal
+    function loadProducts(searchQuery = '') {
+        fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}&limit=50`)
+            .then(response => response.json())
+            .then(data => {
+                productGrid.innerHTML = '';
+                loadingProducts.style.display = 'none';
+                
+                if (data.results.length === 0) {
+                    productGrid.innerHTML = '<div class="col-span-full text-center py-4">Nerasta prekių atitinkančių paiešką</div>';
+                    return;
+                }
+                
+                data.results.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'card card-compact bg-base-100 border hover:shadow-md cursor-pointer';
+                    productCard.innerHTML = `
+                        <div class="card-body">
+                            <h3 class="card-title text-sm">${product.description}</h3>
+                            <p class="text-xs text-gray-500">SKU: ${product.sku}</p>
+                            <p class="font-bold">${product.price.toFixed(2)} €</p>
+                        </div>
+                    `;
+                    
+                    productCard.addEventListener('click', function() {
+                        selectProduct(product);
+                    });
+                    
+                    productGrid.appendChild(productCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading products:', error);
+                loadingProducts.style.display = 'none';
+                productGrid.innerHTML = '<div class="col-span-full text-center py-4 text-error">Klaida kraunant prekes</div>';
+            });
+    }
+    
+    // Handle product search in modal
+    modalSearchBtn.addEventListener('click', function() {
+        loadingProducts.style.display = 'block';
+        loadProducts(modalProductSearch.value);
+    });
+    
+    modalProductSearch.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            loadingProducts.style.display = 'block';
+            loadProducts(modalProductSearch.value);
+        }
+    });
+    
+    // Select a product from the modal
+    function selectProduct(product) {
+        if (currentEditingRow) {
+            currentEditingRow.querySelector('.product-id-input').value = product.id;
+            currentEditingRow.querySelector('.description-input').value = product.description;
+            currentEditingRow.querySelector('.price-input').value = product.price.toFixed(2);
+            
+            // Calculate line total
+            calculateLineTotal(currentEditingRow);
+            calculateTotals();
+            
+            closeProductModal();
+        }
+    }
 });
 </script>
 {% endblock %} 

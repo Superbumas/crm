@@ -2,7 +2,7 @@
 import logging
 from typing import Dict, List, Optional, Any, Union
 import httpx
-from app.exceptions import APIClientError, APIConnectionError, APITimeoutError
+from ..exceptions import APIClientError, APIConnectionError, APITimeoutError
 
 
 class BaseAPIClient:

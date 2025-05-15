@@ -1,11 +1,12 @@
 """Routes for the auth blueprint."""
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlparse
 
 from . import bp
 from ..models.user import User
 from ..extensions import db
+from ..api.v1.utils import generate_jwt_token
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -116,4 +117,18 @@ def profile():
         flash("Password updated successfully")
         return redirect(url_for("auth.profile"))
         
-    return render_template("auth/profile.html", title="Profile") 
+    return render_template("auth/profile.html", title="Profile")
+
+
+@bp.route("/api-token", methods=["GET"])
+@login_required
+def get_api_token():
+    """Get API token for the current user."""
+    if not current_user.is_authenticated:
+        return jsonify({"error": "User not authenticated"}), 401
+    
+    token = generate_jwt_token(current_user.id, "access")
+    return jsonify({
+        "access_token": token,
+        "token_type": "bearer"
+    }) 

@@ -122,7 +122,11 @@
                                     {% elif invoice.status.value == 'paid' %}badge-success
                                     {% elif invoice.status.value == 'cancelled' %}badge-error
                                     {% endif %}">
-                                    {{ invoice.status.value }}
+                                    {% if invoice.status.value == 'draft' %}Juodraštis
+                                    {% elif invoice.status.value == 'issued' %}Išrašyta
+                                    {% elif invoice.status.value == 'paid' %}Apmokėta
+                                    {% elif invoice.status.value == 'cancelled' %}Atšaukta
+                                    {% else %}{{ invoice.status.value }}{% endif %}
                                 </span>
                             </td>
                             <td>{{ invoice.total_amount|euro }}</td>

@@ -2,6 +2,12 @@
 
 {% block title %}Produktai - LT CRM{% endblock %}
 
+{% block styles %}
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="flex flex-col md:flex-row justify-between items-start mb-6">
     <div>
@@ -21,12 +27,18 @@
             </svg>
             Naujas produktas
         </a>
-        <button class="btn btn-outline" onclick="document.getElementById('import-modal').showModal()">
+        <label for="export-modal" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+            Eksportuoti
+        </label>
+        <label for="import-modal" class="btn btn-outline">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
-            Importuoti CSV
-        </button>
+            Importuoti produktus
+        </label>
     </div>
 </div>
 
@@ -171,7 +183,7 @@
 <div class="flex justify-center mt-6">
     <div class="btn-group">
         {% if pagination.has_prev %}
-        <a href="{{ url_for('main.products', page=pagination.prev_num, **request.args) }}" class="btn">
+        <a href="{{ url_for('main.products', page=pagination.prev_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -189,7 +201,7 @@
                 {% if page == pagination.page %}
                 <button class="btn btn-active">{{ page }}</button>
                 {% else %}
-                <a href="{{ url_for('main.products', page=page, **request.args) }}" class="btn">{{ page }}</a>
+                <a href="{{ url_for('main.products', page=page) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">{{ page }}</a>
                 {% endif %}
             {% else %}
                 <button class="btn btn-disabled">...</button>
@@ -197,7 +209,7 @@
         {% endfor %}
         
         {% if pagination.has_next %}
-        <a href="{{ url_for('main.products', page=pagination.next_num, **request.args) }}" class="btn">
+        <a href="{{ url_for('main.products', page=pagination.next_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -214,61 +226,551 @@
 {% endif %}
 
 <!-- Import Modal -->
-<dialog id="import-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Importuoti produktus iš CSV</h3>
-        <form id="csv-upload-form" method="POST" action="{{ url_for('main.product_import_csv') }}" enctype="multipart/form-data" class="space-y-4">
+<input type="checkbox" id="import-modal" class="modal-toggle" />
+<div class="modal">
+    <div class="modal-box w-11/12 max-w-2xl">
+        <h3 class="font-bold text-lg mb-4">Importuoti produktus</h3>
+        <form id="csv-upload-form" method="POST" action="{{ url_for('main.product_import_file') }}" enctype="multipart/form-data" class="space-y-4">
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text">CSV failas</span>
+                    <span class="label-text">Importuojamas failas</span>
                 </label>
-                <input type="file" name="csv_file" accept=".csv" class="file-input file-input-bordered w-full" required />
+                <input type="file" name="csv_file" accept=".csv,.xlsx,.xls,.tsv,.txt" class="file-input file-input-bordered w-full" required />
                 <label class="label">
-                    <span class="label-text-alt">Pasirinkite CSV failą su produktų duomenimis</span>
+                    <span class="label-text-alt">Palaikomi formatai: CSV, Excel (.xlsx/.xls), TSV arba TXT</span>
                 </label>
             </div>
             
             <div class="form-control">
+                <div class="flex flex-col gap-2">
+                    <div class="alert alert-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Privalomi stulpeliai: <strong>sku</strong>, <strong>name</strong>, <strong>price_final</strong></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider">CSV/TSV/TXT nustatymai</div>
+            
+            <div class="form-control">
                 <label class="label">
-                    <span class="label-text">Kodavimas</span>
+                    <span class="label-text">Koduotė (character encoding)</span>
                 </label>
                 <select name="encoding" class="select select-bordered w-full">
+                    <option value="">Automatinis aptikimas</option>
                     <option value="utf-8">UTF-8</option>
-                    <option value="cp1257">CP1257 (Windows Baltic)</option>
-                    <option value="iso-8859-13">ISO-8859-13 (Baltic)</option>
+                    <option value="utf-8-sig">UTF-8 with BOM</option>
+                    <option value="windows-1257">Windows-1257</option>
+                    <option value="iso-8859-13">ISO-8859-13</option>
+                    <option value="latin-1">Latin-1</option>
                 </select>
             </div>
             
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text">Skirtukas</span>
+                    <span class="label-text">Skyriklis (delimiter)</span>
                 </label>
                 <select name="delimiter" class="select select-bordered w-full">
                     <option value=",">Kablelis (,)</option>
                     <option value=";">Kabliataškis (;)</option>
                     <option value="\t">Tabuliacija (Tab)</option>
+                    <option value="|">Vertikalus brūkšnys (|)</option>
                 </select>
             </div>
             
             <div class="form-control">
-                <label class="label cursor-pointer">
-                    <span class="label-text">Pirmoje eilutėje yra stulpelių pavadinimai</span>
-                    <input type="checkbox" name="has_header" checked class="checkbox checkbox-primary" />
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" name="has_header" class="checkbox" checked />
+                    <span class="label-text">Pirma eilutė yra antraštė</span>
                 </label>
             </div>
-        
+            
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Importuoti</button>
-                <button type="button" class="btn" onclick="document.getElementById('import-modal').close()">Atšaukti</button>
+                <label for="import-modal" class="btn" id="cancel-import">Atšaukti</label>
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+</div>
+
+<!-- Export Modal -->
+<input type="checkbox" id="export-modal" class="modal-toggle" />
+<div class="modal" x-data="exportModal()" x-cloak>
+    <div class="modal-box w-11/12 max-w-5xl">
+        <h3 class="font-bold text-lg mb-4">Eksportuoti produktus</h3>
+        
+        <!-- Step indicator -->
+        <ul class="steps steps-horizontal w-full mb-8">
+            <li class="step" :class="{'step-primary': step >= 1}">Formato pasirinkimas</li>
+            <li class="step" :class="{'step-primary': step >= 2}">Laukų konfigūracija</li>
+            <li class="step" :class="{'step-primary': step >= 3}">Peržiūra</li>
+        </ul>
+        
+        <!-- Step 1: Format Selection -->
+        <div x-show="step === 1" class="space-y-6">
+            <div class="form-control">
+                <label class="label font-semibold">
+                    <span class="label-text text-lg">Pasirinkite eksporto formatą</span>
+                </label>
+                <div class="flex flex-col gap-4">
+                    <label class="label cursor-pointer justify-start border border-base-300 rounded-lg p-4 hover:bg-base-200">
+                        <input type="radio" name="format" value="csv" class="radio radio-primary mr-4" x-model="format" checked />
+                        <div>
+                            <div class="font-semibold">CSV</div>
+                            <div class="text-sm opacity-60">Universalus formatas, palaikomas daugelio programų</div>
+                        </div>
+                    </label>
+                    
+                    <label class="label cursor-pointer justify-start border border-base-300 rounded-lg p-4 hover:bg-base-200">
+                        <input type="radio" name="format" value="xlsx" class="radio radio-primary mr-4" x-model="format" />
+                        <div>
+                            <div class="font-semibold">Excel (XLSX)</div>
+                            <div class="text-sm opacity-60">Microsoft Excel formatas</div>
+                        </div>
+                    </label>
+                    
+                    <label class="label cursor-pointer justify-start border border-base-300 rounded-lg p-4 hover:bg-base-200">
+                        <input type="radio" name="format" value="xml" class="radio radio-primary mr-4" x-model="format" />
+                        <div>
+                            <div class="font-semibold">XML</div>
+                            <div class="text-sm opacity-60">Struktūrizuotas duomenų formatas</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- XML options (only shown when XML is selected) -->
+            <div x-show="format === 'xml'" class="form-control bg-base-200 p-4 rounded-lg border border-base-300">
+                <label class="label font-semibold">
+                    <span class="label-text">XML formato šablonas</span>
+                </label>
+                <select x-model="xmlTemplate" class="select select-bordered w-full">
+                    <option value="generic">Bendras XML</option>
+                    <option value="google_merchant">Google Merchant</option>
+                </select>
+                
+                <div x-show="xmlTemplate === 'google_merchant'" class="alert alert-info mt-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <p class="font-semibold">Google Merchant reikalavimai</p>
+                        <p class="text-sm">Privalomi laukai: id (sku), title (name), description, link, image_link, price, availability</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button class="btn btn-primary" @click="goToFieldMapping()">Tęsti</button>
+                <label for="export-modal" class="btn">Atšaukti</label>
+            </div>
+        </div>
+        
+        <!-- Step 2: Field Mapping -->
+        <div x-show="step === 2" class="space-y-6">
+            <div class="form-control">
+                <label class="label font-semibold">
+                    <span class="label-text text-lg">Laukų susiejimas</span>
+                </label>
+                <div class="overflow-x-auto">
+                    <table class="table table-compact w-full">
+                        <thead>
+                            <tr>
+                                <th>Vidinis laukas</th>
+                                <th>Eksporto pavadinimas</th>
+                                <th>Aprašymas</th>
+                                <th>Įtraukti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(field, index) in fields" :key="index">
+                                <tr>
+                                    <td x-text="field.internalName"></td>
+                                    <td>
+                                        <input type="text" class="input input-bordered input-sm w-full" x-model="field.exportName" :disabled="!field.included" />
+                                    </td>
+                                    <td class="text-sm opacity-70" x-text="field.description"></td>
+                                    <td>
+                                        <input type="checkbox" class="checkbox checkbox-sm" x-model="field.included" @change="updateColumnMap()" />
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Save as template -->
+            <div class="form-control bg-base-200 p-4 rounded-lg">
+                <label class="label cursor-pointer justify-start">
+                    <input type="checkbox" class="checkbox mr-3" x-model="saveAsTemplate" />
+                    <span class="label-text font-semibold">Išsaugoti kaip šabloną</span>
+                </label>
+                <div x-show="saveAsTemplate" class="mt-2">
+                    <input type="text" class="input input-bordered w-full" placeholder="Šablono pavadinimas" x-model="templateName" />
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button class="btn" @click="step = 1">Atgal</button>
+                <button class="btn btn-primary" @click="generatePreview()" :disabled="!isColumnMapValid">Peržiūrėti</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Preview -->
+        <div x-show="step === 3" class="space-y-6">
+            <div class="form-control">
+                <label class="label font-semibold">
+                    <span class="label-text text-lg">Peržiūra (pirmi 20 įrašų)</span>
+                </label>
+                
+                <div x-show="loading" class="flex justify-center my-8">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                </div>
+                
+                <div x-show="previewError" class="alert alert-error" x-text="previewError"></div>
+                
+                <div x-show="!loading && !previewError && previewData.length === 0" class="alert alert-warning">
+                    Nėra duomenų peržiūrai
+                </div>
+                
+                <div x-show="!loading && previewData.length > 0" class="overflow-x-auto max-h-96">
+                    <table class="table table-compact w-full">
+                        <thead>
+                            <tr>
+                                <template x-for="(column, index) in Object.keys(previewData[0] || {})" :key="index">
+                                    <th x-text="column"></th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(row, rowIndex) in previewData" :key="rowIndex">
+                                <tr>
+                                    <template x-for="(column, colIndex) in Object.keys(previewData[0] || {})" :key="colIndex">
+                                        <td x-text="row[column] || '-'"></td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button class="btn" @click="step = 2">Atgal</button>
+                <button 
+                    class="btn btn-primary" 
+                    @click="downloadExport()" 
+                    :disabled="loading || previewData.length === 0"
+                    hx-indicator="#download-indicator">
+                    <span id="download-indicator" class="htmx-indicator">
+                        <span class="loading loading-spinner loading-sm"></span>
+                    </span>
+                    Atsisiųsti
+                </button>
+                <label for="export-modal" class="btn">Uždaryti</label>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // If needed, you could add custom JavaScript here
+        // Check if Alpine.js is loaded
+        if (typeof Alpine === 'undefined') {
+            console.error('Alpine.js is not loaded properly');
+            // Attempt to load Alpine.js if it's not loaded
+            const alpineScript = document.createElement('script');
+            alpineScript.src = 'https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js';
+            alpineScript.defer = true;
+            document.body.appendChild(alpineScript);
+        }
+    });
+    
+    function exportModal() {
+        return {
+            step: 1,
+            format: 'csv',
+            xmlTemplate: 'generic',
+            saveAsTemplate: false,
+            templateName: '',
+            loading: false,
+            previewData: [],
+            previewError: null,
+            jwtToken: null,
+            
+            // Initialize component and get JWT token
+            init() {
+                this.getJwtToken();
+            },
+            
+            // Get JWT token for API calls
+            async getJwtToken() {
+                try {
+                    const response = await fetch('/auth/api-token');
+                    if (!response.ok) {
+                        throw new Error('Failed to get API token');
+                    }
+                    const data = await response.json();
+                    this.jwtToken = data.access_token;
+                    console.log('JWT token obtained successfully');
+                } catch (error) {
+                    console.error('Error getting JWT token:', error);
+                    this.previewError = 'Autentifikacijos klaida. Bandykite atnaujinti puslapį.';
+                }
+            },
+            
+            fields: [
+                { internalName: 'id', exportName: 'id', description: 'Unikalus ID', included: true },
+                { internalName: 'sku', exportName: 'sku', description: 'Produkto kodas', included: true },
+                { internalName: 'name', exportName: 'name', description: 'Produkto pavadinimas', included: true },
+                { internalName: 'description_html', exportName: 'description', description: 'Produkto aprašymas', included: true },
+                { internalName: 'barcode', exportName: 'barcode', description: 'Produkto brūkšninis kodas', included: true },
+                { internalName: 'quantity', exportName: 'quantity', description: 'Kiekis sandėlyje', included: true },
+                { internalName: 'delivery_days', exportName: 'delivery_days', description: 'Pristatymo laikas dienomis', included: false },
+                { internalName: 'price_final', exportName: 'price', description: 'Galutinė kaina', included: true },
+                { internalName: 'price_old', exportName: 'price_old', description: 'Sena kaina', included: false },
+                { internalName: 'category', exportName: 'category', description: 'Kategorija', included: true },
+                { internalName: 'main_image_url', exportName: 'image_link', description: 'Pagrindinė nuotrauka', included: true },
+                { internalName: 'model', exportName: 'model', description: 'Produkto modelis', included: false },
+                { internalName: 'manufacturer', exportName: 'brand', description: 'Gamintojas', included: true },
+                { internalName: 'warranty_months', exportName: 'warranty_months', description: 'Garantija mėnesiais', included: false },
+                { internalName: 'weight_kg', exportName: 'weight', description: 'Svoris (kg)', included: false },
+                { internalName: 'is_in_stock', exportName: 'in_stock', description: 'Ar yra sandėlyje', included: false }
+            ],
+            
+            get columnMap() {
+                const map = {};
+                this.fields.filter(f => f.included).forEach(field => {
+                    map[field.internalName] = field.exportName;
+                });
+                return map;
+            },
+            
+            get isColumnMapValid() {
+                return Object.keys(this.columnMap).length > 0;
+            },
+            
+            updateColumnMap() {
+                // Automatically update field mappings for Google Merchant if selected
+                if (this.format === 'xml' && this.xmlTemplate === 'google_merchant') {
+                    // Set required Google Merchant fields
+                    this.fields.forEach(field => {
+                        if (field.internalName === 'sku') {
+                            field.exportName = 'id';
+                            field.included = true;
+                        } else if (field.internalName === 'name') {
+                            field.exportName = 'title';
+                            field.included = true;
+                        } else if (field.internalName === 'description_html') {
+                            field.exportName = 'description';
+                            field.included = true;
+                        } else if (field.internalName === 'main_image_url') {
+                            field.exportName = 'image_link';
+                            field.included = true;
+                        } else if (field.internalName === 'price_final') {
+                            field.exportName = 'price';
+                            field.included = true;
+                        } else if (field.internalName === 'manufacturer') {
+                            field.exportName = 'brand';
+                            field.included = true;
+                        } else if (field.internalName === 'barcode') {
+                            field.exportName = 'gtin';
+                            field.included = true;
+                        } else if (field.internalName === 'is_in_stock') {
+                            field.exportName = 'availability';
+                            field.included = true;
+                        }
+                    });
+                }
+            },
+            
+            goToFieldMapping() {
+                this.updateColumnMap();
+                this.step = 2;
+            },
+            
+            // Helper function to safely get CSRF token
+            getCsrfToken() {
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                return metaTag ? metaTag.getAttribute('content') || '' : '';
+            },
+            
+            async generatePreview() {
+                this.loading = true;
+                this.previewError = null;
+                this.previewData = [];
+                
+                console.log("Starting preview generation");
+                console.log("Column map:", this.columnMap);
+                
+                // Make sure we have a JWT token
+                if (!this.jwtToken) {
+                    console.log("No JWT token available, trying to get one");
+                    await this.getJwtToken();
+                    
+                    if (!this.jwtToken) {
+                        this.previewError = "Autentifikacijos klaida. Bandykite atnaujinti puslapį.";
+                        this.loading = false;
+                        return;
+                    }
+                }
+                
+                try {
+                    const response = await fetch('/api/v1/exports/preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.getCsrfToken(),
+                            'Authorization': `Bearer ${this.jwtToken}`
+                        },
+                        body: JSON.stringify({
+                            format: this.format,
+                            column_map: this.columnMap,
+                            limit: 20
+                        })
+                    });
+                    
+                    console.log("API response status:", response.status);
+                    
+                    const result = await response.json();
+                    console.log("API response data:", result);
+                    
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Klaida generuojant peržiūrą');
+                    }
+                    
+                    this.previewData = result.data || [];
+                    this.step = 3;
+                } catch (error) {
+                    console.error('Preview error details:', error);
+                    this.previewError = error.message || 'Nepavyko gauti peržiūros duomenų';
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            async downloadExport() {
+                // Make sure we have a JWT token
+                if (!this.jwtToken) {
+                    console.log("No JWT token available for download, trying to get one");
+                    await this.getJwtToken();
+                    
+                    if (!this.jwtToken) {
+                        this.showToast("Autentifikacijos klaida. Bandykite atnaujinti puslapį.", "error");
+                        return;
+                    }
+                }
+                
+                // Save template if needed
+                if (this.saveAsTemplate && this.templateName) {
+                    try {
+                        const saveResponse = await fetch('/api/v1/exports/configs', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': this.getCsrfToken(),
+                                'Authorization': `Bearer ${this.jwtToken}`
+                            },
+                            body: JSON.stringify({
+                                name: this.templateName,
+                                format: this.format,
+                                column_map: this.columnMap
+                            })
+                        });
+                        
+                        if (!saveResponse.ok) {
+                            const error = await saveResponse.json();
+                            console.error('Error saving template:', error);
+                            // Show toast notification for error
+                            this.showToast('Klaida išsaugant šabloną: ' + (error.message || 'Nežinoma klaida'), 'error');
+                        } else {
+                            // Show success toast
+                            this.showToast('Šablonas sėkmingai išsaugotas!', 'success');
+                        }
+                    } catch (error) {
+                        console.error('Error saving template:', error);
+                        this.showToast('Klaida išsaugant šabloną: ' + error.message, 'error');
+                    }
+                }
+                
+                // Prepare download params
+                const downloadParams = {
+                    format: this.format,
+                    column_map: this.columnMap
+                };
+                
+                // Add XML specific params if needed
+                if (this.format === 'xml') {
+                    if (this.xmlTemplate === 'google_merchant') {
+                        downloadParams.template = 'google_merchant';
+                    } else {
+                        downloadParams.xml_root = 'items';
+                        downloadParams.xml_item = 'item';
+                    }
+                }
+                
+                // Create a form to submit as a regular form post (for file download)
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/api/v1/exports/download';
+                form.style.display = 'none';
+                
+                // Add JWT token
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'jwt_token';
+                tokenInput.value = this.jwtToken;
+                form.appendChild(tokenInput);
+                
+                // Add CSRF token
+                const csrfToken = this.getCsrfToken();
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+                
+                // Add serialized params as JSON
+                const paramsInput = document.createElement('input');
+                paramsInput.type = 'hidden';
+                paramsInput.name = 'params';
+                paramsInput.value = JSON.stringify(downloadParams);
+                form.appendChild(paramsInput);
+                
+                // Submit the form
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                this.showToast('Eksportas pradėtas!', 'success');
+            },
+            
+            showToast(message, type = 'info') {
+                const toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) return;
+                
+                const toast = document.createElement('div');
+                toast.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg mb-4 animate__animated animate__fadeIn`;
+                toast.innerHTML = `
+                    <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>${message}</span>
+                    </div>
+                    <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    toast.classList.add('animate__fadeOut');
+                    setTimeout(() => toast.remove(), 500);
+                }, 5000);
+            }
+        };
+    }
+</script>
 {% endblock %} 

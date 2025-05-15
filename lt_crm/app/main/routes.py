@@ -1,15 +1,28 @@
 """Routes for the main blueprint."""
 from datetime import datetime, timedelta
-from flask import render_template, request, jsonify, redirect, url_for, flash, send_file
-from flask_login import login_required
-from . import bp
-from ..models.product import Product
-from ..models.order import Order, OrderStatus
-from ..models.invoice import Invoice, InvoiceStatus
-from ..models.stock import StockMovement
-from ..extensions import db
+from io import BytesIO
+import pandas as pd
+from flask import (
+    render_template, flash, redirect, url_for, request, 
+    current_app, jsonify, Response, send_file, session
+)
+from flask_login import current_user, login_required
+from werkzeug.utils import secure_filename
+from flask_babel import gettext as _
+import uuid
+import os
+import csv
 from sqlalchemy import func
-from ..models.customer import Customer
+
+from . import bp
+from lt_crm.app.models.user import User
+from lt_crm.app.extensions import db
+from lt_crm.app.models.product import Product
+from lt_crm.app.models.customer import Customer, Contact, Task
+from lt_crm.app.models.order import Order, OrderItem, OrderStatus
+from lt_crm.app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
+from lt_crm.app.models.stock import StockMovement, Shipment, ShipmentItem, ShipmentStatus, MovementReasonCode
+from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm
 
 
 @bp.route("/")
@@ -81,6 +94,12 @@ def dashboard():
     # Recent orders
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     
+    # Count orders by status for chart
+    status_counts = {}
+    for status in OrderStatus:
+        count = Order.query.filter(Order.status == status).count()
+        status_counts[status.name.lower()] = count
+    
     return render_template(
         "main/dashboard.html", 
         title="Skydelis",
@@ -91,6 +110,7 @@ def dashboard():
         new_orders=new_orders,
         pending_orders=pending_orders,
         recent_orders=recent_orders,
+        status_counts=status_counts,
     )
 
 
@@ -148,9 +168,81 @@ def product_new():
     categories = [c[0] for c in categories if c[0]]
     
     if request.method == "POST":
-        # Handle product creation via HTMX
-        # Implementation details would go here
-        pass
+        try:
+            # Get form data
+            sku = request.form.get("sku")
+            name = request.form.get("name")
+            description_html = request.form.get("description_html")
+            barcode = request.form.get("barcode")
+            quantity = request.form.get("quantity", type=int, default=0)
+            delivery_days = request.form.get("delivery_days", type=int)
+            price_final = request.form.get("price_final", type=float)
+            price_old = request.form.get("price_old", type=float)
+            category = request.form.get("category")
+            main_image_url = request.form.get("main_image_url")
+            extra_image_urls = request.form.get("extra_image_urls")
+            model = request.form.get("model")
+            manufacturer = request.form.get("manufacturer")
+            warranty_months = request.form.get("warranty_months", type=int)
+            weight_kg = request.form.get("weight_kg", type=float)
+            
+            # Validate required fields
+            if not sku or not name or not price_final:
+                flash("Privalomi laukai: SKU, pavadinimas ir kaina", "error")
+                return render_template(
+                    "main/product_form.html", 
+                    title="Naujas produktas",
+                    categories=categories
+                )
+            
+            # Check if product SKU already exists
+            existing_product = Product.query.filter_by(sku=sku).first()
+            if existing_product:
+                flash(f"Produktas su SKU '{sku}' jau egzistuoja", "error")
+                return render_template(
+                    "main/product_form.html", 
+                    title="Naujas produktas",
+                    categories=categories
+                )
+            
+            # Parse extra_image_urls if it's in JSON format
+            parsed_extra_image_urls = None
+            if extra_image_urls:
+                try:
+                    import json
+                    parsed_extra_image_urls = json.loads(extra_image_urls)
+                except:
+                    # If it's not valid JSON, just use as-is for pipe-separated values
+                    parsed_extra_image_urls = extra_image_urls
+            
+            # Create new product
+            product = Product(
+                sku=sku,
+                name=name,
+                description_html=description_html,
+                barcode=barcode,
+                quantity=quantity,
+                delivery_days=delivery_days,
+                price_final=price_final,
+                price_old=price_old,
+                category=category,
+                main_image_url=main_image_url,
+                extra_image_urls=parsed_extra_image_urls,
+                model=model,
+                manufacturer=manufacturer,
+                warranty_months=warranty_months,
+                weight_kg=weight_kg
+            )
+            
+            db.session.add(product)
+            db.session.commit()
+            
+            flash(f"Produktas {name} sėkmingai sukurtas", "success")
+            return redirect(url_for("main.product_detail", id=product.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Klaida kuriant produktą: {str(e)}", "error")
     
     return render_template(
         "main/product_form.html",
@@ -169,9 +261,80 @@ def product_edit(id):
     categories = [c[0] for c in categories if c[0]]
     
     if request.method == "POST":
-        # Handle product update via HTMX
-        # Implementation details would go here
-        pass
+        try:
+            # Get form data
+            sku = request.form.get("sku")
+            name = request.form.get("name")
+            description_html = request.form.get("description_html")
+            barcode = request.form.get("barcode")
+            quantity = request.form.get("quantity", type=int, default=0)
+            delivery_days = request.form.get("delivery_days", type=int)
+            price_final = request.form.get("price_final", type=float)
+            price_old = request.form.get("price_old", type=float)
+            category = request.form.get("category")
+            main_image_url = request.form.get("main_image_url")
+            extra_image_urls = request.form.get("extra_image_urls")
+            model = request.form.get("model")
+            manufacturer = request.form.get("manufacturer")
+            warranty_months = request.form.get("warranty_months", type=int)
+            weight_kg = request.form.get("weight_kg", type=float)
+            
+            # Validate required fields
+            if not sku or not name or not price_final:
+                flash("Privalomi laukai: SKU, pavadinimas ir kaina", "error")
+                return render_template(
+                    "main/product_form.html", 
+                    title=f"Redaguoti {product.name}",
+                    product=product,
+                    categories=categories
+                )
+            
+            # Check if product SKU already exists with different ID
+            existing_product = Product.query.filter(Product.sku == sku, Product.id != id).first()
+            if existing_product:
+                flash(f"Produktas su SKU '{sku}' jau egzistuoja", "error")
+                return render_template(
+                    "main/product_form.html", 
+                    title=f"Redaguoti {product.name}",
+                    product=product,
+                    categories=categories
+                )
+            
+            # Parse extra_image_urls if it's in JSON format
+            parsed_extra_image_urls = None
+            if extra_image_urls:
+                try:
+                    import json
+                    parsed_extra_image_urls = json.loads(extra_image_urls)
+                except:
+                    # If it's not valid JSON, just use as-is for pipe-separated values
+                    parsed_extra_image_urls = extra_image_urls
+            
+            # Update product
+            product.sku = sku
+            product.name = name
+            product.description_html = description_html
+            product.barcode = barcode
+            product.quantity = quantity
+            product.delivery_days = delivery_days
+            product.price_final = price_final
+            product.price_old = price_old
+            product.category = category
+            product.main_image_url = main_image_url
+            product.extra_image_urls = parsed_extra_image_urls
+            product.model = model
+            product.manufacturer = manufacturer
+            product.warranty_months = warranty_months
+            product.weight_kg = weight_kg
+            
+            db.session.commit()
+            
+            flash(f"Produktas {name} sėkmingai atnaujintas", "success")
+            return redirect(url_for("main.product_detail", id=product.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Klaida atnaujinant produktą: {str(e)}", "error")
     
     return render_template(
         "main/product_form.html",
@@ -274,30 +437,218 @@ def invoice_pdf(id):
     """Generate and download invoice PDF."""
     invoice = Invoice.query.get_or_404(id)
     
-    # Here would be the logic to generate or retrieve the PDF
-    # For now, we'll just return a placeholder
-    
-    return jsonify({"message": "PDF generation not implemented yet", "invoice_id": id})
+    try:
+        # Import necessary libraries for PDF generation
+        from weasyprint import HTML
+        from io import BytesIO
+        import tempfile
+        
+        # Prepare the template for PDF generation
+        rendered_template = render_template(
+            "main/invoice_pdf.html",
+            invoice=invoice,
+            company_info=current_app.config.get('COMPANY_INFO', {})
+        )
+        
+        # Generate PDF from the template
+        pdf_file = BytesIO()
+        HTML(string=rendered_template).write_pdf(pdf_file)
+        pdf_file.seek(0)
+        
+        # Set the PDF filename
+        filename = f"invoice_{invoice.invoice_number.replace('/', '-')}.pdf"
+        
+        # Return the PDF as a download
+        return send_file(
+            pdf_file,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+    except ImportError:
+        # Handle case where WeasyPrint is not installed
+        flash("PDF generation requires the WeasyPrint library", "error")
+        return redirect(url_for('main.invoice_detail', id=id))
+    except Exception as e:
+        current_app.logger.exception("Error generating PDF")
+        flash(f"Error generating PDF: {str(e)}", "error")
+        return redirect(url_for('main.invoice_detail', id=id))
 
 
 @bp.route("/invoices/export-pdf")
 @login_required
 def invoices_export_pdf():
     """Export multiple invoices as PDF."""
-    # Here would be the logic to export multiple invoices
-    # For now, we'll just return a placeholder
-    
-    return jsonify({"message": "Batch PDF export not implemented yet"})
+    try:
+        # Import necessary libraries
+        from weasyprint import HTML
+        from io import BytesIO
+        import zipfile
+        import tempfile
+        
+        # Get selected invoice IDs from query parameters
+        invoice_ids = request.args.getlist('ids', type=int)
+        
+        # If no IDs provided, get recent invoices (limit to 50)
+        if not invoice_ids:
+            # Get recent invoices (issued or paid only)
+            invoices = Invoice.query.filter(
+                Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PAID])
+            ).order_by(Invoice.created_at.desc()).limit(50).all()
+        else:
+            # Get specified invoices
+            invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
+        
+        if not invoices:
+            flash("No invoices found to export", "error")
+            return redirect(url_for('main.invoices'))
+        
+        # Create a ZIP file in memory
+        memory_file = BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            # Add each invoice as a PDF
+            for invoice in invoices:
+                # Generate the PDF
+                pdf_buffer = BytesIO()
+                rendered_template = render_template(
+                    "main/invoice_pdf.html",
+                    invoice=invoice,
+                    company_info=current_app.config.get('COMPANY_INFO', {})
+                )
+                HTML(string=rendered_template).write_pdf(pdf_buffer)
+                pdf_buffer.seek(0)
+                
+                # Create a safe filename
+                safe_invoice_number = invoice.invoice_number.replace('/', '-').replace(' ', '_')
+                filename = f"invoice_{safe_invoice_number}.pdf"
+                
+                # Add to ZIP
+                zf.writestr(filename, pdf_buffer.getvalue())
+        
+        # Set the memory file pointer to the beginning
+        memory_file.seek(0)
+        
+        # Return the ZIP file as a download
+        return send_file(
+            memory_file,
+            as_attachment=True,
+            download_name="invoices_export.zip",
+            mimetype="application/zip"
+        )
+    except ImportError:
+        flash("PDF generation requires the WeasyPrint library", "error")
+        return redirect(url_for('main.invoices'))
+    except Exception as e:
+        current_app.logger.exception("Error during batch PDF export")
+        flash(f"Error during PDF export: {str(e)}", "error")
+        return redirect(url_for('main.invoices'))
 
 
 @bp.route("/invoices/export-csv")
 @login_required
 def invoices_export_csv():
     """Export invoices as CSV."""
-    # Here would be the logic to export invoices to CSV
-    # For now, we'll just return a placeholder
-    
-    return jsonify({"message": "CSV export not implemented yet"})
+    try:
+        import csv
+        from io import StringIO
+        from datetime import datetime
+        
+        # Get selected invoice IDs from query parameters
+        invoice_ids = request.args.getlist('ids', type=int)
+        
+        # If no IDs provided, get invoices based on filters
+        if not invoice_ids:
+            # Get filter parameters
+            status = request.args.get('status')
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            search_query = request.args.get('q')
+            
+            # Base query
+            query = Invoice.query
+            
+            # Apply filters
+            if status and status in [e.value for e in InvoiceStatus]:
+                query = query.filter(Invoice.status == InvoiceStatus(status))
+            
+            if start_date:
+                try:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                    query = query.filter(Invoice.issue_date >= start_date)
+                except ValueError:
+                    pass
+            
+            if end_date:
+                try:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                    query = query.filter(Invoice.issue_date <= end_date)
+                except ValueError:
+                    pass
+            
+            if search_query:
+                search = f"%{search_query}%"
+                query = query.filter(
+                    db.or_(
+                        Invoice.invoice_number.ilike(search),
+                        Invoice.billing_name.ilike(search),
+                        Invoice.billing_email.ilike(search)
+                    )
+                )
+            
+            # Get filtered invoices, limit to 1000 for performance
+            invoices = query.order_by(Invoice.created_at.desc()).limit(1000).all()
+        else:
+            # Get specified invoices
+            invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
+        
+        if not invoices:
+            flash("No invoices found to export", "error")
+            return redirect(url_for('main.invoices'))
+        
+        # Create CSV file in memory
+        csv_data = StringIO()
+        csv_writer = csv.writer(csv_data)
+        
+        # Write header
+        header = [
+            'Invoice Number', 'Status', 'Issue Date', 'Due Date', 'Customer/Billing Name',
+            'Customer Email', 'Subtotal Amount', 'Tax Amount', 'Total Amount', 'Created At'
+        ]
+        csv_writer.writerow(header)
+        
+        # Write data rows
+        for invoice in invoices:
+            row = [
+                invoice.invoice_number,
+                invoice.status.value,
+                invoice.issue_date.strftime('%Y-%m-%d') if invoice.issue_date else '',
+                invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else '',
+                invoice.customer.name if invoice.customer else invoice.billing_name,
+                invoice.customer.email if invoice.customer else invoice.billing_email,
+                f"{invoice.subtotal_amount:.2f}",
+                f"{invoice.tax_amount:.2f}" if invoice.tax_amount else '0.00',
+                f"{invoice.total_amount:.2f}",
+                invoice.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            ]
+            csv_writer.writerow(row)
+        
+        # Set the data pointer to the beginning
+        csv_data.seek(0)
+        
+        # Generate timestamp for filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Return CSV file
+        return Response(
+            csv_data.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment;filename=invoices_export_{timestamp}.csv"}
+        )
+        
+    except Exception as e:
+        current_app.logger.exception("Error during CSV export")
+        flash(f"Error exporting to CSV: {str(e)}", "error")
+        return redirect(url_for('main.invoices'))
 
 
 @bp.route("/orders/<int:id>")
@@ -305,10 +656,15 @@ def invoices_export_csv():
 def order_detail(id):
     """Order detail page."""
     order = Order.query.get_or_404(id)
+    
+    # Get related invoices
+    invoices = Invoice.query.filter_by(order_id=id).all()
+    
     return render_template(
         "main/order_detail.html",
         title=f"Užsakymas {order.order_number}",
-        order=order
+        order=order,
+        invoices=invoices
     )
 
 
@@ -355,101 +711,61 @@ def product_delete(id):
         return jsonify({"error": str(e)}), 500 
 
 
-@bp.route("/products/import-csv", methods=["POST"])
+@bp.route("/products/import-file", methods=["POST"])
 @login_required
-def product_import_csv():
-    """Import products from CSV file."""
+def product_import_file():
+    """Import products from file (CSV, Excel, etc.)."""
     if 'csv_file' not in request.files:
-        flash("No file part", "error")
+        flash("Nėra pasirinktas failas", "error")
         return redirect(url_for('main.products'))
     
     file = request.files['csv_file']
     if file.filename == '':
-        flash("No selected file", "error")
+        flash("Nėra pasirinktas failas", "error")
         return redirect(url_for('main.products'))
     
-    if file:
-        try:
-            # Get form parameters
-            encoding = request.form.get('encoding', 'utf-8')
-            delimiter = request.form.get('delimiter', ',')
-            has_header = 'has_header' in request.form
-            
-            # Convert delimiter from string representation
-            if delimiter == '\\t':
-                delimiter = '\t'
-            
-            # Process CSV
-            import pandas as pd
-            import io
-            
-            # Read CSV into pandas DataFrame
-            df = pd.read_csv(
-                io.StringIO(file.stream.read().decode(encoding)), 
-                delimiter=delimiter,
-                header=0 if has_header else None
-            )
-            
-            # Map column names if header exists, otherwise use default names
-            if has_header:
-                # Expected columns: sku, name, description, price, cost_price, quantity, category, barcode
-                required_columns = ['sku', 'name', 'price']
-                if not all(col in df.columns for col in required_columns):
-                    flash(f"CSV must contain required columns: {', '.join(required_columns)}", "error")
-                    return redirect(url_for('main.products'))
-            else:
-                # Assign default column names
-                df.columns = ['sku', 'name', 'description', 'price', 'cost_price', 
-                              'quantity', 'category', 'barcode'][:len(df.columns)]
-            
-            # Process each row
-            products_created = 0
-            products_updated = 0
-            
-            for _, row in df.iterrows():
-                # Check if product exists by SKU
-                product = Product.query.filter_by(sku=row['sku']).first()
-                
-                if product:
-                    # Update existing product
-                    product.name = row['name']
-                    if 'description' in row and pd.notna(row['description']):
-                        product.description = row['description']
-                    if 'price' in row and pd.notna(row['price']):
-                        product.price = row['price']
-                    if 'cost_price' in row and pd.notna(row['cost_price']):
-                        product.cost_price = row['cost_price']
-                    if 'quantity' in row and pd.notna(row['quantity']):
-                        product.quantity = row['quantity']
-                    if 'category' in row and pd.notna(row['category']):
-                        product.category = row['category']
-                    if 'barcode' in row and pd.notna(row['barcode']):
-                        product.barcode = row['barcode']
-                    
-                    products_updated += 1
-                else:
-                    # Create new product
-                    new_product = Product(
-                        sku=row['sku'],
-                        name=row['name'],
-                        description=row['description'] if 'description' in row and pd.notna(row['description']) else None,
-                        price=row['price'],
-                        cost_price=row['cost_price'] if 'cost_price' in row and pd.notna(row['cost_price']) else 0,
-                        quantity=row['quantity'] if 'quantity' in row and pd.notna(row['quantity']) else 0,
-                        category=row['category'] if 'category' in row and pd.notna(row['category']) else None,
-                        barcode=row['barcode'] if 'barcode' in row and pd.notna(row['barcode']) else None,
-                        is_active=True
-                    )
-                    db.session.add(new_product)
-                    products_created += 1
-            
-            db.session.commit()
-            flash(f"Successfully imported CSV: {products_created} products created, {products_updated} products updated", "success")
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Error importing CSV: {str(e)}", "error")
+    # Get file extension
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    
+    # Check allowed extensions
+    allowed_extensions = {'csv', 'xlsx', 'xls', 'tsv', 'txt'}
+    if file_ext not in allowed_extensions:
+        flash(f"Nepalaikomas failo formatas. Naudokite: {', '.join(allowed_extensions)}", "error")
+        return redirect(url_for('main.products'))
+    
+    try:
+        # Get form parameters for text files
+        encoding = request.form.get('encoding', '')
+        delimiter = request.form.get('delimiter', ',')
+        has_header = 'has_header' in request.form
         
+        # Fix tab delimiter if needed
+        if delimiter == '\\t':
+            delimiter = '\t'
+        
+        # Use our improved import service
+        from lt_crm.app.services.import_service import import_products
+        
+        # Import the products directly - this function handles parsing internally
+        result = import_products(
+            file_obj=file,
+            channel="web",
+            reference_id=None,
+            user_id=current_user.id,
+            encoding=encoding or None,
+            delimiter=delimiter,
+            has_header=has_header
+        )
+        
+        # Show success message
+        flash(f"Sėkmingai importuota: {result.get('created', 0)} sukurta, {result.get('updated', 0)} atnaujinta, {result.get('skipped', 0)} praleista", "success")
+        
+    except ValueError as e:
+        flash(f"Klaida importuojant: {str(e)}", "error")
+    except Exception as e:
+        current_app.logger.exception("Error importing products")
+        flash(f"Klaida importuojant produktus: {str(e)}", "error")
+    
     return redirect(url_for('main.products'))
 
 
@@ -458,13 +774,116 @@ def product_import_csv():
 def order_new():
     """Create a new order."""
     if request.method == "POST":
-        # Here would be the logic to create a new order
-        # For now, we'll just redirect to the orders page
-        flash("Order creation not implemented yet", "info")
-        return redirect(url_for('main.orders'))
+        try:
+            # Get form data
+            source = request.form.get("source")
+            status = request.form.get("status")
+            shipping_name = request.form.get("shipping_name")
+            shipping_email = request.form.get("shipping_email")
+            shipping_phone = request.form.get("shipping_phone")
+            shipping_address = request.form.get("shipping_address")
+            shipping_city = request.form.get("shipping_city")
+            shipping_postal_code = request.form.get("shipping_postal_code")
+            shipping_country = request.form.get("shipping_country")
+            shipping_notes = request.form.get("shipping_notes")
+            shipping_method = request.form.get("shipping_method")
+            shipping_amount = request.form.get("shipping_amount", type=float, default=0)
+            tax_amount = request.form.get("tax_amount", type=float, default=0)
+            
+            # Get product IDs, prices, and quantities
+            product_ids = request.form.getlist("product_ids[]")
+            prices = request.form.getlist("prices[]")
+            quantities = request.form.getlist("quantities[]")
+            
+            # Validate that there's at least one product
+            if not product_ids or not prices or not quantities or len(product_ids) == 0:
+                flash("You must add at least one product to the order", "error")
+                products = Product.query.order_by(Product.name).all()
+                return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
+            
+            # Calculate total amount
+            total_amount = sum(float(prices[i]) * int(quantities[i]) for i in range(len(product_ids)) if product_ids[i])
+            total_amount += shipping_amount + tax_amount
+            
+            # Generate order number (format: ORD-00001)
+            last_order = Order.query.order_by(Order.id.desc()).first()
+            order_num = 1
+            if last_order and last_order.order_number:
+                try:
+                    # Extract the numeric part of the last order number
+                    order_num = int(last_order.order_number.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    order_num = 1
+            
+            order_number = f"ORD-{order_num:05d}"
+            
+            # Create customer if needed (based on email)
+            customer = None
+            if shipping_email:
+                customer = Customer.query.filter_by(email=shipping_email).first()
+                if not customer:
+                    customer = Customer(
+                        name=shipping_name,
+                        email=shipping_email,
+                        phone=shipping_phone,
+                        address=shipping_address,
+                        city=shipping_city,
+                        country=shipping_country
+                    )
+                    db.session.add(customer)
+                    db.session.flush()  # Get ID without committing
+            
+            # Create the order
+            new_order = Order(
+                order_number=order_number,
+                customer_id=customer.id if customer else None,
+                status=OrderStatus(status),
+                total_amount=total_amount,
+                tax_amount=tax_amount,
+                shipping_amount=shipping_amount,
+                shipping_name=shipping_name,
+                shipping_email=shipping_email,
+                shipping_phone=shipping_phone,
+                shipping_address=shipping_address,
+                shipping_city=shipping_city,
+                shipping_postal_code=shipping_postal_code,
+                shipping_country=shipping_country,
+                shipping_method=shipping_method,
+                notes=shipping_notes
+            )
+            
+            db.session.add(new_order)
+            db.session.flush()  # Get the order ID without committing
+            
+            # Create order items
+            for i in range(len(product_ids)):
+                if not product_ids[i]:  # Skip empty rows
+                    continue
+                
+                product_id = int(product_ids[i])
+                price = float(prices[i])
+                quantity = int(quantities[i])
+                
+                order_item = OrderItem(
+                    order_id=new_order.id,
+                    product_id=product_id,
+                    quantity=quantity,
+                    price=price
+                )
+                db.session.add(order_item)
+            
+            db.session.commit()
+            flash(f"Order {order_number} created successfully", "success")
+            return redirect(url_for('main.order_detail', id=new_order.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error creating order: {str(e)}", "error")
+            products = Product.query.order_by(Product.name).all()
+            return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
     
     # Get all active products for the order form
-    products = Product.query.filter_by(is_active=True).order_by(Product.name).all()
+    products = Product.query.order_by(Product.name).all()
     
     return render_template(
         "main/order_form.html",
@@ -502,11 +921,30 @@ def order_update_status(id):
 @login_required
 def customer_detail(id):
     """Customer detail page."""
-    # This is a placeholder since we don't have a customer model implemented yet
-    # In a real app, you would fetch the customer from the database
-    # For now, we'll just redirect to the orders page
-    flash(f"Customer detail view not implemented yet (ID: {id})", "info")
-    return redirect(url_for('main.orders'))
+    customer = Customer.query.get_or_404(id)
+    
+    # Get related contacts
+    contacts = Contact.query.filter_by(customer_id=id).all()
+    
+    # Get related tasks
+    tasks = Task.query.filter_by(customer_id=id).order_by(Task.due_date).all()
+    
+    # Get customer's orders
+    orders = Order.query.filter_by(customer_id=id).order_by(Order.created_at.desc()).all()
+    
+    # Get customer's invoices
+    invoices = Invoice.query.filter_by(customer_id=id).order_by(Invoice.created_at.desc()).all()
+    
+    return render_template(
+        "main/customer_detail.html",
+        title=f"Klientas: {customer.name}",
+        customer=customer,
+        contacts=contacts,
+        tasks=tasks,
+        orders=orders,
+        invoices=invoices,
+        now=datetime.now()
+    )
 
 
 @bp.route("/invoices/new-from-order/<int:order_id>")
@@ -515,10 +953,13 @@ def invoice_new_from_order(order_id):
     """Create a new invoice from an order."""
     order = Order.query.get_or_404(order_id)
     
+    current_app.logger.info(f"Creating invoice for order ID: {order_id}, Number: {order.order_number}")
+    
     # Check if invoice already exists for this order
     existing_invoice = Invoice.query.filter_by(order_id=order_id).first()
     if existing_invoice:
-        flash(f"Invoice {existing_invoice.invoice_number} already exists for this order", "info")
+        current_app.logger.warning(f"Invoice {existing_invoice.invoice_number} already exists for order ID: {order_id}")
+        flash(f"Sąskaita faktūra #{existing_invoice.invoice_number} jau sukurta užsakymui #{order.order_number} (ID: {order_id})", "info")
         return redirect(url_for('main.invoice_detail', id=existing_invoice.id))
     
     try:
@@ -528,11 +969,18 @@ def invoice_new_from_order(order_id):
         if last_invoice and last_invoice.invoice_number:
             try:
                 # Extract the numeric part of the last invoice number
-                invoice_num = int(last_invoice.invoice_number.split('-')[-1]) + 1
-            except (ValueError, IndexError):
+                current_app.logger.info(f"Last invoice number: {last_invoice.invoice_number}")
+                parts = last_invoice.invoice_number.split('-')
+                if len(parts) >= 3:
+                    invoice_num = int(parts[-1]) + 1
+                else:
+                    current_app.logger.warning(f"Invalid invoice number format: {last_invoice.invoice_number}")
+            except (ValueError, IndexError) as e:
+                current_app.logger.error(f"Error parsing invoice number: {str(e)}")
                 invoice_num = 1
         
         invoice_number = f"LT-INV-{invoice_num:05d}"
+        current_app.logger.info(f"Generated new invoice number: {invoice_number}")
         
         # Calculate due date (14 days from today)
         today = datetime.now().date()
@@ -555,17 +1003,19 @@ def invoice_new_from_order(order_id):
             billing_postal_code=order.shipping_postal_code,
             billing_country=order.shipping_country,
             billing_email=order.shipping_email,
-            notes=f"Invoice created from order {order.order_number}"
+            notes=f"Sąskaita faktūra sukurta iš užsakymo {order.order_number}"
         )
         
         db.session.add(new_invoice)
         db.session.commit()
         
-        flash(f"Invoice {invoice_number} created successfully from order {order.order_number}", "success")
+        current_app.logger.info(f"Invoice {invoice_number} created successfully")
+        flash(f"Sąskaita faktūra {invoice_number} sėkmingai sukurta", "success")
         return redirect(url_for('main.invoice_detail', id=new_invoice.id))
     except Exception as e:
         db.session.rollback()
-        flash(f"Error creating invoice: {str(e)}", "error")
+        current_app.logger.exception(f"Error creating invoice: {str(e)}")
+        flash(f"Klaida kuriant sąskaitą faktūrą: {str(e)}", "error")
         return redirect(url_for('main.order_detail', id=order_id))
 
 
@@ -574,18 +1024,162 @@ def invoice_new_from_order(order_id):
 def invoice_new():
     """Create a new invoice."""
     if request.method == "POST":
-        # Here would be the logic to create a new invoice
-        # For now, we'll just redirect to the invoices page
-        flash("Invoice creation not implemented yet", "info")
-        return redirect(url_for('main.invoices'))
+        try:
+            # Get form data
+            invoice_number = request.form.get("invoice_number")
+            customer_id = request.form.get("customer_id")
+            status = request.form.get("status", InvoiceStatus.DRAFT.value)
+            issue_date_str = request.form.get("issue_date")
+            due_date_str = request.form.get("due_date")
+            
+            # Process dates
+            issue_date = None
+            if issue_date_str:
+                try:
+                    issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    flash("Invalid issue date format. Use YYYY-MM-DD.", "error")
+                    return redirect(url_for("main.invoice_new"))
+            
+            due_date = None
+            if due_date_str:
+                try:
+                    due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    flash("Invalid due date format. Use YYYY-MM-DD.", "error")
+                    return redirect(url_for("main.invoice_new"))
+            
+            # Get item data from form
+            product_ids = request.form.getlist("product_ids[]")
+            item_descriptions = request.form.getlist("item_descriptions[]")
+            item_quantities = request.form.getlist("item_quantities[]")
+            item_prices = request.form.getlist("item_prices[]")
+            item_tax_rates = request.form.getlist("item_tax_rates[]")
+            
+            # Calculate totals
+            subtotal = 0
+            tax_amount = 0
+            
+            for i in range(len(item_descriptions)):
+                if not item_descriptions[i]:  # Skip empty items
+                    continue
+                
+                quantity = int(item_quantities[i]) if item_quantities[i] else 1
+                price = float(item_prices[i]) if item_prices[i] else 0
+                tax_rate = float(item_tax_rates[i]) if item_tax_rates[i] else 0
+                
+                item_subtotal = quantity * price
+                item_tax = item_subtotal * (tax_rate / 100)
+                
+                subtotal += item_subtotal
+                tax_amount += item_tax
+            
+            total_amount = subtotal + tax_amount
+            
+            # Get billing information
+            billing_name = request.form.get("billing_name")
+            billing_address = request.form.get("billing_address")
+            billing_city = request.form.get("billing_city")
+            billing_postal_code = request.form.get("billing_postal_code")
+            billing_country = request.form.get("billing_country")
+            billing_email = request.form.get("billing_email")
+            company_code = request.form.get("company_code")
+            vat_code = request.form.get("vat_code")
+            payment_details = request.form.get("payment_details")
+            notes = request.form.get("notes")
+            
+            # Create new invoice
+            new_invoice = Invoice(
+                invoice_number=invoice_number,
+                customer_id=customer_id if customer_id else None,
+                status=InvoiceStatus(status),
+                issue_date=issue_date,
+                due_date=due_date,
+                subtotal_amount=subtotal,
+                tax_amount=tax_amount,
+                total_amount=total_amount,
+                billing_name=billing_name,
+                billing_address=billing_address,
+                billing_city=billing_city,
+                billing_postal_code=billing_postal_code,
+                billing_country=billing_country,
+                billing_email=billing_email,
+                company_code=company_code,
+                vat_code=vat_code,
+                payment_details=payment_details,
+                notes=notes
+            )
+            
+            db.session.add(new_invoice)
+            db.session.flush()  # Get the invoice ID
+            
+            # Add invoice items
+            for i in range(len(item_descriptions)):
+                if not item_descriptions[i]:  # Skip empty items
+                    continue
+                
+                quantity = int(item_quantities[i]) if item_quantities[i] else 1
+                price = float(item_prices[i]) if item_prices[i] else 0
+                tax_rate = float(item_tax_rates[i]) if item_tax_rates[i] else 0
+                
+                item_subtotal = quantity * price
+                
+                # Create invoice item using SQLAlchemy class from models
+                from lt_crm.app.models.invoice import InvoiceItem
+                
+                # Get product_id if available
+                product_id = int(product_ids[i]) if product_ids[i] else None
+                
+                invoice_item = InvoiceItem(
+                    invoice_id=new_invoice.id,
+                    product_id=product_id,
+                    description=item_descriptions[i],
+                    quantity=quantity,
+                    price=price,
+                    tax_rate=tax_rate,
+                    subtotal=item_subtotal
+                )
+                db.session.add(invoice_item)
+            
+            db.session.commit()
+            flash(f"Invoice {invoice_number} created successfully", "success")
+            return redirect(url_for("main.invoice_detail", id=new_invoice.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error creating invoice: {str(e)}", "error")
+            customers = Customer.query.order_by(Customer.name).all()
+            return render_template(
+                "main/invoice_form.html",
+                title="Nauja sąskaita faktūra",
+                customers=customers
+            )
     
     # Get all customers for the invoice form
     customers = Customer.query.order_by(Customer.name).all()
     
+    # Generate next invoice number (format: LT-INV-00001)
+    last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
+    invoice_num = 1
+    if last_invoice and last_invoice.invoice_number:
+        try:
+            # Extract the numeric part of the last invoice number
+            invoice_num = int(last_invoice.invoice_number.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            invoice_num = 1
+    
+    invoice_number = f"LT-INV-{invoice_num:05d}"
+    
+    # Calculate default due date (14 days from today)
+    today = datetime.now().date()
+    due_date = today + timedelta(days=14)
+    
     return render_template(
         "main/invoice_form.html",
         title="Nauja sąskaita faktūra",
-        customers=customers
+        customers=customers,
+        invoice_number=invoice_number,
+        issue_date=today.strftime("%Y-%m-%d"),
+        due_date=due_date.strftime("%Y-%m-%d")
     )
 
 
@@ -599,6 +1193,160 @@ def invoice_detail(id):
         "main/invoice_detail.html",
         title=f"Sąskaita {invoice.invoice_number}",
         invoice=invoice
+    )
+
+
+@bp.route("/invoices/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def invoice_edit(id):
+    """Edit an existing invoice."""
+    invoice = Invoice.query.get_or_404(id)
+    
+    # Only draft invoices can be edited
+    if invoice.status != InvoiceStatus.DRAFT:
+        flash("Tik juodraščio būsenos sąskaitos gali būti redaguojamos.", "error")
+        return redirect(url_for("main.invoice_detail", id=invoice.id))
+    
+    if request.method == "POST":
+        try:
+            # Get form data
+            invoice_number = request.form.get("invoice_number")
+            customer_id = request.form.get("customer_id")
+            status = request.form.get("status", InvoiceStatus.DRAFT.value)
+            issue_date_str = request.form.get("issue_date")
+            due_date_str = request.form.get("due_date")
+            
+            # Process dates
+            issue_date = None
+            if issue_date_str:
+                try:
+                    issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    flash("Invalid issue date format. Use YYYY-MM-DD.", "error")
+                    return redirect(url_for("main.invoice_edit", id=invoice.id))
+            
+            due_date = None
+            if due_date_str:
+                try:
+                    due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    flash("Invalid due date format. Use YYYY-MM-DD.", "error")
+                    return redirect(url_for("main.invoice_edit", id=invoice.id))
+            
+            # Get item data from form
+            product_ids = request.form.getlist("product_ids[]")
+            item_descriptions = request.form.getlist("item_descriptions[]")
+            item_quantities = request.form.getlist("item_quantities[]")
+            item_prices = request.form.getlist("item_prices[]")
+            item_tax_rates = request.form.getlist("item_tax_rates[]")
+            
+            # Calculate totals
+            subtotal = 0
+            tax_amount = 0
+            
+            for i in range(len(item_descriptions)):
+                if not item_descriptions[i]:  # Skip empty items
+                    continue
+                
+                quantity = int(item_quantities[i]) if item_quantities[i] else 1
+                price = float(item_prices[i]) if item_prices[i] else 0
+                tax_rate = float(item_tax_rates[i]) if item_tax_rates[i] else 0
+                
+                item_subtotal = quantity * price
+                item_tax = item_subtotal * (tax_rate / 100)
+                
+                subtotal += item_subtotal
+                tax_amount += item_tax
+            
+            total_amount = subtotal + tax_amount
+            
+            # Get billing information
+            billing_name = request.form.get("billing_name")
+            billing_address = request.form.get("billing_address")
+            billing_city = request.form.get("billing_city")
+            billing_postal_code = request.form.get("billing_postal_code")
+            billing_country = request.form.get("billing_country")
+            billing_email = request.form.get("billing_email")
+            company_code = request.form.get("company_code")
+            vat_code = request.form.get("vat_code")
+            payment_details = request.form.get("payment_details")
+            notes = request.form.get("notes")
+            
+            # Update invoice
+            invoice.invoice_number = invoice_number
+            invoice.customer_id = customer_id if customer_id else None
+            invoice.status = InvoiceStatus(status)
+            invoice.issue_date = issue_date
+            invoice.due_date = due_date
+            invoice.subtotal_amount = subtotal
+            invoice.tax_amount = tax_amount
+            invoice.total_amount = total_amount
+            invoice.billing_name = billing_name
+            invoice.billing_address = billing_address
+            invoice.billing_city = billing_city
+            invoice.billing_postal_code = billing_postal_code
+            invoice.billing_country = billing_country
+            invoice.billing_email = billing_email
+            invoice.company_code = company_code
+            invoice.vat_code = vat_code
+            invoice.payment_details = payment_details
+            invoice.notes = notes
+            
+            # Delete existing items
+            InvoiceItem.query.filter_by(invoice_id=invoice.id).delete()
+            
+            # Add updated invoice items
+            for i in range(len(item_descriptions)):
+                if not item_descriptions[i]:  # Skip empty items
+                    continue
+                
+                quantity = int(item_quantities[i]) if item_quantities[i] else 1
+                price = float(item_prices[i]) if item_prices[i] else 0
+                tax_rate = float(item_tax_rates[i]) if item_tax_rates[i] else 0
+                
+                item_subtotal = quantity * price
+                
+                # Get product_id if available
+                product_id = int(product_ids[i]) if product_ids[i] else None
+                
+                # Create invoice item
+                invoice_item = InvoiceItem(
+                    invoice_id=invoice.id,
+                    product_id=product_id,
+                    description=item_descriptions[i],
+                    quantity=quantity,
+                    price=price,
+                    tax_rate=tax_rate,
+                    subtotal=item_subtotal
+                )
+                db.session.add(invoice_item)
+            
+            db.session.commit()
+            flash(f"Sąskaita {invoice_number} atnaujinta sėkmingai", "success")
+            return redirect(url_for("main.invoice_detail", id=invoice.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Klaida atnaujinant sąskaitą: {str(e)}", "error")
+            customers = Customer.query.order_by(Customer.name).all()
+            return render_template(
+                "main/invoice_form.html",
+                title="Redaguoti sąskaitą faktūrą",
+                invoice=invoice,
+                customers=customers,
+                edit_mode=True
+            )
+    
+    # Get all customers for the invoice form
+    customers = Customer.query.order_by(Customer.name).all()
+    
+    return render_template(
+        "main/invoice_form.html",
+        title="Redaguoti sąskaitą faktūrą",
+        invoice=invoice,
+        customers=customers,
+        edit_mode=True,
+        issue_date=invoice.issue_date.strftime("%Y-%m-%d") if invoice.issue_date else "",
+        due_date=invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else ""
     )
 
 
@@ -621,7 +1369,267 @@ def invoice_issue(id):
             invoice.issue_date = datetime.now().date()
         
         db.session.commit()
-        return jsonify({"message": "Invoice issued successfully"}), 200
+        
+        # Return the updated status HTML for HTMX to update
+        status_html = f"""
+        <span id="invoice-status" class="badge badge-info">
+            Išrašyta
+        </span>
+        """
+        
+        return status_html
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500 
+
+
+@bp.route("/api/products/search")
+@login_required
+def product_search_api():
+    """Search products API for dropdowns."""
+    query = request.args.get('q', '')
+    limit = request.args.get('limit', 10, type=int)
+    
+    # Search products by name, SKU, or barcode
+    if query:
+        products = Product.query.filter(
+            (Product.name.ilike(f'%{query}%')) | 
+            (Product.sku.ilike(f'%{query}%')) | 
+            (Product.barcode.ilike(f'%{query}%'))
+        ).limit(limit).all()
+    else:
+        products = Product.query.order_by(Product.name).limit(limit).all()
+    
+    # Format products for select2 dropdown
+    results = [{
+        'id': product.id,
+        'text': f"{product.name} ({product.sku})",
+        'sku': product.sku,
+        'price': float(product.price_final),
+        'description': product.name
+    } for product in products]
+    
+    return jsonify({
+        'results': results
+    }) 
+
+
+@bp.route("/shipments")
+@login_required
+def shipments():
+    """Shipments list page."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    # Base query
+    query = Shipment.query
+    
+    # Apply filters
+    if request.args.get('status'):
+        status = request.args.get('status')
+        if status in [s.value for s in ShipmentStatus]:
+            query = query.filter(Shipment.status == status)
+    
+    if request.args.get('q'):
+        search = f"%{request.args.get('q')}%"
+        query = query.filter(
+            (Shipment.shipment_number.ilike(search)) | 
+            (Shipment.supplier.ilike(search))
+        )
+    
+    # Execute query with pagination
+    pagination = query.order_by(Shipment.created_at.desc()).paginate(page=page, per_page=per_page)
+    shipments_list = pagination.items
+    
+    return render_template(
+        "main/shipments.html",
+        title="Siuntos",
+        shipments=shipments_list,
+        pagination=pagination,
+        ShipmentStatus=ShipmentStatus
+    )
+
+
+@bp.route("/shipments/new", methods=["GET", "POST"])
+@login_required
+def shipment_new():
+    """Create a new shipment."""
+    form = ShipmentForm()
+    
+    if form.validate_on_submit():
+        # Generate shipment number if not provided
+        if not form.shipment_number.data:
+            last_shipment = Shipment.query.order_by(Shipment.id.desc()).first()
+            shipment_num = 1
+            if last_shipment and last_shipment.shipment_number:
+                try:
+                    # Extract the numeric part of the last shipment number
+                    shipment_num = int(last_shipment.shipment_number.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    shipment_num = 1
+            
+            form.shipment_number.data = f"SHIP-{shipment_num:05d}"
+        
+        # Create the shipment
+        shipment = Shipment(
+            shipment_number=form.shipment_number.data,
+            supplier=form.supplier.data,
+            expected_date=form.expected_date.data,
+            notes=form.notes.data,
+            status=ShipmentStatus(form.status.data),
+            user_id=current_user.id
+        )
+        
+        db.session.add(shipment)
+        db.session.commit()
+        
+        flash(f"Siunta {shipment.shipment_number} sėkmingai sukurta", "success")
+        return redirect(url_for('main.shipment_edit', id=shipment.id))
+    
+    return render_template(
+        "main/shipment_form.html",
+        title="Nauja siunta",
+        form=form,
+        shipment=None,
+        ShipmentStatus=ShipmentStatus
+    )
+
+
+@bp.route("/shipments/<int:id>", methods=["GET"])
+@login_required
+def shipment_detail(id):
+    """Shipment detail page."""
+    shipment = Shipment.query.get_or_404(id)
+    
+    return render_template(
+        "main/shipment_detail.html",
+        title=f"Siunta {shipment.shipment_number}",
+        shipment=shipment,
+        ShipmentStatus=ShipmentStatus
+    )
+
+
+@bp.route("/shipments/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def shipment_edit(id):
+    """Edit shipment page."""
+    shipment = Shipment.query.get_or_404(id)
+    form = ShipmentForm(obj=shipment)
+    
+    if form.validate_on_submit():
+        # Update shipment data
+        form.populate_obj(shipment)
+        shipment.status = ShipmentStatus(form.status.data)
+        
+        db.session.add(shipment)
+        db.session.commit()
+        
+        flash(f"Siunta {shipment.shipment_number} sėkmingai atnaujinta", "success")
+        return redirect(url_for('main.shipment_detail', id=shipment.id))
+    
+    # Get items for this shipment
+    items = ShipmentItem.query.filter_by(shipment_id=id).all()
+    
+    return render_template(
+        "main/shipment_form.html",
+        title=f"Redaguoti siuntą {shipment.shipment_number}",
+        form=form,
+        shipment=shipment,
+        items=items,
+        ShipmentStatus=ShipmentStatus
+    )
+
+
+@bp.route("/shipments/<int:id>/add-item", methods=["POST"])
+@login_required
+def shipment_add_item(id):
+    """Add an item to a shipment."""
+    shipment = Shipment.query.get_or_404(id)
+    
+    # Check if we can modify the shipment
+    if shipment.status == ShipmentStatus.RECEIVED:
+        flash("Negalima keisti jau gautos siuntos", "error")
+        return redirect(url_for('main.shipment_detail', id=shipment.id))
+    
+    # Get product info
+    product_id = request.form.get('product_id')
+    if not product_id:
+        flash("Nepasirinktas produktas", "error")
+        return redirect(url_for('main.shipment_edit', id=shipment.id))
+    
+    product = Product.query.get(product_id)
+    if not product:
+        flash("Produktas nerastas", "error")
+        return redirect(url_for('main.shipment_edit', id=shipment.id))
+    
+    # Create shipment item
+    quantity = request.form.get('quantity', type=int, default=1)
+    cost_price = request.form.get('cost_price', type=float)
+    notes = request.form.get('notes')
+    
+    item = ShipmentItem(
+        shipment_id=shipment.id,
+        product_id=product.id,
+        quantity=quantity,
+        cost_price=cost_price,
+        notes=notes
+    )
+    
+    db.session.add(item)
+    db.session.commit()
+    
+    flash(f"Produktas {product.name} pridėtas į siuntą", "success")
+    return redirect(url_for('main.shipment_edit', id=shipment.id))
+
+
+@bp.route("/shipments/<int:id>/remove-item/<int:item_id>", methods=["DELETE"])
+@login_required
+def shipment_remove_item(id, item_id):
+    """Remove an item from a shipment."""
+    shipment = Shipment.query.get_or_404(id)
+    item = ShipmentItem.query.get_or_404(item_id)
+    
+    # Check if the item belongs to this shipment
+    if item.shipment_id != shipment.id:
+        return jsonify({"error": "Item does not belong to this shipment"}), 400
+    
+    # Check if we can modify the shipment
+    if shipment.status == ShipmentStatus.RECEIVED:
+        return jsonify({"error": "Cannot modify a received shipment"}), 400
+    
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return "", 204  # No content, successful deletion
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/shipments/<int:id>/receive", methods=["PUT"])
+@login_required
+def shipment_receive(id):
+    """Mark a shipment as received and update stock levels."""
+    shipment = Shipment.query.get_or_404(id)
+    
+    # Check if shipment is already received
+    if shipment.status == ShipmentStatus.RECEIVED:
+        return jsonify({"error": "Shipment is already received"}), 400
+    
+    # Check if shipment has items
+    if shipment.shipment_items.count() == 0:
+        return jsonify({"error": "Shipment has no items"}), 400
+    
+    try:
+        # Process the shipment arrival
+        shipment.receive_shipment()
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Shipment received successfully",
+            "status": shipment.status.value,
+            "arrival_date": shipment.arrival_date.strftime('%Y-%m-%d') if shipment.arrival_date else None
+        })
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500 

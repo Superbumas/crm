@@ -1,0 +1,5 @@
+sku,name,description_html,barcode,quantity,price_final,price_old,category,manufacturer,model
+P_50002,Prototipinis produktas testams,<p>Produkto aprašymas su <strong>formatavimu</strong></p>,,50,49.99,59.99,Testinė kategorija,Gamintojas,T-500
+P_50003,Produktas su nuolaida,<p>Šis produktas parduodamas su nuolaida</p>,,30,25.50,32.00,Akcijos,Gamintojas,A-100
+P_50004,Brangus produktas,<p>Aukštos kokybės brangus produktas</p>,,10,199.99,,Premium,Premium gamintojas,LUX-1
+P_50005,Produktas be likučio,<p>Šio produkto šiuo metu nėra sandėlyje</p>,,0,75.00,,Standartinė,Gamintojas,S-200 

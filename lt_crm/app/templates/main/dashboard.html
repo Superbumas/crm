@@ -48,10 +48,16 @@
         </div>
     </div>
 
-    <!-- Sales Chart -->
+    <!-- Sales Charts Section -->
     <div class="card bg-base-100 shadow-xl lg:col-span-2">
         <div class="card-body">
-            <h2 class="card-title text-primary">Pardavimų statistika</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title text-primary">Pardavimų statistika</h2>
+                <div class="tabs tabs-boxed">
+                    <a class="tab tab-active" id="chartMonthly">Mėnesio</a>
+                    <a class="tab" id="chartWeekly">Savaitės</a>
+                </div>
+            </div>
             <div style="height: 250px; position: relative;">
                 <canvas id="salesChart"></canvas>
             </div>
@@ -81,9 +87,12 @@
                                 <div class="text-xs opacity-60">{{ product.sku }}</div>
                             </td>
                             <td>
-                                <span class="badge {{ 'badge-error' if product.quantity <= 5 else 'badge-warning' }}">
-                                    {{ product.quantity }} vnt.
-                                </span>
+                                <div class="flex items-center">
+                                    <span class="badge {{ 'badge-error' if product.quantity <= 5 else 'badge-warning' }} mr-2">
+                                        {{ product.quantity }} vnt.
+                                    </span>
+                                    <progress class="progress {{ 'progress-error' if product.quantity <= 5 else 'progress-warning' }}" value="{{ product.quantity }}" max="10"></progress>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -100,6 +109,49 @@
             {% endif %}
             <div class="card-actions justify-end mt-4">
                 <a href="{{ url_for('main.products') }}?stock=low" class="btn btn-sm btn-primary">Peržiūrėti visus</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Chart -->
+    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1">
+                    <h2 class="card-title text-primary mb-4">Užsakymų būsenos</h2>
+                    <div style="height: 200px; position: relative;" class="mx-auto">
+                        <canvas id="orderStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <h2 class="card-title text-primary mb-4">Statistika</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="stats shadow">
+                            <div class="stat">
+                                <div class="stat-title">Vidutinė užsakymo vertė</div>
+                                <div class="stat-value">{{ (monthly_sales / new_orders) if new_orders > 0 else 0|euro }}</div>
+                            </div>
+                        </div>
+                        <div class="stats shadow">
+                            <div class="stat">
+                                <div class="stat-title">Užsakymų per mėnesį</div>
+                                <div class="stat-value">{{ new_orders|default(0) }}</div>
+                            </div>
+                        </div>
+                        <div class="stats shadow">
+                            <div class="stat">
+                                <div class="stat-title">Neišsiųsta</div>
+                                <div class="stat-value">{{ pending_orders|default(0) }}</div>
+                            </div>
+                        </div>
+                        <div class="stats shadow">
+                            <div class="stat">
+                                <div class="stat-title">Pardavimai</div>
+                                <div class="stat-value">{{ monthly_sales|default(0)|euro }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -135,7 +187,13 @@
                                         {% elif order.status.value == 'shipped' %}badge-info
                                         {% elif order.status.value == 'cancelled' %}badge-error
                                         {% else %}badge-ghost{% endif %}">
-                                        {{ order.status.value }}
+                                        {% if order.status.value == 'new' %}Naujas
+                                        {% elif order.status.value == 'paid' %}Apmokėtas
+                                        {% elif order.status.value == 'packed' %}Supakuotas
+                                        {% elif order.status.value == 'shipped' %}Išsiųstas
+                                        {% elif order.status.value == 'returned' %}Grąžintas
+                                        {% elif order.status.value == 'cancelled' %}Atšauktas
+                                        {% else %}{{ order.status.value }}{% endif %}
                                     </span>
                                 </td>
                                 <td>
@@ -168,40 +226,243 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Sample data - this would be replaced with dynamic data from backend
+    // Variables for chart configuration
+    const primaryColor = 'rgba(0, 95, 184, 1)';
+    const primaryColorLight = 'rgba(0, 95, 184, 0.2)';
+    const secondaryColor = 'rgba(38, 132, 255, 1)';
+    const secondaryColorLight = 'rgba(38, 132, 255, 0.2)';
+    
+    // Sales chart data
     const labels = ['Sau', 'Vas', 'Kov', 'Bal', 'Geg', 'Bir', 'Lie', 'Rgp', 'Rgs', 'Spa', 'Lap', 'Gru'];
     const salesData = {{ sales_data|default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])|tojson }};
     
+    // Weekly data (simplified for demo - would be dynamic in real implementation)
+    const weeklyLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+    const weeklySalesData = [
+        Math.round(salesData[new Date().getMonth()] * 0.2),
+        Math.round(salesData[new Date().getMonth()] * 0.14),
+        Math.round(salesData[new Date().getMonth()] * 0.17),
+        Math.round(salesData[new Date().getMonth()] * 0.16),
+        Math.round(salesData[new Date().getMonth()] * 0.13),
+        Math.round(salesData[new Date().getMonth()] * 0.1),
+        Math.round(salesData[new Date().getMonth()] * 0.1)
+    ];
+    
+    // Sales chart
     const ctx = document.getElementById('salesChart').getContext('2d');
-    new Chart(ctx, {
+    const salesChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Pardavimai (EUR)',
                 data: salesData,
-                backgroundColor: 'rgba(0, 95, 184, 0.2)',
-                borderColor: 'rgba(0, 95, 184, 1)',
+                backgroundColor: primaryColorLight,
+                borderColor: primaryColor,
                 borderWidth: 2,
                 tension: 0.3,
-                fill: true
+                fill: true,
+                pointBackgroundColor: primaryColor,
+                pointRadius: 4,
+                pointHoverRadius: 6
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' €';
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    },
                     ticks: {
+                        padding: 10,
                         callback: function(value) {
                             return value + ' €';
                         }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        padding: 10
                     }
                 }
             }
         }
     });
+    
+    // Tab functionality for switching between charts
+    document.getElementById('chartMonthly').addEventListener('click', function() {
+        this.classList.add('tab-active');
+        document.getElementById('chartWeekly').classList.remove('tab-active');
+        
+        salesChart.data.labels = labels;
+        salesChart.data.datasets[0].data = salesData;
+        salesChart.update();
+    });
+    
+    document.getElementById('chartWeekly').addEventListener('click', function() {
+        this.classList.add('tab-active');
+        document.getElementById('chartMonthly').classList.remove('tab-active');
+        
+        salesChart.data.labels = weeklyLabels;
+        salesChart.data.datasets[0].data = weeklySalesData;
+        salesChart.update();
+    });
+    
+    // Get status counts from backend
+    const statusCounts = {{ status_counts|tojson }};
+    
+    // Status translations and colors
+    const statusLabels = {
+        'new': 'Nauji',
+        'paid': 'Apmokėti',
+        'packed': 'Supakuoti',
+        'shipped': 'Išsiųsti',
+        'returned': 'Grąžintas',
+        'cancelled': 'Atšaukti'
+    };
+    
+    const statusColors = {
+        'new': primaryColor,
+        'paid': '#10b981', // success
+        'packed': '#ff9800', // warning
+        'shipped': '#06b6d4', // info
+        'cancelled': '#ef4444' // error
+    };
+    
+    // Order status chart
+    const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Nauji', 'Apmokėti', 'Supakuoti', 'Išsiųsti', 'Atšaukti'],
+            datasets: [{
+                data: [
+                    statusCounts.new || 0, 
+                    statusCounts.paid || 0, 
+                    statusCounts.packed || 0, 
+                    statusCounts.shipped || 0, 
+                    statusCounts.cancelled || 0
+                ],
+                backgroundColor: [
+                    statusColors.new,
+                    statusColors.paid,
+                    statusColors.packed,
+                    statusColors.shipped,
+                    statusColors.cancelled
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 10,
+                        boxWidth: 10,
+                        font: {
+                            size: 10
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map(function(label, i) {
+                                    const meta = chart.getDatasetMeta(0);
+                                    const style = meta.controller.getStyle(i);
+                                    const value = data.datasets[0].data[i] || 0;
+                                    
+                                    return {
+                                        text: `${label}: ${value}`,
+                                        fillStyle: style.backgroundColor,
+                                        strokeStyle: style.borderColor,
+                                        lineWidth: style.borderWidth,
+                                        hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    
+    // Add center text to doughnut chart
+    const totalOrders = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+    
+    // Only draw the center label if the canvas is still available
+    if (document.getElementById('orderStatusChart')) {
+        const orderStatusChartCenter = {
+            id: 'centerText',
+            afterDraw: function(chart) {
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
+                
+                ctx.restore();
+                const fontSize = (height / 300).toFixed(2) * 16;
+                ctx.font = fontSize + 'px Arial';
+                ctx.textBaseline = 'middle';
+                
+                const text = totalOrders;
+                const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                const textY = height / 2;
+                
+                ctx.fillStyle = '#333';
+                ctx.fillText(text, textX, textY - fontSize / 2);
+                
+                ctx.font = (fontSize * 0.6) + 'px Arial';
+                const subText = 'Užsakymai';
+                const subTextX = Math.round((width - ctx.measureText(subText).width) / 2);
+                ctx.fillText(subText, subTextX, textY + fontSize / 2);
+                ctx.save();
+            }
+        };
+        
+        Chart.register(orderStatusChartCenter);
+    }
 });
 </script>
 {% endblock %} 

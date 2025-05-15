@@ -53,13 +53,29 @@ def get_token_from_header():
     
     return auth_header.split(" ")[1]
 
+def get_token_from_form():
+    """Extract token from form data."""
+    # Check for token in form data (for POST requests)
+    if request.method == "POST":
+        # Check for JSON payload
+        if request.is_json:
+            json_data = request.get_json()
+            if json_data and "jwt_token" in json_data:
+                return json_data.get("jwt_token")
+        
+        # Check for form data
+        return request.form.get("jwt_token")
+    
+    return None
+
 # Decorators
 def token_required(token_type="access"):
     """Decorator to check if a valid JWT token is provided."""
     def decorator(f):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
-            token = get_token_from_header()
+            # Try to get token from header first, then from form data
+            token = get_token_from_header() or get_token_from_form()
             
             if not token:
                 return {"message": "Token is missing"}, 401

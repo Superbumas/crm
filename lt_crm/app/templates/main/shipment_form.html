@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">{{ title }}</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.shipments') }}">Siuntos</a></li>
+                <li>{{ "Redaguoti" if shipment else "Nauja" }}</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="flex space-x-2 mt-4 md:mt-0">
+        {% if shipment %}
+        <a href="{{ url_for('main.shipment_detail', id=shipment.id) }}" class="btn btn-outline">Grįžti</a>
+        {% else %}
+        <a href="{{ url_for('main.shipments') }}" class="btn btn-outline">Grįžti</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('main.shipment_edit', id=shipment.id) if shipment else url_for('main.shipment_new') }}">
+    <!-- CSRF token disabled -->
+    
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <!-- Shipment Information -->
+        <div class="lg:col-span-3">
+            <div class="card bg-base-100 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-lg mb-2">Pagrindinė informacija</h2>
+                    <div class="divider my-0"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label py-1">
+                                <span class="label-text">Siuntos numeris</span>
+                            </label>
+                            <input type="text" name="shipment_number" value="{{ form.shipment_number.data or '' }}" 
+                                   required class="input input-bordered input-sm w-full" 
+                                   placeholder="SHIP-00001 (palikus tuščią, bus sugeneruotas)" />
+                            {% if form.shipment_number.errors %}
+                            <div class="text-error text-xs mt-1">
+                                {% for error in form.shipment_number.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label py-1">
+                                <span class="label-text">Tiekėjas</span>
+                            </label>
+                            <input type="text" name="supplier" value="{{ form.supplier.data or '' }}" 
+                                   class="input input-bordered input-sm w-full" 
+                                   placeholder="Tiekėjo pavadinimas" />
+                            {% if form.supplier.errors %}
+                            <div class="text-error text-xs mt-1">
+                                {% for error in form.supplier.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label py-1">
+                                <span class="label-text">Numatoma gavimo data</span>
+                            </label>
+                            <input type="date" name="expected_date" 
+                                   value="{% if form.expected_date.data %}{{ form.expected_date.data.strftime('%Y-%m-%d') }}{% endif %}" 
+                                   class="input input-bordered input-sm w-full" />
+                            {% if form.expected_date.errors %}
+                            <div class="text-error text-xs mt-1">
+                                {% for error in form.expected_date.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label py-1">
+                                <span class="label-text">Būsena</span>
+                            </label>
+                            <select name="status" class="select select-bordered select-sm w-full">
+                                {% for value, label in form.status.choices %}
+                                <option value="{{ value }}" {% if form.status.data == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.status.errors %}
+                            <div class="text-error text-xs mt-1">
+                                {% for error in form.status.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-control mt-2">
+                        <label class="label py-1">
+                            <span class="label-text">Pastabos</span>
+                        </label>
+                        <textarea name="notes" class="textarea textarea-bordered textarea-sm h-16" 
+                                  placeholder="Pastabos apie siuntą">{{ form.notes.data or '' }}</textarea>
+                        {% if form.notes.errors %}
+                        <div class="text-error text-xs mt-1">
+                            {% for error in form.notes.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shipment Items (only if editing) -->
+            {% if shipment %}
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <h2 class="card-title">Prekės</h2>
+                        <button type="button" id="add-item-button" class="btn btn-primary btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Pridėti prekę
+                        </button>
+                    </div>
+                    <div class="divider mt-0"></div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>Prekė</th>
+                                    <th class="text-right">Kiekis</th>
+                                    <th class="text-right">Savikaina</th>
+                                    <th>Pastabos</th>
+                                    <th>Veiksmai</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-table-body">
+                                {% if items %}
+                                    {% for item in items %}
+                                    <tr data-item-id="{{ item.id }}">
+                                        <td>
+                                            <a href="{{ url_for('main.product_detail', id=item.product.id) }}" class="font-medium hover:underline">
+                                                {{ item.product.name }}
+                                            </a>
+                                            <div class="text-xs text-gray-500">{{ item.product.sku }}</div>
+                                        </td>
+                                        <td class="text-right">{{ item.quantity }}</td>
+                                        <td class="text-right">{% if item.cost_price %}{{ item.cost_price|euro }}{% else %}-{% endif %}</td>
+                                        <td>{{ item.notes or '-' }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-xs btn-error remove-item-btn" data-item-id="{{ item.id }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr id="no-items-row">
+                                        <td colspan="5" class="text-center py-4">Siuntoje nėra prekių</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Submit Card -->
+        <div class="card bg-base-100 shadow-xl h-min sticky top-4">
+            <div class="card-body">
+                <h2 class="card-title">Veiksmai</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="space-y-4">
+                    <button type="submit" class="btn btn-primary btn-lg w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {{ "Atnaujinti" if shipment else "Sukurti" }} siuntą
+                    </button>
+                    
+                    {% if shipment and shipment.status.value == 'pending' %}
+                    <button type="button" id="receive-shipment-btn" class="btn btn-success w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Pažymėti kaip gautą
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Product Search Modal -->
+{% if shipment %}
+<input type="checkbox" id="product-search-modal" class="modal-toggle" />
+<div class="modal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <h3 class="font-bold text-lg mb-4">Pasirinkite prekę</h3>
+        
+        <div class="form-control mb-4">
+            <div class="input-group">
+                <input type="text" id="modal-product-search" placeholder="Ieškoti prekių..." class="input input-bordered w-full" />
+                <button type="button" id="modal-search-btn" class="btn btn-square">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div id="loading-products" class="text-center py-4">
+            <span class="loading loading-spinner loading-lg"></span>
+        </div>
+        
+        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto"></div>
+        
+        <div class="modal-action">
+            <label for="product-search-modal" class="btn">Uždaryti</label>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<input type="checkbox" id="add-item-modal" class="modal-toggle" />
+<div class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Pridėti prekę į siuntą</h3>
+        
+        <form id="add-item-form" method="POST" action="{{ url_for('main.shipment_add_item', id=shipment.id) }}">
+            <input type="hidden" id="product_id" name="product_id" />
+            
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Prekė</span>
+                </label>
+                <input type="text" id="product_name" class="input input-bordered" readonly />
+                <input type="text" id="product_sku" class="input input-bordered mt-2 text-sm opacity-70" readonly />
+            </div>
+            
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Kiekis</span>
+                </label>
+                <input type="number" name="quantity" class="input input-bordered" value="1" min="1" required />
+            </div>
+            
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Savikaina</span>
+                </label>
+                <input type="number" name="cost_price" class="input input-bordered" step="0.01" min="0" placeholder="0.00" />
+            </div>
+            
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Pastabos</span>
+                </label>
+                <input type="text" name="notes" class="input input-bordered" />
+            </div>
+            
+            <div class="modal-action">
+                <label for="add-item-modal" class="btn">Atšaukti</label>
+                <button type="submit" class="btn btn-primary">Pridėti</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// This script handles the shipment form functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Element references
+    const addItemBtn = document.getElementById('add-item-button');
+    const modalSearchBtn = document.getElementById('modal-search-btn');
+    const modalProductSearch = document.getElementById('modal-product-search');
+    const productGrid = document.getElementById('product-grid');
+    const loadingProducts = document.getElementById('loading-products');
+    const receiveShipmentBtn = document.getElementById('receive-shipment-btn');
+    
+    // Setup event listeners for remove item buttons
+    setupRemoveItemBtns();
+    
+    // Add item button event
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', openProductModal);
+    }
+    
+    // Modal search button event
+    if (modalSearchBtn) {
+        modalSearchBtn.addEventListener('click', function() {
+            const query = modalProductSearch.value || '';
+            searchProducts(query);
+        });
+        
+        // Search on Enter key press
+        if (modalProductSearch) {
+            modalProductSearch.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = modalProductSearch.value || '';
+                    searchProducts(query);
+                    e.preventDefault();
+                }
+            });
+        }
+    }
+    
+    // Receive shipment button
+    if (receiveShipmentBtn) {
+        receiveShipmentBtn.addEventListener('click', receiveShipment);
+    }
+    
+    // Functions
+    function openProductModal() {
+        if (productGrid) productGrid.innerHTML = '';
+        if (loadingProducts) loadingProducts.style.display = 'block';
+        document.getElementById('product-search-modal').checked = true;
+        if (modalProductSearch) modalProductSearch.value = '';
+        searchProducts('');
+    }
+    
+    function searchProducts(query) {
+        if (!productGrid || !loadingProducts) return;
+        
+        loadingProducts.style.display = 'block';
+        productGrid.innerHTML = '';
+        
+        fetch(`/api/products/search?q=${encodeURIComponent(query)}&limit=50`)
+            .then(response => response.json())
+            .then(data => {
+                loadingProducts.style.display = 'none';
+                
+                if (!data.results || data.results.length === 0) {
+                    productGrid.innerHTML = '<div class="col-span-full text-center py-4">Nerasta prekių atitinkančių paiešką</div>';
+                    return;
+                }
+                
+                data.results.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'card card-compact bg-base-100 border hover:shadow-md cursor-pointer';
+                    productCard.innerHTML = `
+                        <div class="card-body">
+                            <h3 class="card-title text-sm">${product.description}</h3>
+                            <p class="text-xs text-gray-500">SKU: ${product.sku}</p>
+                            <p class="font-bold">${product.price.toFixed(2)} €</p>
+                        </div>
+                    `;
+                    
+                    productCard.addEventListener('click', function() {
+                        selectProduct(product);
+                    });
+                    
+                    productGrid.appendChild(productCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading products:', error);
+                loadingProducts.style.display = 'none';
+                productGrid.innerHTML = '<div class="col-span-full text-center py-4 text-error">Klaida kraunant prekes</div>';
+            });
+    }
+    
+    function selectProduct(product) {
+        document.getElementById('product-search-modal').checked = false;
+        document.getElementById('add-item-modal').checked = true;
+        
+        // Fill the form
+        const productIdInput = document.getElementById('product_id');
+        const productNameInput = document.getElementById('product_name');
+        const productSkuInput = document.getElementById('product_sku');
+        
+        if (productIdInput) productIdInput.value = product.id;
+        if (productNameInput) productNameInput.value = product.description;
+        if (productSkuInput) productSkuInput.value = product.sku;
+    }
+    
+    function setupRemoveItemBtns() {
+        const removeItemBtns = document.querySelectorAll('.remove-item-btn');
+        removeItemBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                if (confirm('Ar tikrai norite pašalinti šią prekę iš siuntos?')) {
+                    removeShipmentItem(itemId);
+                }
+            });
+        });
+    }
+    
+    function removeShipmentItem(itemId) {
+        // Get shipment ID from URL
+        const urlParts = window.location.pathname.split('/');
+        const shipmentId = urlParts[urlParts.indexOf('shipments') + 1];
+        
+        if (!shipmentId || !itemId) return;
+        
+        const url = `/shipments/${shipmentId}/remove-item/${itemId}`;
+        
+        fetch(url, {
+            method: 'DELETE',
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove from DOM
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                if (row) row.remove();
+                
+                // Check if table is empty
+                const tbody = document.getElementById('items-table-body');
+                if (tbody && tbody.children.length === 0) {
+                    tbody.innerHTML = `
+                        <tr id="no-items-row">
+                            <td colspan="5" class="text-center py-4">Siuntoje nėra prekių</td>
+                        </tr>
+                    `;
+                }
+            } else {
+                response.json().then(data => {
+                    alert(`Klaida: ${data.error || 'Nepavyko pašalinti prekės'}`);
+                }).catch(() => {
+                    alert('Klaida: Nepavyko pašalinti prekės');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error removing item:', error);
+            alert('Klaida: Nepavyko pašalinti prekės');
+        });
+    }
+    
+    function receiveShipment() {
+        if (!confirm('Ar tikrai norite pažymėti siuntą kaip gautą? Ši operacija atnaujins prekių kiekį sandėlyje.')) {
+            return;
+        }
+        
+        // Get shipment ID from URL
+        const urlParts = window.location.pathname.split('/');
+        const shipmentId = urlParts[urlParts.indexOf('shipments') + 1];
+        
+        if (!shipmentId) return;
+        
+        fetch(`/shipments/${shipmentId}/receive`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error:', data.error);
+                alert('Klaida: ' + data.error);
+            } else {
+                console.log('Success:', data);
+                alert('Siunta sėkmingai pažymėta kaip gauta.');
+                window.location.href = `/shipments/${shipmentId}`;
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('Įvyko klaida. Bandykite dar kartą.');
+        });
+    }
+});
+</script>
+{% endblock %} 

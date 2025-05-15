@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Siuntos - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">Siuntos</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li>Siuntos</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="flex space-x-2 mt-4 md:mt-0">
+        <a href="{{ url_for('main.shipment_new') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nauja siunta
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+        <form action="{{ url_for('main.shipments') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="form-control flex-1">
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Ieškoti siuntų..." class="input input-bordered w-full" />
+                    <button class="btn btn-square">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-control">
+                <select name="status" class="select select-bordered w-full md:w-48" onchange="this.form.submit()">
+                    <option value="">-- Visos būsenos --</option>
+                    <option value="{{ ShipmentStatus.PENDING.value }}" {% if request.args.get('status') == ShipmentStatus.PENDING.value %}selected{% endif %}>Laukiama</option>
+                    <option value="{{ ShipmentStatus.RECEIVED.value }}" {% if request.args.get('status') == ShipmentStatus.RECEIVED.value %}selected{% endif %}>Gauta</option>
+                    <option value="{{ ShipmentStatus.CANCELLED.value }}" {% if request.args.get('status') == ShipmentStatus.CANCELLED.value %}selected{% endif %}>Atšaukta</option>
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <button type="submit" class="btn">Filtruoti</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shipments List -->
+<div class="card bg-base-100 shadow-xl overflow-hidden">
+    <div class="card-body p-0">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Siuntos nr.</th>
+                        <th>Tiekėjas</th>
+                        <th>Būsena</th>
+                        <th>Laukiama</th>
+                        <th>Gauta</th>
+                        <th>Prekių kiekis</th>
+                        <th>Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if shipments %}
+                        {% for shipment in shipments %}
+                        <tr class="hover">
+                            <td>
+                                <a href="{{ url_for('main.shipment_detail', id=shipment.id) }}" class="font-medium hover:underline">
+                                    {{ shipment.shipment_number }}
+                                </a>
+                            </td>
+                            <td>{{ shipment.supplier or '-' }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if shipment.status.value == 'pending' %}badge-primary
+                                    {% elif shipment.status.value == 'received' %}badge-success
+                                    {% elif shipment.status.value == 'cancelled' %}badge-error
+                                    {% endif %}">
+                                    {% if shipment.status.value == 'pending' %}Laukiama
+                                    {% elif shipment.status.value == 'received' %}Gauta
+                                    {% elif shipment.status.value == 'cancelled' %}Atšaukta
+                                    {% else %}{{ shipment.status.value }}{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ shipment.expected_date.strftime('%Y-%m-%d') if shipment.expected_date else '-' }}</td>
+                            <td>{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment.arrival_date else '-' }}</td>
+                            <td>{{ shipment.shipment_items.count() }}</td>
+                            <td>
+                                <div class="flex gap-1">
+                                    <a href="{{ url_for('main.shipment_detail', id=shipment.id) }}" class="btn btn-xs btn-ghost">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
+                                    <a href="{{ url_for('main.shipment_edit', id=shipment.id) }}" class="btn btn-xs btn-ghost">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">Nerasta siuntų</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<div class="flex justify-center mt-6">
+    <div class="btn-group">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('main.shipments', page=pagination.prev_num, **request.args) }}" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </a>
+        {% else %}
+        <button class="btn btn-disabled">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        {% endif %}
+        
+        <button class="btn no-animation">{{ pagination.page }} / {{ pagination.pages }}</button>
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('main.shipments', page=pagination.next_num, **request.args) }}" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </a>
+        {% else %}
+        <button class="btn btn-disabled">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

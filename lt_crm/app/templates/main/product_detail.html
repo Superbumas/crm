@@ -1,76 +1,257 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mx-auto">
-    <div class="flex justify-between mb-4">
-        <h1 class="text-2xl font-bold">{{ product.name }}</h1>
-        <div class="flex space-x-2">
-            <a href="{{ url_for('main.products') }}" class="btn btn-outline">Grįžti</a>
-            <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-primary">Redaguoti</a>
+<div class="container mx-auto px-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="mb-6">
+        <div class="text-sm breadcrumbs mb-2">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
+                <li>{{ product.name }}</li>
+            </ul>
+        </div>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <h1 class="text-3xl font-bold mb-2 md:mb-0">{{ product.name }}</h1>
+            <div class="flex space-x-2">
+                <a href="{{ url_for('main.products') }}" class="btn btn-outline">Grįžti</a>
+                <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-primary">Redaguoti</a>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Product Info -->
-        <div class="card bg-base-100 shadow-xl md:col-span-2">
-            <div class="card-body">
-                <h2 class="card-title">Produkto informacija</h2>
-                <div class="divider mt-0"></div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <p><span class="font-medium">Produkto kodas:</span> {{ product.sku }}</p>
-                        <p><span class="font-medium">Barkodas:</span> {{ product.barcode or 'Nenurodyta' }}</p>
-                        <p><span class="font-medium">Kategorija:</span> {{ product.category or 'Nenurodyta' }}</p>
-                        <p><span class="font-medium">Kaina:</span> {{ product.price|euro }}</p>
-                        <p><span class="font-medium">Savikaina:</span> {{ product.cost_price|euro }}</p>
+    <!-- Main Product Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Product Image -->
+        <div class="card bg-base-100 shadow-xl overflow-hidden">
+            <div class="card-body p-0">
+                {% if product.main_image_url %}
+                <figure class="relative pt-[75%]">
+                    <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
+                         class="absolute inset-0 w-full h-full object-contain p-4" 
+                         onerror="this.style.display='none';">
+                </figure>
+                {% else %}
+                <figure class="relative pt-[75%] bg-base-200">
+                    <div class="absolute inset-0 flex items-center justify-center text-base-content/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                     </div>
-                    <div>
-                        <p>
-                            <span class="font-medium">Kiekis sandėlyje:</span>
-                            <span class="badge {{ 'badge-error' if product.quantity <= 5 else 'badge-success' if product.quantity > 10 else 'badge-warning' }}">
-                                {{ product.quantity }} vnt.
-                            </span>
-                        </p>
-                        {% if product.min_stock_level %}
-                        <p><span class="font-medium">Minimalus kiekis:</span> {{ product.min_stock_level }} vnt.</p>
+                </figure>
+                {% endif %}
+                
+                {% if product.extra_image_urls %}
+                <div class="p-4 border-t border-base-300">
+                    <h3 class="font-medium mb-2">Papildomos nuotraukos</h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        {% set img_urls = [] %}
+                        {% if product.extra_image_urls is string and '|' in product.extra_image_urls %}
+                            {% set img_urls = product.extra_image_urls.split('|') %}
+                        {% elif product.extra_image_urls is iterable and product.extra_image_urls is not string %}
+                            {% set img_urls = product.extra_image_urls %}
                         {% endif %}
-                        <p><span class="font-medium">Statusas:</span> 
-                            <span class="badge {{ 'badge-success' if product.is_active else 'badge-error' }}">
-                                {{ 'Aktyvus' if product.is_active else 'Neaktyvus' }}
-                            </span>
-                        </p>
-                        <p><span class="font-medium">Sukurtas:</span> {{ product.created_at.strftime('%Y-%m-%d') }}</p>
-                        <p><span class="font-medium">Atnaujintas:</span> {{ product.updated_at.strftime('%Y-%m-%d') }}</p>
+                        
+                        {% for img_url in img_urls %}
+                        {% set img_url_trimmed = img_url.strip() %}
+                        {% if img_url_trimmed %}
+                        <div class="aspect-square img-container">
+                            <img src="{{ img_url_trimmed }}" alt="{{ product.name }} - nuotrauka {{ loop.index }}" 
+                                 class="w-full h-full object-cover rounded-md border border-base-300"
+                                 onerror="this.parentElement.style.display='none';">
+                        </div>
+                        {% endif %}
+                        {% endfor %}
                     </div>
-                </div>
-                
-                {% if product.description %}
-                <div class="mt-4">
-                    <h3 class="font-medium">Aprašymas</h3>
-                    <p class="mt-2">{{ product.description }}</p>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Stock Management -->
-        <div class="card bg-base-100 shadow-xl">
+        <!-- Product Info -->
+        <div class="card bg-base-100 shadow-xl md:col-span-2">
             <div class="card-body">
-                <h2 class="card-title">Atsargų valdymas</h2>
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="card-title text-xl">Produkto informacija</h2>
+                    <div class="flex items-center">
+                        <span class="badge {{ 'badge-success' if product.is_in_stock else 'badge-error' }} badge-lg">
+                            {{ 'Yra sandėlyje' if product.is_in_stock else 'Nėra sandėlyje' }}
+                        </span>
+                    </div>
+                </div>
                 <div class="divider mt-0"></div>
                 
-                <div class="mb-4 text-center">
-                    <div class="stat-value text-primary">{{ product.quantity }}</div>
-                    <div class="stat-title">Vnt. sandėlyje</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Basic Information -->
+                    <div class="space-y-3">
+                        <h3 class="font-medium text-lg">Pagrindinė informacija</h3>
+                        
+                        <div class="bg-base-200 p-4 rounded-lg">
+                            <div class="stat p-0">
+                                <div class="stat-title opacity-70">Kaina</div>
+                                <div class="stat-value text-primary text-2xl">{{ product.price_final|euro }}</div>
+                                {% if product.price_old %}
+                                <div class="stat-desc line-through opacity-60">{{ product.price_old|euro }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm opacity-70">Produkto kodas</div>
+                                <div class="font-medium">{{ product.sku }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm opacity-70">Barkodas</div>
+                                <div class="font-medium">{{ product.barcode or 'Nenurodyta' }}</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-sm opacity-70">Kategorija</div>
+                            <div class="font-medium">{{ product.category or 'Nenurodyta' }}</div>
+                        </div>
+                        
+                        {% if product.manufacturer or product.model %}
+                        <div class="grid grid-cols-2 gap-4">
+                            {% if product.manufacturer %}
+                            <div>
+                                <div class="text-sm opacity-70">Gamintojas</div>
+                                <div class="font-medium">{{ product.manufacturer }}</div>
+                            </div>
+                            {% endif %}
+                            {% if product.model %}
+                            <div>
+                                <div class="text-sm opacity-70">Modelis</div>
+                                <div class="font-medium">{{ product.model }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Additional Details -->
+                    <div class="space-y-4">
+                        <h3 class="font-medium text-lg">Papildoma informacija</h3>
+                        
+                        <div class="bg-base-200 p-4 rounded-lg">
+                            <div class="stat p-0">
+                                <div class="stat-title opacity-70">Kiekis sandėlyje</div>
+                                <div class="stat-value {{ 'text-error' if product.quantity <= 5 else 'text-success' if product.quantity > 10 else 'text-warning' }} text-2xl">
+                                    {{ product.quantity }} vnt.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            {% if product.delivery_days is not none %}
+                            <div>
+                                <div class="text-sm opacity-70">Pristatymo trukmė</div>
+                                <div class="font-medium">{{ product.delivery_days }} d.</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if product.warranty_months is not none %}
+                            <div>
+                                <div class="text-sm opacity-70">Garantija</div>
+                                <div class="font-medium">{{ product.warranty_months }} mėn.</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if product.weight_kg is not none %}
+                        <div>
+                            <div class="text-sm opacity-70">Svoris</div>
+                            <div class="font-medium">{{ product.weight_kg }} kg</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm opacity-70">Sukurtas</div>
+                                <div class="font-medium">{{ product.created_at.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm opacity-70">Atnaujintas</div>
+                                <div class="font-medium">{{ product.updated_at.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="flex justify-center space-x-2 mb-4">
-                    <button class="btn btn-primary">+ Papildyti</button>
-                    <button class="btn btn-error">- Nurašyti</button>
+                {% if product.parameters %}
+                <div class="mt-6">
+                    <h3 class="font-medium text-lg mb-2">Parametrai</h3>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <tbody>
+                                {% for key, value in product.get_parameters().items() %}
+                                <tr>
+                                    <td class="font-medium">{{ key }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Description Section - Always show -->
+                <div class="mt-6">
+                    <h3 class="font-medium text-lg mb-2">Aprašymas</h3>
+                    <div class="prose max-w-none bg-base-200 p-4 rounded-lg">
+                        {% if product.description_html %}
+                            <!-- Handling for HTML content -->
+                            {{ product.description_html|safe }}
+                        {% else %}
+                            <p class="text-base-content/50 italic">Produkto aprašymas nepateiktas</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Stock Management Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Variants (if available) -->
+        {% if product.variants %}
+        <div class="card bg-base-100 shadow-xl md:col-span-2">
+            <div class="card-body">
+                <h2 class="card-title">Variantai</h2>
+                <div class="divider mt-0"></div>
+                
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>Kodas</th>
+                                <th>Pavadinimas</th>
+                                <th>Kaina</th>
+                                <th>Likutis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for variant in product.variants %}
+                            <tr>
+                                <td>{{ variant.sku }}</td>
+                                <td>{{ variant.name }}</td>
+                                <td>{{ variant.price|euro }}</td>
+                                <td>
+                                    <span class="badge {% if variant.quantity > 10 %}badge-success{% elif variant.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
+                                        {{ variant.quantity }} vnt.
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Stock Movement History -->
@@ -80,7 +261,7 @@
             <div class="divider mt-0"></div>
             
             <div class="overflow-x-auto">
-                <table class="table w-full">
+                <table class="table table-zebra w-full">
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -96,14 +277,14 @@
                             <tr>
                                 <td>{{ movement.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
-                                    <span class="badge {{ 'badge-success' if movement.quantity > 0 else 'badge-error' }}">
-                                        {{ 'Papildymas' if movement.quantity > 0 else 'Nurašymas' }}
+                                    <span class="badge {{ 'badge-success' if movement.qty_delta > 0 else 'badge-error' }}">
+                                        {{ 'Papildymas' if movement.qty_delta > 0 else 'Nurašymas' }}
                                     </span>
                                 </td>
-                                <td>{{ movement.quantity }}</td>
-                                <td>{{ movement.description or '-' }}</td>
+                                <td>{{ movement.qty_delta }}</td>
+                                <td>{{ movement.note or '-' }}</td>
                                 <td>
-                                    {% if movement.reference_type == 'order' and movement.reference_id %}
+                                    {% if movement.reason_code.value == 'sale' and movement.reference_id %}
                                     <a href="{{ url_for('main.order_detail', id=movement.reference_id) }}" class="link link-primary">
                                         Užsakymas #{{ movement.reference_id }}
                                     </a>

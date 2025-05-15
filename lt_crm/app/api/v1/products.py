@@ -182,50 +182,76 @@ class ProductImport(Resource):
             return {"message": "No selected file"}, 400
             
         # Check if file is allowed
-        if not allowed_file(file.filename, {"csv", "xlsx", "xls"}):
-            return {"message": "File type not allowed. Use CSV or XLSX"}, 400
+        if not allowed_file(file.filename, {"csv", "xlsx", "xls", "tsv", "txt"}):
+            return {"message": "File type not allowed. Use CSV, TSV, XLSX, or XLS"}, 400
             
         try:
-            # Import products using the import service
+            # Get import parameters
             reference_id = request.form.get("reference_id", f"API-{uuid.uuid4()}")
             channel = request.form.get("channel", "api")
+            encoding = request.form.get("encoding")
+            delimiter = request.form.get("delimiter", ",")
+            has_header = request.form.get("has_header", "true").lower() in ("true", "1", "yes")
             
+            # Import products using the improved import service
             summary = import_products(
                 file,
                 channel=channel,
                 reference_id=reference_id,
-                user_id=current_user.id
+                user_id=current_user.id,
+                encoding=encoding,
+                delimiter=delimiter,
+                has_header=has_header
             )
             
-            return {
+            # Prepare response
+            response = {
                 "message": "Import completed",
-                "summary": summary
+                "summary": {
+                    "created": summary.get("created", 0),
+                    "updated": summary.get("updated", 0),
+                    "skipped": summary.get("skipped", 0),
+                    "errors": summary.get("errors", 0),
+                    "total": summary.get("total_rows", 0),
+                    "timestamp": summary.get("timestamp")
+                }
             }
+            
+            # Include error details if present and requested
+            include_errors = request.form.get("include_errors", "false").lower() in ("true", "1", "yes")
+            if include_errors and summary.get("errors", 0) > 0 and summary.get("error_details"):
+                # Limit number of errors returned to avoid excessive response sizes
+                error_limit = min(int(request.form.get("error_limit", "100")), 1000)
+                response["errors"] = summary.get("error_details", [])[:error_limit]
+                
+                if len(summary.get("error_details", [])) > error_limit:
+                    response["errors_truncated"] = True
+                    response["total_errors"] = len(summary.get("error_details", []))
+            
+            return response
             
         except Exception as e:
             return {"message": f"Error processing file: {str(e)}"}, 400
-
-@ns.route("/import/template")
-class ProductImportTemplate(Resource):
-    """Product import template resource."""
-    
+            
     @ns.doc("get_import_template")
     @ns.response(200, "Template file")
     @token_required()
     def get(self, current_user):
-        """Get a template for product import."""
-        format = request.args.get("format", "xlsx")
-        if format not in ["csv", "xlsx"]:
-            return {"message": "Invalid format. Use 'csv' or 'xlsx'"}, 400
+        """Get product import template file."""
+        format_type = request.args.get("format", "xlsx")
+        if format_type not in ("csv", "xlsx"):
+            return {"message": "Invalid format type. Use 'csv' or 'xlsx'"}, 400
             
-        template = generate_import_template(format=format)
-        
-        filename = f"product_import_template.{format}"
-        mimetype = "text/csv" if format == "csv" else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        
-        return send_file(
-            template,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=filename
-        ) 
+        try:
+            template = generate_import_template(format=format_type)
+            mime_type = "text/csv" if format_type == "csv" else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            filename = f"product_import_template.{format_type}"
+            
+            return send_file(
+                template,
+                mimetype=mime_type,
+                as_attachment=True,
+                download_name=filename
+            )
+        except Exception as e:
+            return {"message": f"Error generating template: {str(e)}"}, 500 

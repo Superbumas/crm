@@ -122,7 +122,7 @@
                                 <select name="product_ids[]" class="select select-bordered w-full product-select" required>
                                     <option value="">Pasirinkite prekę</option>
                                     {% for product in products %}
-                                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-sku="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>
+                                    <option value="{{ product.id }}" data-price="{{ product.price_final }}" data-sku="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>
                                     {% endfor %}
                                 </select>
                             </div>

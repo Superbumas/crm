@@ -2,11 +2,11 @@
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from lt_crm.app.clients.base_client import BaseAPIClient
-from lt_crm.app.exceptions import APIError
-from lt_crm.app.models.order import Order, OrderItem, OrderStatus
-from lt_crm.app.models.product import Product
-from lt_crm.app.extensions import db
+from .base_client import BaseAPIClient
+from ..exceptions import APIError
+from ..models.order import Order, OrderItem, OrderStatus
+from ..models.product import Product
+from ..extensions import db
 
 
 class AllegroClient(BaseAPIClient):

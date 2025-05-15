@@ -30,10 +30,40 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
     summary = {
         "created": 0,
         "updated": 0,
+        "skipped": 0,
         "errors": 0,
         "error_details": [],
         "total_rows": len(df)
     }
+    
+    # Dictionary mapping between possible column names and model field names
+    field_mapping = {
+        # Standard names
+        'sku': 'sku',
+        'name': 'name',
+        'description_html': 'description_html',
+        'description': 'description_html',  # Alternative name
+        'barcode': 'barcode',
+        'quantity': 'quantity',
+        'delivery_days': 'delivery_days',
+        'price_final': 'price_final',
+        'price': 'price_final',  # Alternative name
+        'price_old': 'price_old',
+        'category': 'category',
+        'main_image_url': 'main_image_url',
+        'image_url': 'main_image_url',  # Alternative name
+        'manufacturer': 'manufacturer',
+        'model': 'model',
+        'warranty_months': 'warranty_months',
+        'weight_kg': 'weight_kg',
+        'parameters': 'parameters',
+        'variants': 'variants',
+        'delivery_options': 'delivery_options',
+        'extra_image_urls': 'extra_image_urls'
+    }
+    
+    # Dictionary to track SKUs that have been processed
+    processed_skus = {}
     
     for _, row in df.iterrows():
         try:
@@ -42,11 +72,65 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
             for col in df.columns:
                 val = row[col]
                 if pd.notna(val):
-                    product_data[col] = val
+                    # Map column name if it exists in the mapping
+                    field_name = field_mapping.get(col, col)
+                    product_data[field_name] = val
             
-            sku = product_data.get("sku")
-            if not sku:
-                raise ValueError("SKU is required")
+            # Check for required fields after mapping
+            original_sku = product_data.get("sku")
+            if not original_sku:
+                summary["skipped"] += 1
+                summary["error_details"].append("Skipped row with missing SKU")
+                continue
+            
+            # Handle duplicate SKUs by adding suffix if the SKU already exists
+            sku = original_sku
+            if sku in processed_skus:
+                # Found a duplicate SKU - append a suffix number
+                counter = processed_skus[sku] + 1
+                processed_skus[sku] = counter
+                new_sku = f"{sku}_{counter}"
+                product_data["sku"] = new_sku
+                sku = new_sku
+                summary["error_details"].append(f"Duplicate SKU '{original_sku}' modified to '{new_sku}'")
+            else:
+                processed_skus[sku] = 0
+                
+            # Check name exists
+            if "name" not in product_data:
+                summary["skipped"] += 1
+                summary["error_details"].append(f"Skipped SKU {sku}: Missing product name")
+                continue
+                
+            # Check price exists
+            if "price_final" not in product_data:
+                summary["skipped"] += 1
+                summary["error_details"].append(f"Skipped SKU {sku}: Missing price")
+                continue
+            
+            # Safely convert price to decimal if it's not already numeric
+            try:
+                if isinstance(product_data["price_final"], str):
+                    # Remove any currency symbols and handle different decimal separators
+                    price_str = product_data["price_final"]
+                    # Remove currency symbols and spaces
+                    price_str = ''.join(c for c in price_str if c.isdigit() or c in '.,')
+                    # Handle different decimal separators
+                    if ',' in price_str and '.' in price_str:
+                        # If both are present, the last one is the decimal separator
+                        if price_str.rindex('.') > price_str.rindex(','):
+                            price_str = price_str.replace(',', '')
+                        else:
+                            price_str = price_str.replace('.', '').replace(',', '.')
+                    elif ',' in price_str:
+                        # If only comma is present, assume it's a decimal separator
+                        price_str = price_str.replace(',', '.')
+                        
+                    product_data["price_final"] = float(price_str)
+            except (ValueError, TypeError):
+                summary["skipped"] += 1
+                summary["error_details"].append(f"Skipped SKU {sku}: Invalid price format")
+                continue
                 
             # Find existing product or create new one
             product = Product.query.filter_by(sku=sku).first()
@@ -54,16 +138,24 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
             # Extract quantity if present for stock movement
             quantity = None
             if "quantity" in product_data:
-                quantity = int(product_data["quantity"])
-            
+                try:
+                    quantity = int(float(product_data["quantity"]))
+                    if quantity < 0:
+                        quantity = 0  # Negative quantities are not allowed
+                except (ValueError, TypeError):
+                    quantity = 0  # Default to 0 if conversion fails
+                
             if product:
                 # Get initial quantity
                 initial_qty = product.quantity
                 
                 # Update existing product
                 for key, value in product_data.items():
-                    if key != "quantity":  # Handle quantity separately
-                        setattr(product, key, value)
+                    if key != "quantity" and hasattr(product, key):  # Handle quantity separately and ensure attribute exists
+                        try:
+                            setattr(product, key, value)
+                        except Exception as e:
+                            summary["error_details"].append(f"Warning for SKU {sku}: Could not set {key}={value}: {str(e)}")
                 
                 # If quantity changed, record the difference
                 if quantity is not None:
@@ -72,46 +164,68 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                         product.quantity = quantity  # Set new quantity
                         
                         # Record stock movement
+                        try:
+                            movement = StockMovement(
+                                product_id=product.id,
+                                qty_delta=qty_delta,
+                                reason_code=MovementReasonCode.IMPORT,
+                                note=f"Import update: {initial_qty} → {quantity}",
+                                channel=channel,
+                                reference_id=reference_id,
+                                user_id=user_id
+                            )
+                            db.session.add(movement)
+                        except Exception as e:
+                            summary["error_details"].append(f"Warning for SKU {sku}: Could not create stock movement: {str(e)}")
+                
+                summary["updated"] += 1
+            else:
+                # Create new product with only valid fields
+                valid_product_data = {}
+                for key, value in product_data.items():
+                    if hasattr(Product, key):  # Ensure attribute exists in the model
+                        valid_product_data[key] = value
+                
+                # Handle required fields
+                if "quantity" in valid_product_data:
+                    initial_qty = 0
+                    qty = int(float(valid_product_data["quantity"]))
+                    if qty < 0:
+                        qty = 0  # Negative quantities are not allowed
+                else:
+                    initial_qty = 0
+                    qty = 0
+                    valid_product_data["quantity"] = 0
+                
+                # Ensure sku, name, and price_final exist
+                if not all(field in valid_product_data for field in ['sku', 'name', 'price_final']):
+                    summary["skipped"] += 1
+                    summary["error_details"].append(f"Skipped SKU {sku}: Missing required fields")
+                    continue
+                
+                try:
+                    product = Product(**valid_product_data)
+                    db.session.add(product)
+                    db.session.flush()  # Get the product ID
+                    
+                    # Record stock movement if quantity > 0
+                    if qty > 0:
                         movement = StockMovement(
                             product_id=product.id,
-                            qty_delta=qty_delta,
+                            qty_delta=qty,
                             reason_code=MovementReasonCode.IMPORT,
-                            note=f"Import update: {initial_qty} → {quantity}",
+                            note=f"Initial import: {qty}",
                             channel=channel,
                             reference_id=reference_id,
                             user_id=user_id
                         )
                         db.session.add(movement)
-                
-                summary["updated"] += 1
-            else:
-                # Create new product
-                if "quantity" in product_data:
-                    initial_qty = 0
-                    qty = int(product_data["quantity"])
-                else:
-                    initial_qty = 0
-                    qty = 0
-                    product_data["quantity"] = 0
-                
-                product = Product(**product_data)
-                db.session.add(product)
-                db.session.flush()  # Get the product ID
-                
-                # Record stock movement if quantity > 0
-                if qty > 0:
-                    movement = StockMovement(
-                        product_id=product.id,
-                        qty_delta=qty,
-                        reason_code=MovementReasonCode.IMPORT,
-                        note=f"Initial import: {qty}",
-                        channel=channel,
-                        reference_id=reference_id,
-                        user_id=user_id
-                    )
-                    db.session.add(movement)
-                
-                summary["created"] += 1
+                    
+                    summary["created"] += 1
+                except Exception as e:
+                    summary["skipped"] += 1
+                    summary["error_details"].append(f"Could not create product with SKU {sku}: {str(e)}")
+                    continue
                 
         except Exception as e:
             summary["errors"] += 1

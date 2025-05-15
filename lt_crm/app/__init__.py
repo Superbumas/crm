@@ -5,7 +5,8 @@ from flask import Flask, request, g
 from flask_talisman import Talisman
 from prometheus_flask_exporter import PrometheusMetrics
 from sentry_sdk.integrations.flask import FlaskIntegration
-from .extensions import db, migrate, login_manager, babel
+from flask_wtf.csrf import CSRFProtect
+from .extensions import db, migrate, login_manager, babel, minify
 from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
 
@@ -14,9 +15,10 @@ from .celery_beat import register_beat_schedule
 talisman = Talisman(content_security_policy={
     'default-src': "'self'",
     'style-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-    'script-src': "'self' 'unsafe-inline' https://cdn.tailwindcss.com",
+    'script-src': "'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net",
     'img-src': "'self' data:",
     'font-src': "'self' https://cdn.jsdelivr.net",
+    'connect-src': "'self'",
 },
     frame_options='DENY',
     session_cookie_secure=True,
@@ -25,6 +27,9 @@ talisman = Talisman(content_security_policy={
     strict_transport_security=True,
     referrer_policy='strict-origin-when-cross-origin'
 )
+
+# Initialize CSRFProtect but defer application until inside create_app
+csrf = CSRFProtect()
 
 
 def get_locale():
@@ -54,6 +59,23 @@ def create_app(test_config=None):
         JWT_SECRET_KEY=os.environ.get("JWT_SECRET_KEY", "jwt-secret-key"),
         JWT_ACCESS_TOKEN_EXPIRES=int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES", 3600)),  # 1 hour
         JWT_REFRESH_TOKEN_EXPIRES=int(os.environ.get("JWT_REFRESH_TOKEN_EXPIRES", 2592000)),  # 30 days
+        # Company information for invoices
+        COMPANY_INFO={
+            "name": os.environ.get("COMPANY_NAME", "LT CRM"),
+            "address": os.environ.get("COMPANY_ADDRESS", "Gedimino pr. 1"),
+            "city": os.environ.get("COMPANY_CITY", "Vilnius"),
+            "postal_code": os.environ.get("COMPANY_POSTAL_CODE", "01103"),
+            "country": os.environ.get("COMPANY_COUNTRY", "Lietuva"),
+            "phone": os.environ.get("COMPANY_PHONE", "+370 600 00000"),
+            "email": os.environ.get("COMPANY_EMAIL", "info@ltcrm.lt"),
+            "company_code": os.environ.get("COMPANY_CODE", "123456789"),
+            "vat_code": os.environ.get("COMPANY_VAT_CODE", "LT123456789"),
+            "bank_name": os.environ.get("COMPANY_BANK_NAME", "SEB bankas"),
+            "bank_account": os.environ.get("COMPANY_BANK_ACCOUNT", "LT123456789012345678"),
+            "bank_swift": os.environ.get("COMPANY_BANK_SWIFT", "CBVILT2X"),
+        },
+        # Disable CSRF protection
+        WTF_CSRF_ENABLED=False
     )
 
     if test_config:
@@ -77,6 +99,8 @@ def create_app(test_config=None):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    csrf.init_app(app)
+    minify.init_app(app)
     
     # Configure login
     login_manager.login_view = "auth.login"
@@ -132,4 +156,4 @@ def create_app(test_config=None):
         """Health check endpoint."""
         return {"status": "ok", "version": "1.0.0"}
 
-    return app 
+    return app
