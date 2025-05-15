@@ -95,7 +95,7 @@
                             </td>
                             <td>{{ shipment.expected_date.strftime('%Y-%m-%d') if shipment.expected_date else '-' }}</td>
                             <td>{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment.arrival_date else '-' }}</td>
-                            <td>{{ shipment.shipment_items.count() }}</td>
+                            <td>{{ shipment.item_count() }}</td>
                             <td>
                                 <div class="flex gap-1">
                                     <a href="{{ url_for('main.shipment_detail', id=shipment.id) }}" class="btn btn-xs btn-ghost">
@@ -125,7 +125,7 @@
 </div>
 
 <!-- Pagination -->
-{% if pagination.pages > 1 %}
+{% if pagination and pagination.pages > 1 %}
 <div class="flex justify-center mt-6">
     <div class="btn-group">
         {% if pagination.has_prev %}

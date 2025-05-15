@@ -2,6 +2,7 @@
 from flask import flash, redirect, render_template, request, url_for, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlparse
+from datetime import datetime
 
 from . import bp
 from ..models.user import User
@@ -25,6 +26,10 @@ def login():
             flash("Invalid email or password")
             return redirect(url_for("auth.login"))
 
+        # Update last login timestamp
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        
         login_user(user, remember=remember_me)
         
         next_page = request.args.get("next")
@@ -131,4 +136,146 @@ def get_api_token():
     return jsonify({
         "access_token": token,
         "token_type": "bearer"
-    }) 
+    })
+
+
+@bp.route("/users")
+@login_required
+def users():
+    """Users administration page."""
+    # Only allow admin users to access
+    if not current_user.is_admin:
+        flash("Jūs neturite teisių atlikti šį veiksmą.", "error")
+        return redirect(url_for("main.dashboard"))
+    
+    # Get all users
+    users_list = User.query.all()
+    
+    return render_template(
+        "auth/users.html",
+        title="Vartotojų administravimas",
+        users=users_list
+    )
+
+
+@bp.route("/users/create", methods=["POST"])
+@login_required
+def create_user():
+    """Create a new user."""
+    # Only allow admin users
+    if not current_user.is_admin:
+        flash("Jūs neturite teisių atlikti šį veiksmą.", "error")
+        return redirect(url_for("main.dashboard"))
+    
+    # Get form data
+    username = request.form.get("username")
+    email = request.form.get("email")
+    password = request.form.get("password")
+    confirm_password = request.form.get("confirm_password")
+    is_admin = "is_admin" in request.form
+    
+    # Validate form data
+    if not username or not email or not password or not confirm_password:
+        flash("Visi laukai yra privalomi", "error")
+        return redirect(url_for("auth.users"))
+    
+    if password != confirm_password:
+        flash("Slaptažodžiai nesutampa", "error")
+        return redirect(url_for("auth.users"))
+    
+    # Check if username or email already exists
+    if User.query.filter_by(username=username).first():
+        flash(f"Vartotojas su vardu {username} jau egzistuoja", "error")
+        return redirect(url_for("auth.users"))
+    
+    if User.query.filter_by(email=email).first():
+        flash(f"Vartotojas su el. paštu {email} jau egzistuoja", "error")
+        return redirect(url_for("auth.users"))
+    
+    # Create user
+    user = User(
+        username=username,
+        email=email,
+        is_admin=is_admin,
+        is_active=True
+    )
+    user.set_password(password)
+    
+    # Save to database
+    db.session.add(user)
+    db.session.commit()
+    
+    flash(f"Vartotojas {username} sėkmingai sukurtas", "success")
+    return redirect(url_for("auth.users"))
+
+
+@bp.route("/users/<int:id>/edit", methods=["POST"])
+@login_required
+def edit_user(id):
+    """Edit user."""
+    # Only allow admin users
+    if not current_user.is_admin:
+        flash("Jūs neturite teisių atlikti šį veiksmą.", "error")
+        return redirect(url_for("main.dashboard"))
+    
+    # Get user
+    user = User.query.get_or_404(id)
+    
+    # Get form data
+    username = request.form.get("username")
+    email = request.form.get("email")
+    is_admin = "is_admin" in request.form
+    is_active = "is_active" in request.form
+    
+    # Validate form data
+    if not username or not email:
+        flash("Vartotojo vardas ir el. paštas yra privalomi", "error")
+        return redirect(url_for("auth.users"))
+    
+    # Check if username or email already exists for other users
+    username_exists = User.query.filter(User.username == username, User.id != id).first()
+    if username_exists:
+        flash(f"Vartotojas su vardu {username} jau egzistuoja", "error")
+        return redirect(url_for("auth.users"))
+    
+    email_exists = User.query.filter(User.email == email, User.id != id).first()
+    if email_exists:
+        flash(f"Vartotojas su el. paštu {email} jau egzistuoja", "error")
+        return redirect(url_for("auth.users"))
+    
+    # Update user
+    user.username = username
+    user.email = email
+    user.is_admin = is_admin
+    user.is_active = is_active
+    
+    # Save to database
+    db.session.commit()
+    
+    flash(f"Vartotojas {username} sėkmingai atnaujintas", "success")
+    return redirect(url_for("auth.users"))
+
+
+@bp.route("/users/<int:id>/delete", methods=["POST"])
+@login_required
+def delete_user(id):
+    """Delete user."""
+    # Only allow admin users
+    if not current_user.is_admin:
+        flash("Jūs neturite teisių atlikti šį veiksmą.", "error")
+        return redirect(url_for("main.dashboard"))
+    
+    # Get user
+    user = User.query.get_or_404(id)
+    
+    # Check if user is the current user
+    if user.id == current_user.id:
+        flash("Negalima ištrinti savo paskyros", "error")
+        return redirect(url_for("auth.users"))
+    
+    # Delete user
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f"Vartotojas {user.username} sėkmingai ištrintas", "success")
+    return redirect(url_for("auth.users")) 

@@ -1,5 +1,22 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    [x-cloak] { display: none !important; }
+    .gallery-thumbnail { 
+        cursor: pointer; 
+        transition: all 0.2s ease-in-out;
+    }
+    .gallery-thumbnail:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .lightbox-slide {
+        transition: opacity 0.3s ease-in-out;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4">
     <!-- Breadcrumbs & Header -->
@@ -28,7 +45,8 @@
                 {% if product.main_image_url %}
                 <figure class="relative pt-[75%]">
                     <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
-                         class="absolute inset-0 w-full h-full object-contain p-4" 
+                         class="absolute inset-0 w-full h-full object-contain p-4 gallery-thumbnail cursor-pointer" 
+                         onclick="window.openProductGallery(0)"
                          onerror="this.style.display='none';">
                 </figure>
                 {% else %}
@@ -58,7 +76,8 @@
                         {% if img_url_trimmed %}
                         <div class="aspect-square img-container">
                             <img src="{{ img_url_trimmed }}" alt="{{ product.name }} - nuotrauka {{ loop.index }}" 
-                                 class="w-full h-full object-cover rounded-md border border-base-300"
+                                 class="w-full h-full object-cover rounded-md border border-base-300 gallery-thumbnail cursor-pointer"
+                                 onclick="window.openProductGallery({{ loop.index }})"
                                  onerror="this.parentElement.style.display='none';">
                         </div>
                         {% endif %}
@@ -304,5 +323,206 @@
             </div>
         </div>
     </div>
+
+    <!-- Image Gallery Lightbox -->
+    <div id="image-gallery-modal" class="modal">
+        <div class="modal-box max-w-5xl relative p-0 bg-base-200">
+            <!-- Close button -->
+            <button onclick="closeGallery()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-50">✕</button>
+            
+            <!-- Image container -->
+            <div class="relative h-[70vh] overflow-hidden">
+                <!-- Main Image -->
+                <div id="gallery-image-container" class="absolute inset-0 flex items-center justify-center p-4">
+                    <img id="active-gallery-image" src="" alt="{{ product.name }}" class="max-h-full max-w-full object-contain">
+                </div>
+                
+                <!-- Navigation arrows -->
+                <button onclick="prevImage()" class="btn btn-circle btn-ghost absolute left-2 top-1/2 -translate-y-1/2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button onclick="nextImage()" class="btn btn-circle btn-ghost absolute right-2 top-1/2 -translate-y-1/2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Thumbnails for navigation -->
+            <div class="p-4 bg-base-100">
+                <div id="thumbnail-container" class="flex overflow-x-auto space-x-2 pb-2">
+                    <!-- Thumbnails will be inserted here by JavaScript -->
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <div id="image-counter" class="text-sm"></div>
+                    <div>
+                        <button id="slideshow-start" onclick="startSlideshow()" class="btn btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Paleisti demonstraciją
+                        </button>
+                        <button id="slideshow-stop" onclick="stopSlideshow()" class="btn btn-sm hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                            </svg>
+                            Sustabdyti
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // All gallery image URLs
+    const allImages = [
+        {% if product.main_image_url %}
+        "{{ product.main_image_url }}",
+        {% endif %}
+        {% if product.extra_image_urls %}
+            {% set img_urls = [] %}
+            {% if product.extra_image_urls is string and '|' in product.extra_image_urls %}
+                {% set img_urls = product.extra_image_urls.split('|') %}
+            {% elif product.extra_image_urls is iterable and product.extra_image_urls is not string %}
+                {% set img_urls = product.extra_image_urls %}
+            {% endif %}
+            
+            {% for img_url in img_urls %}
+            {% set img_url_trimmed = img_url.strip() %}
+            {% if img_url_trimmed %}
+            "{{ img_url_trimmed }}",
+            {% endif %}
+            {% endfor %}
+        {% endif %}
+    ];
+    
+    // Gallery state
+    let currentImageIndex = 0;
+    let isSlideshowRunning = false;
+    let slideshowInterval = null;
+    const slideshowSpeed = 3000; // milliseconds
+    
+    // DOM elements
+    const imageGalleryModal = document.getElementById('image-gallery-modal');
+    const activeGalleryImage = document.getElementById('active-gallery-image');
+    const thumbnailContainer = document.getElementById('thumbnail-container');
+    const imageCounter = document.getElementById('image-counter');
+    const slideshowStartBtn = document.getElementById('slideshow-start');
+    const slideshowStopBtn = document.getElementById('slideshow-stop');
+    
+    // Initialize the gallery thumbnails
+    function initGalleryThumbnails() {
+        thumbnailContainer.innerHTML = '';
+        allImages.forEach((image, index) => {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = `w-16 h-16 flex-shrink-0 ${currentImageIndex === index ? 'ring-2 ring-primary' : ''}`;
+            
+            const img = document.createElement('img');
+            img.src = image;
+            img.alt = `Thumbnail ${index + 1}`;
+            img.className = 'w-full h-full object-cover cursor-pointer rounded-md';
+            img.onclick = () => setCurrentImage(index);
+            
+            thumbnail.appendChild(img);
+            thumbnailContainer.appendChild(thumbnail);
+        });
+    }
+    
+    // Set current image
+    function setCurrentImage(index) {
+        currentImageIndex = index;
+        activeGalleryImage.src = allImages[index];
+        imageCounter.textContent = `Image ${index + 1} of ${allImages.length}`;
+        
+        // Update thumbnails to show selected
+        const thumbnails = thumbnailContainer.children;
+        for (let i = 0; i < thumbnails.length; i++) {
+            if (i === index) {
+                thumbnails[i].classList.add('ring-2', 'ring-primary');
+            } else {
+                thumbnails[i].classList.remove('ring-2', 'ring-primary');
+            }
+        }
+    }
+    
+    // Open gallery
+    window.openProductGallery = function(index) {
+        currentImageIndex = index;
+        imageGalleryModal.classList.add('modal-open');
+        setCurrentImage(index);
+        initGalleryThumbnails();
+        
+        // Add keyboard event listeners
+        document.addEventListener('keydown', handleKeyEvents);
+    };
+    
+    // Close gallery
+    window.closeGallery = function() {
+        imageGalleryModal.classList.remove('modal-open');
+        stopSlideshow();
+        
+        // Remove keyboard event listeners
+        document.removeEventListener('keydown', handleKeyEvents);
+    };
+    
+    // Handle keyboard events
+    function handleKeyEvents(e) {
+        if (e.key === 'ArrowLeft') {
+            prevImage();
+        } else if (e.key === 'ArrowRight') {
+            nextImage();
+        } else if (e.key === 'Escape') {
+            closeGallery();
+        }
+    }
+    
+    // Navigate to previous image
+    window.prevImage = function() {
+        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+        setCurrentImage(currentImageIndex);
+    };
+    
+    // Navigate to next image
+    window.nextImage = function() {
+        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+        setCurrentImage(currentImageIndex);
+    };
+    
+    // Start slideshow
+    window.startSlideshow = function() {
+        if (allImages.length <= 1) return;
+        
+        isSlideshowRunning = true;
+        slideshowStartBtn.classList.add('hidden');
+        slideshowStopBtn.classList.remove('hidden');
+        
+        slideshowInterval = setInterval(() => {
+            nextImage();
+        }, slideshowSpeed);
+    };
+    
+    // Stop slideshow
+    window.stopSlideshow = function() {
+        isSlideshowRunning = false;
+        slideshowStartBtn.classList.remove('hidden');
+        slideshowStopBtn.classList.add('hidden');
+        
+        clearInterval(slideshowInterval);
+    };
+    
+    // Click outside modal to close
+    imageGalleryModal.addEventListener('click', function(e) {
+        if (e.target === imageGalleryModal) {
+            closeGallery();
+        }
+    });
+</script>
 {% endblock %} 

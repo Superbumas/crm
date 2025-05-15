@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Nustatymai - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">Nustatymai</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li>Nustatymai</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="bg-base-100 shadow-lg rounded-lg p-6 mb-6">
+    <div class="tabs mb-6">
+        <a class="tab tab-lifted tab-active">Įmonės informacija</a>
+    </div>
+    
+    {% if not is_admin %}
+    <div class="alert alert-info mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Jūs galite tik peržiūrėti įmonės informaciją. Norėdami atlikti pakeitimus, susisiekite su administratoriumi.</span>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('main.settings') }}" class="max-w-4xl">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="card mb-6">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Pagrindinė informacija</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Įmonės pavadinimas</span>
+                        </label>
+                        <input type="text" name="name" class="input input-bordered" value="{{ form.name.data or settings.name }}" required {% if not is_admin %}disabled{% endif %}>
+                        {% if form.name.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">El. paštas</span>
+                        </label>
+                        <input type="email" name="email" class="input input-bordered" value="{{ form.email.data or settings.email }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.email.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.email.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Telefonas</span>
+                        </label>
+                        <input type="text" name="phone" class="input input-bordered" value="{{ form.phone.data or settings.phone }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.phone.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.phone.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-6">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Adresas</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Adresas</span>
+                        </label>
+                        <input type="text" name="address" class="input input-bordered" value="{{ form.address.data or settings.address }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.address.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.address.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Miestas</span>
+                        </label>
+                        <input type="text" name="city" class="input input-bordered" value="{{ form.city.data or settings.city }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.city.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.city.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Pašto kodas</span>
+                        </label>
+                        <input type="text" name="postal_code" class="input input-bordered" value="{{ form.postal_code.data or settings.postal_code }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.postal_code.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.postal_code.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Šalis</span>
+                        </label>
+                        <input type="text" name="country" class="input input-bordered" value="{{ form.country.data or settings.country }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.country.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.country.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-6">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Juridinė informacija</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Įmonės kodas</span>
+                        </label>
+                        <input type="text" name="company_code" class="input input-bordered" value="{{ form.company_code.data or settings.company_code }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.company_code.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.company_code.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">PVM mokėtojo kodas</span>
+                        </label>
+                        <input type="text" name="vat_code" class="input input-bordered" value="{{ form.vat_code.data or settings.vat_code }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.vat_code.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.vat_code.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-6">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Banko informacija</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Banko pavadinimas</span>
+                        </label>
+                        <input type="text" name="bank_name" class="input input-bordered" value="{{ form.bank_name.data or settings.bank_name }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.bank_name.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.bank_name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Banko sąskaita</span>
+                        </label>
+                        <input type="text" name="bank_account" class="input input-bordered" value="{{ form.bank_account.data or settings.bank_account }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.bank_account.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.bank_account.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">SWIFT kodas</span>
+                        </label>
+                        <input type="text" name="bank_swift" class="input input-bordered" value="{{ form.bank_swift.data or settings.bank_swift }}" {% if not is_admin %}disabled{% endif %}>
+                        {% if form.bank_swift.errors %}
+                        <div class="text-error text-sm mt-1">{{ form.bank_swift.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if is_admin %}
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Išsaugoti pakeitimus
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %} 

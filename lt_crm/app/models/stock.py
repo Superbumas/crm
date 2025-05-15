@@ -52,6 +52,16 @@ class Shipment(TimestampMixin, db.Model):
         """Return string representation of the shipment."""
         return f"<Shipment {self.shipment_number}>"
     
+    def item_count(self):
+        """Safely get the count of shipment items."""
+        try:
+            # Use scalar() instead of count() to avoid transaction issues
+            from sqlalchemy import func
+            return db.session.query(func.count(ShipmentItem.id)).filter(ShipmentItem.shipment_id == self.id).scalar() or 0
+        except Exception:
+            # Return 0 if there's an error
+            return 0
+    
     def receive_shipment(self):
         """Process the shipment arrival and update stock quantities."""
         if self.status == ShipmentStatus.RECEIVED:

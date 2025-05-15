@@ -32,3 +32,20 @@ class ShipmentForm(FlaskForm):
         (ShipmentStatus.RECEIVED.value, 'Received'),
         (ShipmentStatus.CANCELLED.value, 'Cancelled')
     ], validators=[DataRequired()])
+
+
+class CompanySettingsForm(FlaskForm):
+    """Form for company settings."""
+    
+    name = StringField("Įmonės pavadinimas", validators=[DataRequired(), Length(max=100)])
+    address = StringField("Adresas", validators=[Optional(), Length(max=200)])
+    city = StringField("Miestas", validators=[Optional(), Length(max=100)])
+    postal_code = StringField("Pašto kodas", validators=[Optional(), Length(max=20)])
+    country = StringField("Šalis", validators=[Optional(), Length(max=100)])
+    phone = StringField("Telefonas", validators=[Optional(), Length(max=20)])
+    email = StringField("El. paštas", validators=[Optional(), Email(), Length(max=120)])
+    company_code = StringField("Įmonės kodas", validators=[Optional(), Length(max=50)])
+    vat_code = StringField("PVM mokėtojo kodas", validators=[Optional(), Length(max=50)])
+    bank_name = StringField("Banko pavadinimas", validators=[Optional(), Length(max=100)])
+    bank_account = StringField("Banko sąskaita", validators=[Optional(), Length(max=50)])
+    bank_swift = StringField("SWIFT kodas", validators=[Optional(), Length(max=20)])

@@ -360,7 +360,7 @@
             
             <div class="modal-action">
                 <button class="btn btn-primary" @click="goToFieldMapping()">Tęsti</button>
-                <label for="export-modal" class="btn">Atšaukti</label>
+                <label for="export-modal" class="btn" @click="resetModal()">Atšaukti</label>
             </div>
         </div>
         
@@ -412,6 +412,7 @@
             <div class="modal-action">
                 <button class="btn" @click="step = 1">Atgal</button>
                 <button class="btn btn-primary" @click="generatePreview()" :disabled="!isColumnMapValid">Peržiūrėti</button>
+                <label for="export-modal" class="btn" @click="resetModal()">Atšaukti</label>
             </div>
         </div>
         
@@ -466,7 +467,7 @@
                     </span>
                     Atsisiųsti
                 </button>
-                <label for="export-modal" class="btn">Uždaryti</label>
+                <label for="export-modal" class="btn" @click="resetModal()">Uždaryti</label>
             </div>
         </div>
     </div>
@@ -487,6 +488,17 @@
             alpineScript.defer = true;
             document.body.appendChild(alpineScript);
         }
+        
+        // Add event listener for the export-modal checkbox to reset state when modal is closed
+        document.getElementById('export-modal').addEventListener('change', function(e) {
+            if (!e.target.checked) {
+                // When the modal is closed (checkbox unchecked), find the Alpine component and reset it
+                const modalElement = document.querySelector('[x-data="exportModal()"]');
+                if (modalElement && modalElement.__x) {
+                    modalElement.__x.$data.resetModal();
+                }
+            }
+        });
     });
     
     function exportModal() {
@@ -769,6 +781,14 @@
                     toast.classList.add('animate__fadeOut');
                     setTimeout(() => toast.remove(), 500);
                 }, 5000);
+            },
+            
+            resetModal() {
+                this.step = 1;
+                this.previewData = [];
+                this.previewError = null;
+                this.saveAsTemplate = false;
+                this.templateName = '';
             }
         };
     }

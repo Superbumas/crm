@@ -22,7 +22,8 @@ from lt_crm.app.models.customer import Customer, Contact, Task
 from lt_crm.app.models.order import Order, OrderItem, OrderStatus
 from lt_crm.app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
 from lt_crm.app.models.stock import StockMovement, Shipment, ShipmentItem, ShipmentStatus, MovementReasonCode
-from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm
+from lt_crm.app.models.settings import CompanySettings
+from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm, CompanySettingsForm
 
 
 @bp.route("/")
@@ -348,87 +349,118 @@ def product_edit(id):
 @login_required
 def orders():
     """Orders list page."""
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    # Base query
-    query = Order.query
-    
-    # Apply filters
-    if request.args.get('q'):
-        search = f"%{request.args.get('q')}%"
-        query = query.filter(
-            (Order.order_number.ilike(search)) | 
-            (Order.shipping_name.ilike(search)) | 
-            (Order.shipping_email.ilike(search))
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        
+        # Base query
+        query = Order.query
+        
+        # Apply filters
+        if request.args.get('q'):
+            search = f"%{request.args.get('q')}%"
+            query = query.filter(
+                (Order.order_number.ilike(search)) | 
+                (Order.shipping_name.ilike(search)) | 
+                (Order.shipping_email.ilike(search))
+            )
+        
+        if request.args.get('status'):
+            statuses = request.args.get('status').split(',')
+            query = query.filter(Order.status.in_([OrderStatus(s) for s in statuses]))
+        
+        if request.args.get('source'):
+            query = query.filter(Order.source == request.args.get('source'))
+        
+        # Execute query with pagination
+        pagination = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page)
+        orders = pagination.items
+        
+        return render_template(
+            "main/orders.html",
+            title="Užsakymai",
+            orders=orders,
+            pagination=pagination,
         )
-    
-    if request.args.get('status'):
-        statuses = request.args.get('status').split(',')
-        query = query.filter(Order.status.in_([OrderStatus(s) for s in statuses]))
-    
-    if request.args.get('source'):
-        query = query.filter(Order.source == request.args.get('source'))
-    
-    # Execute query with pagination
-    pagination = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page)
-    orders = pagination.items
-    
-    return render_template(
-        "main/orders.html",
-        title="Užsakymai",
-        orders=orders,
-        pagination=pagination,
-    )
+    except Exception as e:
+        # Log the error
+        current_app.logger.error(f"Error in orders route: {str(e)}")
+        # Rollback the session
+        db.session.rollback()
+        # Show error message
+        flash(f"An error occurred while loading orders: {str(e)}", "error")
+        # Return empty list
+        return render_template(
+            "main/orders.html",
+            title="Užsakymai",
+            orders=[],
+            pagination=None,
+        )
 
 
 @bp.route("/invoices")
 @login_required
 def invoices():
     """Invoices list page."""
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    # Base query
-    query = Invoice.query
-    
-    # Apply filters
-    if request.args.get('q'):
-        search = f"%{request.args.get('q')}%"
-        query = query.filter(
-            (Invoice.invoice_number.ilike(search)) | 
-            (Invoice.billing_name.ilike(search)) | 
-            (Invoice.billing_email.ilike(search))
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        
+        # Base query
+        query = Invoice.query
+        
+        # Apply filters
+        if request.args.get('q'):
+            search = f"%{request.args.get('q')}%"
+            query = query.filter(
+                (Invoice.invoice_number.ilike(search)) | 
+                (Invoice.billing_name.ilike(search)) | 
+                (Invoice.billing_email.ilike(search))
+            )
+        
+        if request.args.get('status'):
+            query = query.filter(Invoice.status == InvoiceStatus(request.args.get('status')))
+        
+        if request.args.get('date_from'):
+            try:
+                date_from = datetime.strptime(request.args.get('date_from'), '%Y-%m-%d')
+                query = query.filter(Invoice.issue_date >= date_from)
+            except ValueError:
+                pass
+        
+        if request.args.get('date_to'):
+            try:
+                date_to = datetime.strptime(request.args.get('date_to'), '%Y-%m-%d')
+                query = query.filter(Invoice.issue_date <= date_to)
+            except ValueError:
+                pass
+        
+        # Execute query with pagination
+        pagination = query.order_by(Invoice.created_at.desc()).paginate(page=page, per_page=per_page)
+        invoices = pagination.items
+        
+        return render_template(
+            "main/invoices.html",
+            title="Sąskaitos faktūros",
+            invoices=invoices,
+            pagination=pagination,
+            now=datetime.now(),
         )
-    
-    if request.args.get('status'):
-        query = query.filter(Invoice.status == InvoiceStatus(request.args.get('status')))
-    
-    if request.args.get('date_from'):
-        try:
-            date_from = datetime.strptime(request.args.get('date_from'), '%Y-%m-%d')
-            query = query.filter(Invoice.issue_date >= date_from)
-        except ValueError:
-            pass
-    
-    if request.args.get('date_to'):
-        try:
-            date_to = datetime.strptime(request.args.get('date_to'), '%Y-%m-%d')
-            query = query.filter(Invoice.issue_date <= date_to)
-        except ValueError:
-            pass
-    
-    # Execute query with pagination
-    pagination = query.order_by(Invoice.created_at.desc()).paginate(page=page, per_page=per_page)
-    invoices = pagination.items
-    
-    return render_template(
-        "main/invoices.html",
-        title="Sąskaitos faktūros",
-        invoices=invoices,
-        pagination=pagination,
-        now=datetime.now(),
-    )
+    except Exception as e:
+        # Log the error
+        current_app.logger.error(f"Error in invoices route: {str(e)}")
+        # Rollback the session
+        db.session.rollback()
+        # Show error message
+        flash(f"An error occurred while loading invoices: {str(e)}", "error")
+        # Return empty list
+        return render_template(
+            "main/invoices.html",
+            title="Sąskaitos faktūros",
+            invoices=[],
+            pagination=None,
+            now=datetime.now(),
+        )
 
 
 @bp.route("/invoices/<int:id>/pdf")
@@ -443,11 +475,14 @@ def invoice_pdf(id):
         from io import BytesIO
         import tempfile
         
+        # Get company settings
+        company_settings = CompanySettings.get_instance()
+        
         # Prepare the template for PDF generation
         rendered_template = render_template(
             "main/invoice_pdf.html",
             invoice=invoice,
-            company_info=current_app.config.get('COMPANY_INFO', {})
+            company_info=company_settings.to_dict()
         )
         
         # Generate PDF from the template
@@ -480,31 +515,29 @@ def invoice_pdf(id):
 def invoices_export_pdf():
     """Export multiple invoices as PDF."""
     try:
-        # Import necessary libraries
+        # Import necessary libraries for PDF generation
         from weasyprint import HTML
         from io import BytesIO
         import zipfile
-        import tempfile
         
-        # Get selected invoice IDs from query parameters
-        invoice_ids = request.args.getlist('ids', type=int)
-        
-        # If no IDs provided, get recent invoices (limit to 50)
-        if not invoice_ids:
-            # Get recent invoices (issued or paid only)
-            invoices = Invoice.query.filter(
-                Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PAID])
-            ).order_by(Invoice.created_at.desc()).limit(50).all()
-        else:
-            # Get specified invoices
-            invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
-        
-        if not invoices:
-            flash("No invoices found to export", "error")
+        # Get invoice IDs from query params
+        invoice_ids = request.args.get('ids', '').split(',')
+        if not invoice_ids or invoice_ids[0] == '':
+            flash("No invoices selected for export", "error")
             return redirect(url_for('main.invoices'))
+        
+        # Query invoices
+        invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
+        if not invoices:
+            flash("No invoices found with the provided IDs", "error")
+            return redirect(url_for('main.invoices'))
+        
+        # Get company settings
+        company_settings = CompanySettings.get_instance()
         
         # Create a ZIP file in memory
         memory_file = BytesIO()
+        
         with zipfile.ZipFile(memory_file, 'w') as zf:
             # Add each invoice as a PDF
             for invoice in invoices:
@@ -513,7 +546,7 @@ def invoices_export_pdf():
                 rendered_template = render_template(
                     "main/invoice_pdf.html",
                     invoice=invoice,
-                    company_info=current_app.config.get('COMPANY_INFO', {})
+                    company_info=company_settings.to_dict()
                 )
                 HTML(string=rendered_template).write_pdf(pdf_buffer)
                 pdf_buffer.seek(0)
@@ -1417,37 +1450,50 @@ def product_search_api():
 @bp.route("/shipments")
 @login_required
 def shipments():
-    """Shipments list page."""
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    # Base query
-    query = Shipment.query
-    
-    # Apply filters
-    if request.args.get('status'):
-        status = request.args.get('status')
-        if status in [s.value for s in ShipmentStatus]:
-            query = query.filter(Shipment.status == status)
-    
-    if request.args.get('q'):
-        search = f"%{request.args.get('q')}%"
-        query = query.filter(
-            (Shipment.shipment_number.ilike(search)) | 
-            (Shipment.supplier.ilike(search))
+    """Display list of shipments."""
+    try:
+        # Get page and search parameters
+        page = request.args.get("page", 1, type=int)
+        q = request.args.get("q", "")
+        status = request.args.get("status", "")
+        
+        # Query shipments
+        query = Shipment.query
+        
+        # Apply filters
+        if q:
+            query = query.filter(Shipment.shipment_number.ilike(f"%{q}%") | 
+                                Shipment.supplier.ilike(f"%{q}%"))
+        
+        if status:
+            query = query.filter(Shipment.status == ShipmentStatus(status))
+        
+        # Order and paginate
+        query = query.order_by(Shipment.created_at.desc())
+        per_page = 20  # Set a hardcoded per_page value
+        pagination = query.paginate(page=page, per_page=per_page)
+        shipments = pagination.items
+        
+        return render_template(
+            "main/shipments.html",
+            shipments=shipments,
+            pagination=pagination,
+            ShipmentStatus=ShipmentStatus,
         )
-    
-    # Execute query with pagination
-    pagination = query.order_by(Shipment.created_at.desc()).paginate(page=page, per_page=per_page)
-    shipments_list = pagination.items
-    
-    return render_template(
-        "main/shipments.html",
-        title="Siuntos",
-        shipments=shipments_list,
-        pagination=pagination,
-        ShipmentStatus=ShipmentStatus
-    )
+    except Exception as e:
+        # Log the error
+        current_app.logger.error(f"Error in shipments route: {str(e)}")
+        # Rollback the session
+        db.session.rollback()
+        # Show error message
+        flash(f"An error occurred while loading shipments: {str(e)}", "error")
+        # Return empty list
+        return render_template(
+            "main/shipments.html",
+            shipments=[],
+            pagination=None,
+            ShipmentStatus=ShipmentStatus,
+        )
 
 
 @bp.route("/shipments/new", methods=["GET", "POST"])
@@ -1633,3 +1679,35 @@ def shipment_receive(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500 
+
+
+@bp.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    """Settings page."""
+    # All users can access company information settings
+    
+    # Get company settings
+    settings = CompanySettings.get_instance()
+    form = CompanySettingsForm(obj=settings)
+    
+    if request.method == "POST" and form.validate_on_submit():
+        # Only allow admin users to update settings
+        if not current_user.is_admin:
+            flash("Jūs neturite teisių atnaujinti nustatymus. Tik peržiūrėti.", "error")
+            return redirect(url_for("main.settings"))
+            
+        # Update settings
+        form.populate_obj(settings)
+        db.session.commit()
+        
+        flash("Nustatymai sėkmingai atnaujinti", "success")
+        return redirect(url_for("main.settings"))
+    
+    return render_template(
+        "main/settings.html",
+        title="Nustatymai",
+        settings=settings,
+        form=form,
+        is_admin=current_user.is_admin
+    ) 

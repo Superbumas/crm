@@ -2,6 +2,7 @@
 import enum
 from lt_crm.app.extensions import db
 from lt_crm.app.models.base import TimestampMixin
+from sqlalchemy import func
 
 
 class OrderStatus(enum.Enum):
@@ -58,7 +59,12 @@ class Order(TimestampMixin, db.Model):
     @property
     def item_count(self):
         """Return number of items in the order."""
-        return self.items.count()
+        try:
+            # Use scalar() instead of count() to avoid transaction issues
+            return db.session.query(func.count(OrderItem.id)).filter(OrderItem.order_id == self.id).scalar() or 0
+        except Exception:
+            # Return 0 if there's an error
+            return 0
 
 
 class OrderItem(TimestampMixin, db.Model):
