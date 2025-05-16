@@ -19,8 +19,16 @@ services:
       - ./lt_crm:/app/lt_crm
       - ./lt_crm/migrations:/app/migrations
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
   worker:
@@ -56,6 +64,11 @@ services:
       - POSTGRES_DB=lt_crm
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   pgadmin:

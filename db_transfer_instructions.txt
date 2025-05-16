@@ -1,0 +1,62 @@
+# Database Transfer Instructions
+
+## Step 1: Export from local machine
+Run this on your local machine to create a backup:
+```
+pg_dump -h localhost -U postgres -d lt_crm -f lt_crm_backup.sql
+```
+
+## Step 2: Transfer file to Azure VM
+Use SCP or another file transfer method:
+```
+scp lt_crm_backup.sql username@your-azure-vm-ip:~/crm/
+```
+
+## Step 3: Import on Azure VM
+Run this on your Azure VM to import the data:
+```
+cd ~/crm
+docker-compose exec -T postgres psql -U postgres -d lt_crm < lt_crm_backup.sql
+```
+
+## Alternative Method: Using pgAdmin
+
+1. **On local machine:**
+   - Connect to your local database
+   - Right-click on database → Backup...
+   - Format: Custom
+   - Save the file
+
+2. **In pgAdmin web interface on Azure:**
+   - Connect to your Azure database
+   - Right-click on database → Restore...
+   - Browse to your backup file
+   - Click Restore
+
+## Resetting the Database
+
+If you need to reset the database completely:
+
+1. **Stop the application:**
+```
+docker-compose down
+```
+
+2. **Remove the database volume:**
+```
+docker volume rm crm_postgres_data
+```
+
+3. **Start the application again:**
+```
+docker-compose up -d
+```
+
+The database will be automatically recreated with all required tables when the application starts.
+
+## Don't forget
+Make scripts executable on Linux:
+```
+chmod +x export_db.sh
+chmod +x import_db.sh
+``` 

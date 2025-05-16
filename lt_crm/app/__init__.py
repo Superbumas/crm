@@ -6,7 +6,7 @@ from flask_talisman import Talisman
 from prometheus_flask_exporter import PrometheusMetrics
 from sentry_sdk.integrations.flask import FlaskIntegration
 from flask_wtf.csrf import CSRFProtect
-from .extensions import db, migrate, login_manager, babel, minify
+from .extensions import db, migrate, login_manager, babel, minify, csrf
 from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
 import json
@@ -21,36 +21,58 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super(CustomJSONEncoder, self).default(obj)
 
 
-# Initialize Talisman but defer application until inside create_app
-talisman = Talisman(content_security_policy={
-    'default-src': "'self'",
-    'style-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-    'script-src': "'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net",
-    'img-src': "'self' data:",
-    'font-src': "'self' https://cdn.jsdelivr.net",
-    'connect-src': "'self'",
-},
-    frame_options='DENY',
-    session_cookie_secure=True,
-    session_cookie_http_only=True,
-    force_https=True,
-    strict_transport_security=True,
-    referrer_policy='strict-origin-when-cross-origin'
-)
-
-# Initialize CSRFProtect but defer application until inside create_app
-csrf = CSRFProtect()
-
-
 def get_locale():
     """Get the locale for the current request."""
-    # Try to get locale from request arguments
-    locale = request.args.get('locale')
-    if locale:
-        return locale
-    
-    # Use browser's accept-languages header
+    # user = getattr(g, 'user', None)
+    # if user is not None:
+    #     return user.locale
     return request.accept_languages.best_match(['en', 'lt'])
+
+
+# Initialize security headers
+csp = {
+    'default-src': ['\'self\''],
+    'style-src': ['\'self\'', '\'unsafe-inline\'', 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
+    'script-src': ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\'', 'cdn.jsdelivr.net'],
+    'font-src': ['\'self\'', 'fonts.gstatic.com', 'cdn.jsdelivr.net'],
+    'img-src': ['\'self\'', 'data:'],
+}
+
+talisman = Talisman(content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
+
+
+def init_database(app):
+    """Initialize database tables if they don't exist."""
+    with app.app_context():
+        # Check if we can connect to the database
+        try:
+            # Check if a key table exists
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            has_tables = inspector.get_table_names()
+            
+            if not has_tables:
+                app.logger.info("No tables found in database - creating all tables")
+                db.create_all()
+                app.logger.info("Database tables created successfully")
+                
+                # Set up initial required data
+                from .services.accounting import setup_default_accounts
+                setup_default_accounts()
+                app.logger.info("Default accounting accounts created")
+                
+                # Create default company settings
+                from .models.settings import CompanySettings
+                CompanySettings.get_instance()
+                app.logger.info("Default company settings created")
+                
+                return True
+            else:
+                app.logger.info(f"Database has {len(has_tables)} tables - no initialization needed")
+                return False
+        except Exception as e:
+            app.logger.error(f"Error during database initialization: {str(e)}")
+            return False
 
 
 def create_app(test_config=None):
@@ -129,6 +151,9 @@ def create_app(test_config=None):
     # Enable HTTPS security headers in production
     if not app.debug and not app.testing:
         talisman.init_app(app)
+
+    # Initialize database tables if they don't exist
+    init_database(app)
 
     # Register Celery
     init_celery(app)
