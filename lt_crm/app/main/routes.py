@@ -1057,8 +1057,7 @@ def order_new():
             # Validate that there's at least one product
             if not product_ids or not prices or not quantities or len(product_ids) == 0:
                 flash("Būtina pridėti bent vieną produktą į užsakymą", "error")
-                products = Product.query.order_by(Product.name).all()
-                return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
+                return render_template("main/order_form.html", title="Naujas užsakymas")
             
             # Calculate total amount
             total_amount = sum(float(prices[i]) * int(quantities[i]) for i in range(len(product_ids)) if product_ids[i])
@@ -1149,16 +1148,11 @@ def order_new():
         except Exception as e:
             db.session.rollback()
             flash(f"Klaida kuriant užsakymą: {str(e)}", "error")
-            products = Product.query.order_by(Product.name).all()
-            return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
-    
-    # Get all active products for the order form
-    products = Product.query.order_by(Product.name).all()
+            return render_template("main/order_form.html", title="Naujas užsakymas")
     
     return render_template(
         "main/order_form.html",
-        title="Naujas užsakymas",
-        products=products
+        title="Naujas užsakymas"
     )
 
 

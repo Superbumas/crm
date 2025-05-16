@@ -1,5 +1,25 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-selection {
+        height: 3rem !important;
+        border-radius: 0.5rem !important;
+        border-color: hsl(var(--bc) / 0.2) !important;
+        display: flex !important;
+        align-items: center !important;
+        padding-left: 0.5rem !important;
+    }
+    .select2-selection__arrow {
+        height: 3rem !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto">
     <div class="flex justify-between mb-4">
@@ -121,9 +141,6 @@
                             <div class="col-span-6">
                                 <select name="product_ids[]" class="select select-bordered w-full product-select" required>
                                     <option value="">Pasirinkite prekę</option>
-                                    {% for product in products %}
-                                    <option value="{{ product.id }}" data-price="{{ product.price_final }}" data-sku="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>
-                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-span-2">
@@ -197,11 +214,44 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const orderItems = document.getElementById('order-items');
     const addItemBtn = document.getElementById('add-item');
     const orderTotalEl = document.getElementById('order-total');
+    
+    // Initialize Select2 for product selection
+    $('.product-select').each(function() {
+        initSelect2($(this));
+    });
+    
+    // Initialize Select2 for a dropdown
+    function initSelect2(element) {
+        element.select2({
+            placeholder: 'Ieškokite prekės pavadinimo, SKU...',
+            allowClear: true,
+            ajax: {
+                url: '{{ url_for("main.product_search_api") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term,
+                        limit: 20
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.results
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
+    }
     
     // Initial calculation
     calculateTotals();
@@ -212,7 +262,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const newRow = firstRow.cloneNode(true);
         
         // Clear values in the new row
-        newRow.querySelector('.product-select').value = '';
+        const select = newRow.querySelector('.product-select');
+        // Destroy old select2 before cloning
+        $(select).select2('destroy');
+        
+        select.value = '';
         newRow.querySelector('.price-input').value = '';
         newRow.querySelector('.quantity-input').value = '1';
         newRow.querySelector('.line-total').value = '';
@@ -222,6 +276,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Append the new row
         orderItems.appendChild(newRow);
+        
+        // Initialize Select2 on the new dropdown
+        initSelect2($(newRow.querySelector('.product-select')));
     });
     
     // Add event listeners to the initial row
@@ -236,16 +293,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const removeBtn = row.querySelector('.remove-row');
         
         // Product selection change
-        productSelect.addEventListener('change', function() {
-            const option = this.options[this.selectedIndex];
-            if (option && option.value) {
-                const price = parseFloat(option.dataset.price);
+        $(productSelect).on('select2:select', function(e) {
+            const option = e.params.data;
+            if (option && option.id) {
+                const price = parseFloat(option.price);
                 priceInput.value = price.toFixed(2);
                 calculateLineTotal(row);
-            } else {
-                priceInput.value = '';
-                lineTotalInput.value = '';
+                calculateTotals();
             }
+        });
+        
+        $(productSelect).on('select2:clear', function() {
+            priceInput.value = '';
+            lineTotalInput.value = '';
             calculateTotals();
         });
         
@@ -266,6 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Don't remove if it's the only row
             const rows = orderItems.querySelectorAll('.item-row');
             if (rows.length > 1) {
+                // Destroy Select2 before removing the row
+                $(productSelect).select2('destroy');
                 row.remove();
                 calculateTotals();
             }
