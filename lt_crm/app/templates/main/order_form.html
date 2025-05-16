@@ -127,7 +127,7 @@
                                 </select>
                             </div>
                             <div class="col-span-2">
-                                <input type="number" name="prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required readonly />
+                                <input type="number" name="prices[]" step="0.01" min="0" class="input input-bordered w-full price-input" required />
                             </div>
                             <div class="col-span-1">
                                 <input type="number" name="quantities[]" min="1" value="1" class="input input-bordered w-full quantity-input" required />
@@ -251,6 +251,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Quantity change
         quantityInput.addEventListener('input', function() {
+            calculateLineTotal(row);
+            calculateTotals();
+        });
+        
+        // Price change
+        priceInput.addEventListener('input', function() {
             calculateLineTotal(row);
             calculateTotals();
         });
