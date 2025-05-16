@@ -190,47 +190,23 @@
                     <label class="label">
                         <span class="label-text">Pagrindinė nuotrauka</span>
                     </label>
-                    <div class="flex gap-2">
-                        <input type="text" name="main_image_url" id="main_image_url" value="{{ product.main_image_url if product else '' }}" 
-                               class="input input-bordered w-full" 
-                               placeholder="https://example.com/image.jpg" />
-                        <button type="button" class="btn btn-square btn-sm" onclick="testMainImageURL()">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </button>
-                    </div>
+                    <input type="text" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="https://example.com/image.jpg" />
                     
-                    <div class="mt-2 image-preview-container">
-                        {% if product and product.main_image_url %}
-                        <img src="{{ product.main_image_url }}" id="main-image-preview" alt="{{ product.name }}" class="max-h-32 rounded-md" 
-                             onerror="handleImageError(this)" />
-                        <div class="text-error text-sm mt-1 hidden" id="main-image-error">Nepavyko užkrauti nuotraukos</div>
-                        {% else %}
-                        <img src="" id="main-image-preview" alt="Nuotraukos peržiūra" class="max-h-32 rounded-md hidden" 
-                             onerror="handleImageError(this)" />
-                        <div class="text-error text-sm mt-1 hidden" id="main-image-error">Nepavyko užkrauti nuotraukos</div>
-                        {% endif %}
+                    {% if product and product.main_image_url %}
+                    <div class="mt-2">
+                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}" class="max-h-32 rounded-md" />
                     </div>
+                    {% endif %}
                 </div>
                 
                 <div class="form-control">
                     <label class="label">
-                        <span class="label-text">Papildomos nuotraukos (JSON arba URL atskiriami |)</span>
+                        <span class="label-text">Papildomos nuotraukos (JSON)</span>
                     </label>
-                    <div class="flex gap-2">
-                        <textarea name="extra_image_urls" id="extra_image_urls" class="textarea textarea-bordered" 
-                                  placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
-                        <button type="button" class="btn btn-square btn-sm" onclick="testExtraImageURLs()">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mt-2">
-                        <div id="extra-images-preview" class="flex flex-wrap gap-2"></div>
-                        <div class="text-error text-sm mt-1 hidden" id="extra-images-error">Klaida apdorojant papildomas nuotraukas</div>
-                    </div>
+                    <textarea name="extra_image_urls" class="textarea textarea-bordered" 
+                              placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
                 </div>
             </div>
         </div>
@@ -314,110 +290,6 @@
                 });
             });
         });
-    });
-
-    function handleImageError(img) {
-        img.style.display = 'none';
-        const errorElement = img.nextElementSibling || img.parentElement.querySelector('[id$="-error"]');
-        if (errorElement) {
-            errorElement.classList.remove('hidden');
-        }
-    }
-    
-    function testMainImageURL() {
-        const input = document.getElementById('main_image_url');
-        const preview = document.getElementById('main-image-preview');
-        const error = document.getElementById('main-image-error');
-        
-        if (!input.value.trim()) {
-            error.classList.remove('hidden');
-            error.textContent = 'URL negali būti tuščias';
-            preview.classList.add('hidden');
-            return;
-        }
-        
-        // Reset previous state
-        preview.classList.remove('hidden');
-        error.classList.add('hidden');
-        
-        // Set new image source
-        preview.src = input.value.trim();
-    }
-    
-    function testExtraImageURLs() {
-        const input = document.getElementById('extra_image_urls');
-        const preview = document.getElementById('extra-images-preview');
-        const error = document.getElementById('extra-images-error');
-        
-        // Clear previous previews
-        preview.innerHTML = '';
-        error.classList.add('hidden');
-        
-        let urls = [];
-        const value = input.value.trim();
-        
-        if (!value) {
-            error.classList.remove('hidden');
-            error.textContent = 'URL sąrašas negali būti tuščias';
-            return;
-        }
-        
-        try {
-            // Try to parse as JSON
-            if (value.startsWith('[') && value.endsWith(']')) {
-                urls = JSON.parse(value);
-            } else if (value.includes('|')) {
-                // Split by pipe character
-                urls = value.split('|').map(url => url.trim()).filter(url => url);
-            } else if (value.includes(',')) {
-                // Split by comma
-                urls = value.split(',').map(url => url.trim()).filter(url => url);
-            } else {
-                // Single URL
-                urls = [value];
-            }
-            
-            // Create preview for each URL
-            urls.forEach((url, index) => {
-                const container = document.createElement('div');
-                container.className = 'relative';
-                
-                const img = document.createElement('img');
-                img.src = url;
-                img.alt = `Preview ${index + 1}`;
-                img.className = 'h-24 w-24 object-cover rounded-md border border-base-200';
-                img.onerror = function() {
-                    this.style.display = 'none';
-                    this.nextElementSibling.style.display = 'flex';
-                };
-                
-                const errorFallback = document.createElement('div');
-                errorFallback.className = 'absolute inset-0 flex items-center justify-center text-xs text-center rounded-md border border-base-300 p-1 bg-base-100';
-                errorFallback.style.display = 'none';
-                errorFallback.textContent = 'Klaida';
-                
-                container.appendChild(img);
-                container.appendChild(errorFallback);
-                preview.appendChild(container);
-            });
-            
-        } catch (e) {
-            error.classList.remove('hidden');
-            error.textContent = 'Klaida apdorojant URL: ' + e.message;
-        }
-    }
-    
-    // Initialize previews on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const mainImageURL = document.getElementById('main_image_url');
-        if (mainImageURL && mainImageURL.value) {
-            testMainImageURL();
-        }
-        
-        const extraImageURLs = document.getElementById('extra_image_urls');
-        if (extraImageURLs && extraImageURLs.value) {
-            testExtraImageURLs();
-        }
     });
 </script>
 {% endblock %} 

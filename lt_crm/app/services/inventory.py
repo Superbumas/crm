@@ -1,6 +1,5 @@
 """Inventory management services."""
 import pandas as pd
-import logging
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from lt_crm.app.extensions import db
@@ -8,8 +7,6 @@ from lt_crm.app.models.product import Product
 from lt_crm.app.models.stock import StockMovement, MovementReasonCode
 from lt_crm.app.models.order import OrderStatus
 
-# Set up logging
-logger = logging.getLogger(__name__)
 
 def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=None):
     """
@@ -55,7 +52,6 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
         'category': 'category',
         'main_image_url': 'main_image_url',
         'image_url': 'main_image_url',  # Alternative name
-        'image_link': 'main_image_url',  # Another alternative name
         'manufacturer': 'manufacturer',
         'model': 'model',
         'warranty_months': 'warranty_months',
@@ -79,49 +75,6 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                     # Map column name if it exists in the mapping
                     field_name = field_mapping.get(col, col)
                     product_data[field_name] = val
-            
-            # Check for image URL fields and ensure they're properly formatted
-            if 'main_image_url' in product_data:
-                image_url = product_data['main_image_url']
-                if isinstance(image_url, str):
-                    # Clean up the URL
-                    image_url = image_url.strip().strip("'").strip('"')
-                    if image_url:
-                        product_data['main_image_url'] = image_url
-                        logger.info(f"Processing product with image URL: {image_url}")
-                    else:
-                        logger.warning(f"Empty image URL found for SKU: {product_data.get('sku', 'unknown')}")
-                        del product_data['main_image_url']
-            else:
-                logger.info(f"No main_image_url found for SKU: {product_data.get('sku', 'unknown')}")
-            
-            # Process extra image URLs
-            if 'extra_image_urls' in product_data:
-                extra_urls = product_data['extra_image_urls']
-                logger.info(f"Extra image URLs before processing: {extra_urls} (type: {type(extra_urls)})")
-                
-                # Handle different types of extra_image_urls
-                if isinstance(extra_urls, str):
-                    # Check if it's a pipe or comma-separated string
-                    if '|' in extra_urls:
-                        extra_urls = [url.strip() for url in extra_urls.split('|') if url.strip()]
-                    elif ',' in extra_urls:
-                        extra_urls = [url.strip() for url in extra_urls.split(',') if url.strip()]
-                    # Otherwise, it might be a JSON string, which should have been parsed in clean_product_dataframe
-                
-                # Ensure it's a list
-                if not isinstance(extra_urls, list):
-                    try:
-                        # If it's still a string at this point, try to interpret as a single URL
-                        extra_urls = [extra_urls]
-                    except:
-                        logger.warning(f"Could not process extra_image_urls for SKU {product_data.get('sku', 'unknown')}, setting to empty list")
-                        extra_urls = []
-                
-                # Clean up URLs in the list
-                extra_urls = [url.strip().strip("'").strip('"') for url in extra_urls if url]
-                product_data['extra_image_urls'] = extra_urls
-                logger.info(f"Processed extra image URLs: {extra_urls}")
             
             # Check for required fields after mapping
             original_sku = product_data.get("sku")
@@ -200,9 +153,6 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                 for key, value in product_data.items():
                     if key != "quantity" and hasattr(product, key):  # Handle quantity separately and ensure attribute exists
                         try:
-                            # Log image-related updates
-                            if key in ['main_image_url', 'extra_image_urls']:
-                                logger.info(f"Updating {key} for SKU {sku}: {value}")
                             setattr(product, key, value)
                         except Exception as e:
                             summary["error_details"].append(f"Warning for SKU {sku}: Could not set {key}={value}: {str(e)}")
@@ -234,9 +184,6 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                 valid_product_data = {}
                 for key, value in product_data.items():
                     if hasattr(Product, key):  # Ensure attribute exists in the model
-                        # Log image-related fields
-                        if key in ['main_image_url', 'extra_image_urls']:
-                            logger.info(f"Setting {key} for new product SKU {sku}: {value}")
                         valid_product_data[key] = value
                 
                 # Handle required fields
