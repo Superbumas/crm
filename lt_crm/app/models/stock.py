@@ -77,23 +77,16 @@ class Shipment(TimestampMixin, db.Model):
                 product.quantity += item.quantity
                 db.session.add(product)
                 
-                # Insert stock movement using raw SQL to avoid enum issues
-                now = datetime.now()
-                sql = text("""
-                    INSERT INTO stock_movements 
-                    (product_id, qty_delta, reason_code, note, reference_id, user_id, created_at, updated_at) 
-                    VALUES (:product_id, :qty_delta, 'SHIPMENT', :note, :reference_id, :user_id, :created_at, :updated_at)
-                """)
-                
-                db.session.execute(sql, {
-                    'product_id': item.product_id,
-                    'qty_delta': item.quantity,
-                    'note': f"Siuntos gavimas: {self.shipment_number}",
-                    'reference_id': str(self.id),
-                    'user_id': self.user_id,
-                    'created_at': now,
-                    'updated_at': now
-                })
+                # Create a stock movement record directly using the model
+                movement = StockMovement(
+                    product_id=item.product_id,
+                    qty_delta=item.quantity,
+                    reason_code=MovementReasonCode.SHIPMENT,
+                    note=f"Siuntos gavimas: {self.shipment_number}",
+                    reference_id=str(self.id),
+                    user_id=self.user_id
+                )
+                db.session.add(movement)
             
         # Update shipment status and arrival date
         self.status = ShipmentStatus.RECEIVED

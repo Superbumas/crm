@@ -707,13 +707,13 @@ def invoices_export_pdf():
         # Get invoice IDs from query params
         invoice_ids = request.args.get('ids', '').split(',')
         if not invoice_ids or invoice_ids[0] == '':
-            flash("No invoices selected for export", "error")
+            flash("Nepasirinktos sąskaitos eksportavimui", "error")
             return redirect(url_for('main.invoices'))
         
         # Query invoices
         invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
         if not invoices:
-            flash("No invoices found with the provided IDs", "error")
+            flash("Nerasta sąskaitų su nurodytais ID", "error")
             return redirect(url_for('main.invoices'))
         
         # Get company settings
@@ -765,11 +765,11 @@ def invoices_export_pdf():
             mimetype="application/zip"
         )
     except ImportError:
-        flash("PDF generation requires the WeasyPrint library", "error")
+        flash("PDF generavimui reikia WeasyPrint bibliotekos", "error")
         return redirect(url_for('main.invoices'))
     except Exception as e:
         current_app.logger.exception("Error during batch PDF export")
-        flash(f"Error during PDF export: {str(e)}", "error")
+        flash(f"Klaida eksportuojant PDF: {str(e)}", "error")
         return redirect(url_for('main.invoices'))
 
 
@@ -831,7 +831,7 @@ def invoices_export_csv():
             invoices = Invoice.query.filter(Invoice.id.in_(invoice_ids)).all()
         
         if not invoices:
-            flash("No invoices found to export", "error")
+            flash("Nerasta sąskaitų eksportavimui", "error")
             return redirect(url_for('main.invoices'))
         
         # Create CSV file in memory
@@ -840,8 +840,8 @@ def invoices_export_csv():
         
         # Write header
         header = [
-            'Invoice Number', 'Status', 'Issue Date', 'Due Date', 'Customer/Billing Name',
-            'Customer Email', 'Subtotal Amount', 'Tax Amount', 'Total Amount', 'Created At'
+            'Sąskaitos nr.', 'Statusas', 'Išrašymo data', 'Apmokėjimo data', 'Klientas', 
+            'El. paštas', 'Suma be PVM', 'PVM suma', 'Bendra suma', 'Sukurta'
         ]
         csv_writer.writerow(header)
         
@@ -876,7 +876,7 @@ def invoices_export_csv():
         
     except Exception as e:
         current_app.logger.exception("Error during CSV export")
-        flash(f"Error exporting to CSV: {str(e)}", "error")
+        flash(f"Klaida eksportuojant į CSV: {str(e)}", "error")
         return redirect(url_for('main.invoices'))
 
 
@@ -1056,7 +1056,7 @@ def order_new():
             
             # Validate that there's at least one product
             if not product_ids or not prices or not quantities or len(product_ids) == 0:
-                flash("You must add at least one product to the order", "error")
+                flash("Būtina pridėti bent vieną produktą į užsakymą", "error")
                 products = Product.query.order_by(Product.name).all()
                 return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
             
@@ -1143,12 +1143,12 @@ def order_new():
                 except Exception as e:
                     current_app.logger.warning(f"Error processing stock changes for new order {new_order.id}: {str(e)}")
             
-            flash(f"Order {order_number} created successfully", "success")
+            flash(f"Užsakymas {order_number} sėkmingai sukurtas", "success")
             return redirect(url_for('main.order_detail', id=new_order.id))
             
         except Exception as e:
             db.session.rollback()
-            flash(f"Error creating order: {str(e)}", "error")
+            flash(f"Klaida kuriant užsakymą: {str(e)}", "error")
             products = Product.query.order_by(Product.name).all()
             return render_template("main/order_form.html", title="Naujas užsakymas", products=products)
     
@@ -1175,7 +1175,7 @@ def order_update_status(id):
         
         if not status or status not in [e.value for e in OrderStatus]:
             current_app.logger.error(f"Invalid status '{status}' for order {id}")
-            return jsonify({"error": f"Invalid status: {status}"}), 400
+            return jsonify({"error": f"Neteisingas statusas: {status}"}), 400
         
         # Store old status for comparison
         old_status = order.status
@@ -1202,7 +1202,7 @@ def order_update_status(id):
             
             # Return information about the movements
             return jsonify({
-                "message": "Status updated successfully",
+                "message": "Statusas sėkmingai atnaujintas",
                 "movements_created": len(movements),
                 "new_status": order.status.value
             }), 200
@@ -1211,7 +1211,7 @@ def order_update_status(id):
             current_app.logger.error(f"Error processing order inventory changes: {str(e)}")
             # We don't roll back the status change even if inventory processing failed
             return jsonify({
-                "message": "Status updated but inventory processing failed",
+                "message": "Statusas atnaujintas, bet inventoriaus apdorojimas nepavyko",
                 "error": str(e),
                 "new_status": order.status.value
             }), 500

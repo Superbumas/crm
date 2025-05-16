@@ -56,6 +56,34 @@
         .htmx-request.htmx-indicator {
             opacity: 1
         }
+        
+        /* Toast styling */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            max-width: 24rem;
+        }
+        
+        .toast-alert {
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-in-out forwards;
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
@@ -104,23 +132,6 @@
 
             <!-- Main content -->
             <main>
-                <!-- Toast alerts -->
-                <div id="toast-container" class="toast toast-top toast-end z-50">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert {{ 'alert-error' if category == 'error' else 'alert-success' }} shadow-lg mb-4 animate__animated animate__fadeIn">
-                        <div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>{{ message }}</span>
-                        </div>
-                        <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
-                    </div>
-                    {% endfor %}
-                {% endif %}
-                {% endwith %}
-                </div>
-
                 {% block content %}{% endblock %}
             </main>
         </div>
@@ -278,8 +289,22 @@
         </div>
     </footer>
 
-    <!-- Toast container for notifications -->
-    <div id="toast-container" class="toast toast-end"></div>
+    <!-- Toast container for notifications - SINGLE CONTAINER -->
+    <div id="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="toast-alert alert {{ 'alert-error' if category == 'error' else 'alert-success' }} shadow-lg mb-2">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>{{ message }}</span>
+                </div>
+                <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
 
     <!-- JavaScript -->
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
@@ -318,11 +343,11 @@
         
         // Auto-remove toasts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
-            const toasts = document.querySelectorAll('.toast .alert');
+            const toasts = document.querySelectorAll('.toast-alert');
             toasts.forEach(toast => {
                 setTimeout(() => {
-                    toast.classList.add('animate__fadeOut');
-                    setTimeout(() => toast.remove(), 500);
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.remove(), 300);
                 }, 5000);
             });
         });
