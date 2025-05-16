@@ -57,11 +57,12 @@ def register():
     if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
+        name = request.form.get("name")
         password = request.form.get("password")
         password2 = request.form.get("password2")
         
         # Validate form inputs
-        if not username or not email or not password or not password2:
+        if not username or not email or not name or not password or not password2:
             flash("All fields are required", "error")
             return redirect(url_for("auth.register"))
             
@@ -81,7 +82,7 @@ def register():
             return redirect(url_for("auth.register"))
         
         # Create new user
-        user = User(username=username, email=email)
+        user = User(username=username, email=email, name=name)
         user.set_password(password)
         
         # Save to database
@@ -170,6 +171,7 @@ def create_user():
     # Get form data
     username = request.form.get("username")
     email = request.form.get("email")
+    name = request.form.get("name", username)  # Default to username if name not provided
     password = request.form.get("password")
     confirm_password = request.form.get("confirm_password")
     is_admin = "is_admin" in request.form
@@ -196,6 +198,7 @@ def create_user():
     user = User(
         username=username,
         email=email,
+        name=name,
         is_admin=is_admin,
         is_active=True
     )
