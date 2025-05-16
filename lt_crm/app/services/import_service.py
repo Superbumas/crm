@@ -3,9 +3,12 @@ import os
 import io
 import pandas as pd
 import chardet
+import logging
 from werkzeug.utils import secure_filename
 from lt_crm.app.services.inventory import import_products_from_dataframe
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
 def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=','):
     """
@@ -117,8 +120,19 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
                               'price_final', 'price_old', 'category', 'manufacturer', 'model']
             df.columns = default_columns[:len(df.columns)]
         
+        # Debug: Log column names present in the file
+        logger.info(f"Columns in import file: {list(df.columns)}")
+        
         # Clean and convert data types
         df = clean_product_dataframe(df)
+        
+        # Debug: Check for image URLs in the dataframe
+        if 'main_image_url' in df.columns:
+            logger.info(f"Found main_image_url column. Sample values: {df['main_image_url'].head().tolist()}")
+        elif 'image_url' in df.columns:
+            logger.info(f"Found image_url column. Sample values: {df['image_url'].head().tolist()}")
+        else:
+            logger.warning("No image URL column found in import file")
         
         # Validate data
         is_valid, error_msg = validate_product_data(df)
@@ -190,6 +204,20 @@ def clean_product_dataframe(df):
                 if default is not None:
                     df[col] = default
     
+    # Special handling for image URLs
+    if 'image_url' in df.columns and 'main_image_url' not in df.columns:
+        # Rename to the standard column name
+        df['main_image_url'] = df['image_url']
+        logger.info("Renamed 'image_url' to 'main_image_url'")
+    
+    # Clean image URLs
+    if 'main_image_url' in df.columns:
+        # Remove any leading/trailing whitespace, quotes, etc.
+        df['main_image_url'] = df['main_image_url'].apply(
+            lambda x: x.strip().strip('"\'') if pd.notna(x) and isinstance(x, str) else x
+        )
+        logger.info(f"Cleaned main_image_url. Sample values after cleaning: {df['main_image_url'].head().tolist()}")
+    
     # Convert JSON fields if they're strings
     json_cols = ['extra_image_urls', 'parameters', 'variants', 'delivery_options']
     for col in json_cols:
@@ -208,6 +236,15 @@ def try_parse_json(value):
     try:
         return json.loads(value)
     except:
+        # Check if this might be a pipe-separated string of URLs
+        if isinstance(value, str) and ('|' in value or ',' in value):
+            # Split by pipe or comma and return as a list
+            sep = '|' if '|' in value else ','
+            urls = [url.strip() for url in value.split(sep)]
+            # Filter out empty entries
+            urls = [url for url in urls if url]
+            logger.info(f"Converted pipe/comma-separated string to list: {urls}")
+            return urls
         return value
 
 

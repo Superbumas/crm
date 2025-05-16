@@ -14,6 +14,9 @@
     .lightbox-slide {
         transition: opacity 0.3s ease-in-out;
     }
+    .img-error-fallback {
+        display: none;
+    }
 </style>
 {% endblock %}
 
@@ -47,7 +50,17 @@
                     <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
                          class="absolute inset-0 w-full h-full object-contain p-4 gallery-thumbnail cursor-pointer" 
                          onclick="window.openProductGallery(0)"
-                         onerror="this.style.display='none';">
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="absolute inset-0 flex items-center justify-center text-base-content/40 img-error-fallback">
+                        <div class="text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p class="mt-2">Nepavyko užkrauti nuotraukos</p>
+                            <p class="text-sm break-all mt-1">{{ product.main_image_url }}</p>
+                        </div>
+                    </div>
                 </figure>
                 {% else %}
                 <figure class="relative pt-[75%] bg-base-200">
@@ -67,18 +80,25 @@
                         {% set img_urls = [] %}
                         {% if product.extra_image_urls is string and '|' in product.extra_image_urls %}
                             {% set img_urls = product.extra_image_urls.split('|') %}
+                        {% elif product.extra_image_urls is string and ',' in product.extra_image_urls %}
+                            {% set img_urls = product.extra_image_urls.split(',') %}
                         {% elif product.extra_image_urls is iterable and product.extra_image_urls is not string %}
                             {% set img_urls = product.extra_image_urls %}
+                        {% elif product.extra_image_urls is string %}
+                            {% set img_urls = [product.extra_image_urls] %}
                         {% endif %}
                         
                         {% for img_url in img_urls %}
-                        {% set img_url_trimmed = img_url.strip() %}
+                        {% set img_url_trimmed = img_url.strip() if img_url is string else img_url %}
                         {% if img_url_trimmed %}
-                        <div class="aspect-square img-container">
+                        <div class="aspect-square img-container relative">
                             <img src="{{ img_url_trimmed }}" alt="{{ product.name }} - nuotrauka {{ loop.index }}" 
                                  class="w-full h-full object-cover rounded-md border border-base-300 gallery-thumbnail cursor-pointer"
                                  onclick="window.openProductGallery({{ loop.index }})"
-                                 onerror="this.parentElement.style.display='none';">
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="absolute inset-0 flex items-center justify-center text-xs text-center rounded-md border border-base-300 p-1 img-error-fallback">
+                                <span>Nepavyko užkrauti</span>
+                            </div>
                         </div>
                         {% endif %}
                         {% endfor %}
