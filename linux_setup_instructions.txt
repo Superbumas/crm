@@ -1,0 +1,63 @@
+# Running CRM on Linux/Azure VM
+
+## Handling Git Conflict
+To handle your Git conflict with docker-compose.yml, run one of these options:
+
+### Option 1: Save your changes and stash them
+```
+git stash
+git pull
+git stash pop   # This might cause conflicts you need to resolve
+```
+
+### Option 2: Discard your local changes (if they are not important)
+```
+git checkout -- docker-compose.yml
+git pull
+```
+
+### Option 3: Keep your changes and force the merge
+```
+git pull -X theirs  # Keep remote changes
+# OR
+git pull -X ours    # Keep your local changes
+```
+
+## Running the Application
+
+1. Make the Linux start script executable:
+```
+chmod +x start.sh
+```
+
+2. Run the bash version of the start script:
+```
+./start.sh
+```
+
+3. If you need to access pgAdmin to manage the database:
+   - It should be available at http://your-domain:5050 or http://your-ip:5050
+   - Login with:
+     - Email: admin@example.com
+     - Password: admin
+
+## Troubleshooting
+
+1. If ports are blocked, run the firewall commands:
+```
+sudo ufw allow 5050/tcp
+sudo ufw allow 5432/tcp
+sudo ufw allow 8000/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+2. Check Docker container status:
+```
+docker-compose ps
+```
+
+3. View container logs:
+```
+docker-compose logs web
+``` 

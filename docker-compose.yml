@@ -17,6 +17,7 @@ services:
       - SECRET_KEY=local-dev-secret-key
     volumes:
       - ./lt_crm:/app/lt_crm
+      - ./lt_crm/migrations:/app/migrations
     depends_on:
       - postgres
       - redis
@@ -39,6 +40,7 @@ services:
       - SECRET_KEY=local-dev-secret-key
     volumes:
       - ./lt_crm:/app/lt_crm
+      - ./lt_crm/migrations:/app/migrations
     depends_on:
       - redis
       - postgres
