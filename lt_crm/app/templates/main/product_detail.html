@@ -253,18 +253,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for variant in product.variants %}
-                            <tr>
-                                <td>{{ variant.sku }}</td>
-                                <td>{{ variant.name }}</td>
-                                <td>{{ variant.price|euro }}</td>
+                            {% if product.variants is iterable and product.variants is not string %}
+                                {% for variant in product.variants %}
+                                <tr>
+                                    <td>{{ variant.sku if variant is mapping and variant.sku is defined else '-' }}</td>
+                                    <td>{{ variant.name if variant is mapping and variant.name is defined else '-' }}</td>
+                                    <td>{{ variant.price|euro if variant is mapping and variant.price is defined else '-' }}</td>
                                 <td>
-                                    <span class="badge {% if variant.quantity > 10 %}badge-success{% elif variant.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
-                                        {{ variant.quantity }} vnt.
-                                    </span>
+                                    {% if variant.quantity is defined and variant.quantity is not string %}
+                                        <span class="badge {% if variant.quantity > 10 %}badge-success{% elif variant.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
+                                            {{ variant.quantity }} vnt.
+                                        </span>
+                                    {% elif variant.quantity is defined and variant.quantity is string %}
+                                        <span class="badge badge-info">
+                                            {{ variant.quantity }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-ghost">
+                                            -
+                                        </span>
+                                    {% endif %}
                                 </td>
                             </tr>
-                            {% endfor %}
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">Nėra variantų arba variantai netinkamo formato</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
