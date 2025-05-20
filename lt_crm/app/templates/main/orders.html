@@ -118,9 +118,21 @@
                             <td>
                                 <div class="status-control" data-order-id="{{ order.id }}">
                                     <div class="flex items-center space-x-2">
-                                        <select class="select select-bordered select-sm w-full max-w-xs status-select" 
-                                                data-original-value="{{ order.status.value }}"
-                                                name="status">
+                                        <span class="order-status-text">
+                                            {% if order.status.value == 'new' %}Naujas
+                                            {% elif order.status.value == 'paid' %}Apmokėtas
+                                            {% elif order.status.value == 'packed' %}Supakuotas
+                                            {% elif order.status.value == 'shipped' %}Išsiųstas
+                                            {% elif order.status.value == 'returned' %}Grąžintas
+                                            {% elif order.status.value == 'cancelled' %}Atšauktas
+                                            {% else %}{{ order.status.value }}{% endif %}
+                                        </span>
+                                        <button class="btn btn-xs btn-outline edit-status-btn" title="Redaguoti">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                        <select class="select select-bordered select-sm w-full max-w-xs status-select" name="status" style="display:none">
                                             <option value="new" {% if order.status.value == 'new' %}selected{% endif %}>Naujas</option>
                                             <option value="paid" {% if order.status.value == 'paid' %}selected{% endif %}>Apmokėtas</option>
                                             <option value="packed" {% if order.status.value == 'packed' %}selected{% endif %}>Supakuotas</option>
@@ -128,15 +140,13 @@
                                             <option value="returned" {% if order.status.value == 'returned' %}selected{% endif %}>Grąžintas</option>
                                             <option value="cancelled" {% if order.status.value == 'cancelled' %}selected{% endif %}>Atšauktas</option>
                                         </select>
-                                        <div class="status-actions hidden">
-                                            <button class="btn btn-square btn-xs btn-success confirm-status-btn" 
-                                                    title="Išsaugoti">
+                                        <div class="status-actions" style="display:none">
+                                            <button class="btn btn-square btn-xs btn-success confirm-status-btn" title="Išsaugoti">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                 </svg>
                                             </button>
-                                            <button class="btn btn-square btn-xs btn-error cancel-status-btn" 
-                                                    title="Atšaukti">
+                                            <button class="btn btn-square btn-xs btn-error cancel-status-btn" title="Atšaukti">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
@@ -310,9 +320,9 @@
                 
                 // Show the action buttons when status changes
                 if (this.value !== originalValue) {
-                    statusActions.classList.remove('hidden');
+                    statusActions.style.display = '';
                 } else {
-                    statusActions.classList.add('hidden');
+                    statusActions.style.display = 'none';
                 }
             });
         });
@@ -328,7 +338,7 @@
                 select.value = select.getAttribute('data-original-value');
                 
                 // Hide the action buttons
-                statusActions.classList.add('hidden');
+                statusActions.style.display = 'none';
             });
         });
         
@@ -341,7 +351,7 @@
                 const orderId = statusControl.getAttribute('data-order-id');
                 
                 // Hide the action buttons
-                statusActions.classList.add('hidden');
+                statusActions.style.display = 'none';
                 
                 // Show loading indicator
                 select.classList.add('select-disabled');
@@ -505,6 +515,28 @@
                 setTimeout(() => toast.remove(), 500);
             }, 5000);
         }
+
+        // Edit status button functionality
+        document.querySelectorAll('.edit-status-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const container = btn.closest('.status-control');
+                container.querySelector('.order-status-text').style.display = 'none';
+                btn.style.display = 'none';
+                container.querySelector('.status-select').style.display = '';
+                container.querySelector('.status-actions').style.display = '';
+            });
+        });
+
+        // Cancel status button functionality
+        document.querySelectorAll('.cancel-status-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const container = btn.closest('.status-control');
+                container.querySelector('.order-status-text').style.display = '';
+                container.querySelector('.edit-status-btn').style.display = '';
+                container.querySelector('.status-select').style.display = 'none';
+                container.querySelector('.status-actions').style.display = 'none';
+            });
+        });
     });
 </script>
-{% endblock %} 
+{% endblock %}
