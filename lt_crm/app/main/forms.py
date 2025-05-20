@@ -23,7 +23,7 @@ class ShipmentItemForm(FlaskForm):
 class ShipmentForm(FlaskForm):
     """Form for creating or editing a shipment."""
     
-    shipment_number = StringField('Shipment Number', validators=[DataRequired(), Length(max=50)])
+    shipment_number = StringField('Shipment Number', validators=[Optional(), Length(max=50)])
     supplier = StringField('Supplier', validators=[Optional(), Length(max=100)])
     expected_date = DateField('Expected Date', validators=[Optional()], default=date.today)
     notes = TextAreaField('Notes', validators=[Optional()])
