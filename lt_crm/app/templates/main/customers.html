@@ -43,7 +43,7 @@
                 </svg>
             </div>
             <div class="stat-title">Viso klientų</div>
-            <div class="stat-value text-primary">{{ pagination.total if pagination else customers|length }}</div>
+            <div class="stat-value text-primary">-</div>
             <div class="stat-desc">Registruoti sistemoje</div>
         </div>
     </div>
@@ -56,7 +56,7 @@
                 </svg>
             </div>
             <div class="stat-title">Aktyvūs klientai</div>
-            <div class="stat-value text-success">{{ customers|selectattr('orders')|list|length }}</div>
+            <div class="stat-value text-success">-</div>
             <div class="stat-desc">Su užsakymais</div>
         </div>
     </div>
@@ -69,7 +69,7 @@
                 </svg>
             </div>
             <div class="stat-title">Įmonės</div>
-            <div class="stat-value text-info">{{ customers|selectattr('company')|list|length }}</div>
+            <div class="stat-value text-info">-</div>
             <div class="stat-desc">Verslo klientai</div>
         </div>
     </div>
@@ -150,7 +150,7 @@
         <div class="flex justify-between items-center p-4 bg-base-200 border-b border-base-300">
             <div class="flex items-center gap-4">
                 <span class="text-sm font-medium text-base-content">
-                    Rodoma: {{ customers|length }} {% if pagination %}iš {{ pagination.total }}{% endif %} klientų
+                    Klientų sąrašas
                 </span>
             </div>
             <div class="flex items-center gap-2">
@@ -275,13 +275,8 @@
                             <td>
                                 <div class="flex items-center gap-2">
                                     <div class="badge badge-primary badge-outline">
-                                        {{ customer.orders.count() }} vnt.
+                                        -
                                     </div>
-                                    {% if customer.orders.count() > 0 %}
-                                    <div class="text-xs text-base-content/60">
-                                        Pask.: {{ customer.orders.order_by(customer.orders.c.created_at.desc()).first().created_at.strftime('%Y-%m-%d') if customer.orders.first() else '-' }}
-                                    </div>
-                                    {% endif %}
                                 </div>
                             </td>
                             <td class="text-right">
