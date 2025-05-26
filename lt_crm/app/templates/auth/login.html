@@ -12,8 +12,8 @@
                     </svg>
                 </div>
             </div>
-            <h1 class="text-3xl font-bold text-base-content mb-2">{{ _('Sign In') }}</h1>
-            <p class="text-base-content/70 text-sm">{{ _('Welcome back! Please sign in to your account.') }}</p>
+            <h1 class="text-3xl font-bold text-base-content mb-2">Prisijungti</h1>
+            <p class="text-base-content/70 text-sm">Sveiki sugrįžę! Prašome prisijungti prie savo paskyros.</p>
         </div>
 
         <!-- Login Form Card -->
@@ -41,7 +41,7 @@
                     <!-- Email Field -->
                     <div class="form-control">
                         <label class="label" for="email">
-                            <span class="label-text font-medium">{{ _('Email') }}</span>
+                            <span class="label-text font-medium">El. paštas</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -55,7 +55,7 @@
                                 id="email" 
                                 required 
                                 class="input input-bordered w-full pl-10 text-lg"
-                                placeholder="{{ _('Enter your email address') }}"
+                                placeholder="Įveskite savo el. pašto adresą"
                                 autocomplete="email"
                                 autofocus
                             >
@@ -65,7 +65,7 @@
                     <!-- Password Field -->
                     <div class="form-control">
                         <label class="label" for="password">
-                            <span class="label-text font-medium">{{ _('Password') }}</span>
+                            <span class="label-text font-medium">Slaptažodis</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -79,7 +79,7 @@
                                 id="password" 
                                 required 
                                 class="input input-bordered w-full pl-10 text-lg"
-                                placeholder="{{ _('Enter your password') }}"
+                                placeholder="Įveskite savo slaptažodį"
                                 autocomplete="current-password"
                             >
                         </div>
@@ -89,7 +89,7 @@
                     <div class="form-control">
                         <label class="label cursor-pointer justify-start gap-3">
                             <input type="checkbox" name="remember_me" id="remember_me" class="checkbox checkbox-primary">
-                            <span class="label-text">{{ _('Remember me') }}</span>
+                            <span class="label-text">Prisiminti mane</span>
                         </label>
                     </div>
                     
@@ -99,7 +99,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                             </svg>
-                            {{ _('Sign In') }}
+                            Prisijungti
                         </button>
                     </div>
                 </form>
@@ -109,16 +109,16 @@
         <!-- Register Link -->
         <div class="text-center">
             <p class="text-base-content/70">
-                {{ _("Don't have an account?") }}
+                Neturite paskyros?
                 <a href="{{ url_for('auth.register') }}" class="link link-primary font-medium">
-                    {{ _('Register') }}
+                    Registruotis
                 </a>
             </p>
         </div>
         
         <!-- Footer -->
         <div class="text-center text-xs text-base-content/50 mt-8">
-            <p>© 2024 LT CRM. {{ _('All rights reserved.') }}</p>
+            <p>© 2024 LT CRM. Visos teisės saugomos.</p>
         </div>
     </div>
 </div>

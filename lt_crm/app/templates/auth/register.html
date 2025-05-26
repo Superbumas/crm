@@ -12,8 +12,8 @@
                     </svg>
                 </div>
             </div>
-            <h1 class="text-3xl font-bold text-base-content mb-2">{{ _('Register') }}</h1>
-            <p class="text-base-content/70 text-sm">{{ _('Create your account to get started.') }}</p>
+            <h1 class="text-3xl font-bold text-base-content mb-2">Registruotis</h1>
+            <p class="text-base-content/70 text-sm">Sukurkite paskyrą, kad galėtumėte pradėti.</p>
         </div>
 
         <!-- Register Form Card -->
@@ -41,7 +41,7 @@
                     <!-- Username Field -->
                     <div class="form-control">
                         <label class="label" for="username">
-                            <span class="label-text font-medium">{{ _('Username') }}</span>
+                            <span class="label-text font-medium">Vartotojo vardas</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -55,7 +55,7 @@
                                 id="username" 
                                 required 
                                 class="input input-bordered w-full pl-10"
-                                placeholder="{{ _('Enter your username') }}"
+                                placeholder="Įveskite savo vartotojo vardą"
                                 autocomplete="username"
                                 autofocus
                             >
@@ -65,7 +65,7 @@
                     <!-- Full Name Field -->
                     <div class="form-control">
                         <label class="label" for="name">
-                            <span class="label-text font-medium">{{ _('Full Name') }}</span>
+                            <span class="label-text font-medium">Pilnas vardas</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -79,7 +79,7 @@
                                 id="name" 
                                 required 
                                 class="input input-bordered w-full pl-10"
-                                placeholder="{{ _('Enter your full name') }}"
+                                placeholder="Įveskite savo pilną vardą"
                                 autocomplete="name"
                             >
                         </div>
@@ -88,7 +88,7 @@
                     <!-- Email Field -->
                     <div class="form-control">
                         <label class="label" for="email">
-                            <span class="label-text font-medium">{{ _('Email') }}</span>
+                            <span class="label-text font-medium">El. paštas</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -102,7 +102,7 @@
                                 id="email" 
                                 required 
                                 class="input input-bordered w-full pl-10"
-                                placeholder="{{ _('Enter your email address') }}"
+                                placeholder="Įveskite savo el. pašto adresą"
                                 autocomplete="email"
                             >
                         </div>
@@ -111,7 +111,7 @@
                     <!-- Password Field -->
                     <div class="form-control">
                         <label class="label" for="password">
-                            <span class="label-text font-medium">{{ _('Password') }}</span>
+                            <span class="label-text font-medium">Slaptažodis</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -125,7 +125,7 @@
                                 id="password" 
                                 required 
                                 class="input input-bordered w-full pl-10"
-                                placeholder="{{ _('Enter your password') }}"
+                                placeholder="Įveskite savo slaptažodį"
                                 autocomplete="new-password"
                             >
                         </div>
@@ -134,7 +134,7 @@
                     <!-- Confirm Password Field -->
                     <div class="form-control">
                         <label class="label" for="password2">
-                            <span class="label-text font-medium">{{ _('Confirm Password') }}</span>
+                            <span class="label-text font-medium">Patvirtinti slaptažodį</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -148,7 +148,7 @@
                                 id="password2" 
                                 required 
                                 class="input input-bordered w-full pl-10"
-                                placeholder="{{ _('Confirm your password') }}"
+                                placeholder="Patvirtinkite savo slaptažodį"
                                 autocomplete="new-password"
                             >
                         </div>
@@ -160,7 +160,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                             </svg>
-                            {{ _('Register') }}
+                            Registruotis
                         </button>
                     </div>
                 </form>
@@ -170,16 +170,16 @@
         <!-- Login Link -->
         <div class="text-center">
             <p class="text-base-content/70">
-                {{ _('Already have an account?') }}
+                Jau turite paskyrą?
                 <a href="{{ url_for('auth.login') }}" class="link link-primary font-medium">
-                    {{ _('Sign In') }}
+                    Prisijungti
                 </a>
             </p>
         </div>
         
         <!-- Footer -->
         <div class="text-center text-xs text-base-content/50 mt-8">
-            <p>© 2024 LT CRM. {{ _('All rights reserved.') }}</p>
+            <p>© 2024 LT CRM. Visos teisės saugomos.</p>
         </div>
     </div>
 </div>
