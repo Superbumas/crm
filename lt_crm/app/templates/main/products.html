@@ -815,7 +815,7 @@
                 </button>
                 <button class="btn btn-primary action-btn" @click="generatePreview()" :disabled="!isColumnMapValid">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z" />
                     </svg>
                     Peržiūrėti
                 </button>
@@ -1088,7 +1088,9 @@
             // Helper function to safely get CSRF token
             getCsrfToken() {
                 const metaTag = document.querySelector('meta[name="csrf-token"]');
-                return metaTag ? metaTag.getAttribute('content') || '' : '';
+                const token = metaTag ? metaTag.getAttribute('content') || '' : '';
+                console.log('CSRF token:', token);
+                return token;
             },
             
             showToast(message, type = 'info') {
@@ -1220,6 +1222,25 @@
                 }
                 
                 try {
+                    // Prepare request body
+                    const requestBody = {
+                        format: this.format,
+                        column_map: this.columnMap,
+                        limit: 20
+                    };
+                    
+                    // Add XML specific params if needed
+                    if (this.format === 'xml') {
+                        if (this.xmlTemplate === 'google_merchant') {
+                            requestBody.template = 'google_merchant';
+                        } else {
+                            requestBody.xml_root = 'items';
+                            requestBody.xml_item = 'item';
+                        }
+                    }
+                    
+                    console.log("Request body:", requestBody);
+                    
                     const response = await fetch('/api/v1/exports/preview', {
                         method: 'POST',
                         headers: {
@@ -1227,11 +1248,7 @@
                             'X-CSRF-TOKEN': this.getCsrfToken(),
                             'Authorization': `Bearer ${this.jwtToken}`
                         },
-                        body: JSON.stringify({
-                            format: this.format,
-                            column_map: this.columnMap,
-                            limit: 20
-                        })
+                        body: JSON.stringify(requestBody)
                     });
                     
                     console.log("API response status:", response.status);

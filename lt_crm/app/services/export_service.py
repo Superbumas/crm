@@ -51,11 +51,12 @@ class ExportService:
                             break
                 else:
                     # Get attribute value if it exists
-                    value = getattr(item, internal_name, None)
-                
-                # Call the value if it's a property method
-                if callable(value) and not hasattr(value, '__self__'):
-                    value = value()
+                    try:
+                        value = getattr(item, internal_name, None)
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(f"Error getting attribute {internal_name}: {str(e)}")
+                        value = None
                 
                 row[external_name] = value
             
@@ -344,7 +345,7 @@ class ExportService:
                 if not valid_path:
                     invalid_keys.append(internal_name)
             else:
-                # Check if attribute exists directly on model
+                # Check if attribute exists directly on model (including properties)
                 if not hasattr(model_class, internal_name):
                     invalid_keys.append(internal_name)
         

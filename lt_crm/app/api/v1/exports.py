@@ -30,6 +30,7 @@ class ExportPreviewSchema(Schema):
     limit = ma_fields.Int(required=False, validate=validate.Range(min=1, max=100), default=20)
     xml_root = ma_fields.Str(required=False, default="items")
     xml_item = ma_fields.Str(required=False, default="item")
+    template = ma_fields.Str(required=False, validate=validate.OneOf(["generic", "google_merchant"]))
 
 class ExportDownloadSchema(Schema):
     """Schema for export download requests."""
@@ -61,7 +62,8 @@ export_preview_model = ns.model("ExportPreview", {
     "filter": fields.Raw(required=False, description="Filter criteria for the query"),
     "limit": fields.Integer(required=False, default=20, description="Maximum number of records to include"),
     "xml_root": fields.String(required=False, default="items", description="Root element name for XML"),
-    "xml_item": fields.String(required=False, default="item", description="Item element name for XML")
+    "xml_item": fields.String(required=False, default="item", description="Item element name for XML"),
+    "template": fields.String(required=False, enum=["generic", "google_merchant"], description="Predefined template")
 })
 
 export_download_model = ns.model("ExportDownload", {
@@ -137,6 +139,9 @@ class ExportPreview(Resource):
         column_map = data["column_map"]
         filter_criteria = data.get("filter", {})
         limit = data.get("limit", 20)
+        xml_root = data.get("xml_root", "items")
+        xml_item = data.get("xml_item", "item")
+        template = data.get("template")
         
         # Initialize export service
         export_service = ExportService()
@@ -152,8 +157,16 @@ class ExportPreview(Resource):
         # Build query with filters
         query = build_product_query(filter_criteria).limit(limit)
         
+        # Log query info for debugging
+        current_app.logger.info(f"Export preview query: {query}")
+        current_app.logger.info(f"Column map: {column_map}")
+        
         # Generate dataframe
         df = export_service.build_dataframe(query, column_map)
+        
+        # Log dataframe info for debugging
+        current_app.logger.info(f"Generated dataframe shape: {df.shape}")
+        current_app.logger.info(f"Dataframe columns: {list(df.columns)}")
         
         # Return the first rows as JSON
         preview_data = df.to_dict(orient="records")
@@ -161,7 +174,10 @@ class ExportPreview(Resource):
         return {
             "data": preview_data,
             "count": len(preview_data),
-            "format": export_format
+            "format": export_format,
+            "xml_root": xml_root,
+            "xml_item": xml_item,
+            "template": template
         }
 
 
