@@ -196,10 +196,7 @@
     }
     
     .orders-table .dropdown.dropdown-end .dropdown-content {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
+        position: fixed !important;
         z-index: 10000 !important;
         display: none;
         min-width: 12rem !important;
@@ -215,16 +212,10 @@
         display: block !important;
     }
     
-    /* Auto-adjust dropdown position to prevent clipping */
+    /* Ensure smooth positioning */
     .orders-table .dropdown.dropdown-end .dropdown-content {
-        transform: translateY(0);
-    }
-    
-    /* Use dropdown-top class for dropdowns near bottom of viewport */
-    .orders-table .dropdown.dropdown-top .dropdown-content {
-        top: auto !important;
-        bottom: 100% !important;
-        transform: translateY(0);
+        transform: none !important;
+        transition: opacity 0.2s ease-in-out;
     }
     
     /* Ensure the actions column has proper positioning */
@@ -964,25 +955,42 @@ function updatePerPage(value) {
                 const dropdown = trigger.closest('.dropdown');
                 dropdown.classList.toggle('dropdown-open');
                 
-                // Check if dropdown would go off-screen and adjust position
+                // Position dropdown intelligently
                 if (dropdown.classList.contains('dropdown-open')) {
                     setTimeout(() => {
                         const dropdownContent = dropdown.querySelector('.dropdown-content');
                         if (dropdownContent) {
-                            const rect = dropdownContent.getBoundingClientRect();
+                            const triggerRect = trigger.getBoundingClientRect();
+                            const dropdownHeight = dropdownContent.offsetHeight || 200; // fallback height
                             const viewportHeight = window.innerHeight;
+                            const viewportWidth = window.innerWidth;
                             
-                            // If dropdown goes below viewport, position it above
-                            if (rect.bottom > viewportHeight - 20) {
-                                dropdown.classList.add('dropdown-top');
-                            } else {
-                                dropdown.classList.remove('dropdown-top');
+                            // Calculate optimal position
+                            let top = triggerRect.bottom + 5; // 5px gap below trigger
+                            let left = triggerRect.right - 192; // 192px = 12rem width, align to right
+                            
+                            // Adjust if dropdown would go below viewport
+                            if (top + dropdownHeight > viewportHeight - 20) {
+                                top = triggerRect.top - dropdownHeight - 5; // Position above
                             }
+                            
+                            // Adjust if dropdown would go off left edge
+                            if (left < 10) {
+                                left = 10;
+                            }
+                            
+                            // Adjust if dropdown would go off right edge
+                            if (left + 192 > viewportWidth - 10) {
+                                left = viewportWidth - 202; // 192px width + 10px margin
+                            }
+                            
+                            // Apply positioning
+                            dropdownContent.style.top = top + 'px';
+                            dropdownContent.style.left = left + 'px';
                         }
                     }, 10);
                     trigger.focus();
                 } else {
-                    dropdown.classList.remove('dropdown-top');
                     trigger.blur();
                 }
             });
