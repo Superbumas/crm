@@ -1,353 +1,109 @@
 {% extends "base.html" %}
 
-{% block title %}Ataskaitos - LT CRM{% endblock %}
-
 {% block content %}
-<!-- Page Header -->
-<div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 mb-6">
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-base-content mb-2">Ataskaitos ir analizė</h1>
-            <nav class="text-sm breadcrumbs">
-                <ul>
-                    <li><a href="{{ url_for('main.dashboard') }}" class="text-primary hover:text-primary-focus">Skydelis</a></li>
-                    <li><span class="text-base-content/70">Ataskaitos</span></li>
-                </ul>
-            </nav>
-        </div>
-        
-        <div class="flex flex-wrap gap-3">
-            <button class="btn btn-outline btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
-                Eksportuoti visas
-            </button>
-            <button class="btn btn-outline">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-2a2 2 0 011-1.732M12 14a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-2a2 2 0 011-1.732M18 10a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-2a2 2 0 011-1.732" />
-                </svg>
-                Nustatymai
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Stats -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="stats shadow border border-primary/10">
-        <div class="stat">
-            <div class="stat-figure text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-            </div>
-            <div class="stat-title">Galimos ataskaitos</div>
-            <div class="stat-value text-primary">4</div>
-            <div class="stat-desc">Tipai</div>
-        </div>
+<div class="container mx-auto px-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-primary">{{ title }}</h1>
     </div>
     
-    <div class="stats shadow border border-success/10">
-        <div class="stat">
-            <div class="stat-figure text-success">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="stat-title">Paskutinis atnaujinimas</div>
-            <div class="stat-value text-success text-lg">Šiandien</div>
-            <div class="stat-desc">Duomenys aktualūs</div>
-        </div>
-    </div>
-    
-    <div class="stats shadow border border-info/10">
-        <div class="stat">
-            <div class="stat-figure text-info">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-            </div>
-            <div class="stat-title">Eksportų šiandien</div>
-            <div class="stat-value text-info">0</div>
-            <div class="stat-desc">CSV failų</div>
-        </div>
-    </div>
-    
-    <div class="stats shadow border border-warning/10">
-        <div class="stat">
-            <div class="stat-figure text-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="stat-title">Duomenų šaltiniai</div>
-            <div class="stat-value text-warning">5</div>
-            <div class="stat-desc">Aktyvūs</div>
-        </div>
-    </div>
-</div>
-
-<!-- Reports Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Sales Summary Report -->
-    <div class="card bg-base-100 shadow-xl border border-primary/10 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-        <div class="card-body">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-primary/10 rounded-full p-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Sales Summary Report -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-primary">Pardavimų ataskaita</h2>
-                        <div class="badge badge-primary badge-outline badge-sm">Finansai</div>
+                        <p class="mt-2 text-sm opacity-70">
+                            Pardavimų apžvalga, pajamos pagal laikotarpius, lyginamoji analizė, geriausiai parduodami produktai
+                        </p>
+                    </div>
+                    <div class="text-3xl text-primary opacity-50">
+                        <i class="fas fa-chart-line"></i>
                     </div>
                 </div>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">
-                Pardavimų apžvalga, pajamos pagal laikotarpius, lyginamoji analizė, geriausiai parduodami produktai
-            </p>
-            
-            <div class="flex items-center gap-4 mb-4">
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-base-content/60">~5 min</span>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ url_for('main.sales_summary_report') }}" class="btn btn-primary btn-sm">Peržiūrėti</a>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    <span class="text-base-content/60">CSV, PDF</span>
-                </div>
-            </div>
-            
-            <div class="card-actions justify-end">
-                <a href="{{ url_for('main.sales_summary_report') }}" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Peržiūrėti
-                </a>
             </div>
         </div>
-    </div>
 
-    <!-- Inventory Status Report -->
-    <div class="card bg-base-100 shadow-xl border border-success/10 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-        <div class="card-body">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-success/10 rounded-full p-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
+        <!-- Inventory Status Report -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-success">Inventoriaus ataskaita</h2>
-                        <div class="badge badge-success badge-outline badge-sm">Sandėlis</div>
+                        <p class="mt-2 text-sm opacity-70">
+                            Prekių likučių apžvalga, nesančios/mažo kiekio prekės, sandėlio vertė pagal kategorijas
+                        </p>
+                    </div>
+                    <div class="text-3xl text-success opacity-50">
+                        <i class="fas fa-boxes"></i>
                     </div>
                 </div>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">
-                Prekių likučių apžvalga, nesančios/mažo kiekio prekės, sandėlio vertė pagal kategorijas
-            </p>
-            
-            <div class="flex items-center gap-4 mb-4">
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-base-content/60">~3 min</span>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ url_for('main.inventory_status_report') }}" class="btn btn-success btn-sm">Peržiūrėti</a>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    <span class="text-base-content/60">CSV, Excel</span>
-                </div>
-            </div>
-            
-            <div class="card-actions justify-end">
-                <a href="{{ url_for('main.inventory_status_report') }}" class="btn btn-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Peržiūrėti
-                </a>
             </div>
         </div>
-    </div>
 
-    <!-- Customer Analysis Report -->
-    <div class="card bg-base-100 shadow-xl border border-info/10 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-        <div class="card-body">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-info/10 rounded-full p-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </div>
+        <!-- Customer Analysis Report -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-info">Klientų analizė</h2>
-                        <div class="badge badge-info badge-outline badge-sm">CRM</div>
+                        <p class="mt-2 text-sm opacity-70">
+                            Geriausi klientai, naujų/esamų klientų santykis, pirkimo dažnumas, geografinė analizė
+                        </p>
+                    </div>
+                    <div class="text-3xl text-info opacity-50">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">
-                Geriausi klientai, naujų/esamų klientų santykis, pirkimo dažnumas, geografinė analizė
-            </p>
-            
-            <div class="flex items-center gap-4 mb-4">
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-base-content/60">~4 min</span>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ url_for('main.customer_analysis_report') }}" class="btn btn-info btn-sm">Peržiūrėti</a>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    <span class="text-base-content/60">CSV, PDF</span>
-                </div>
-            </div>
-            
-            <div class="card-actions justify-end">
-                <a href="{{ url_for('main.customer_analysis_report') }}" class="btn btn-info">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Peržiūrėti
-                </a>
             </div>
         </div>
-    </div>
 
-    <!-- Invoice Status Report -->
-    <div class="card bg-base-100 shadow-xl border border-warning/10 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-        <div class="card-body">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="bg-warning/10 rounded-full p-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
+        <!-- Invoice Status Report -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-warning">Sąskaitų faktūrų ataskaita</h2>
-                        <div class="badge badge-warning badge-outline badge-sm">Finansai</div>
+                        <p class="mt-2 text-sm opacity-70">
+                            Sąskaitų statusai, negauti mokėjimai, vidutinis apmokėjimo laikas, mokesčių analizė
+                        </p>
+                    </div>
+                    <div class="text-3xl text-warning opacity-50">
+                        <i class="fas fa-file-invoice"></i>
                     </div>
                 </div>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">
-                Sąskaitų statusai, negauti mokėjimai, vidutinis apmokėjimo laikas, mokesčių analizė
-            </p>
-            
-            <div class="flex items-center gap-4 mb-4">
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-base-content/60">~3 min</span>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ url_for('main.invoice_status_report') }}" class="btn btn-warning btn-sm">Peržiūrėti</a>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    <span class="text-base-content/60">CSV, PDF</span>
-                </div>
-            </div>
-            
-            <div class="card-actions justify-end">
-                <a href="{{ url_for('main.invoice_status_report') }}" class="btn btn-warning">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Peržiūrėti
-                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Information Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="card bg-base-100 shadow-xl border border-base-300">
+    <div class="card bg-base-100 shadow-xl mb-8">
         <div class="card-body">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="bg-primary/10 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <h2 class="card-title text-primary">Ataskaitų informacija</h2>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">
+            <h2 class="card-title text-primary mb-4">Ataskaitų informacija</h2>
+            <p class="mb-4">
                 Naudokite šias ataskaitas įmonės veiklos analizei, pardavimų stebėjimui, inventoriaus kontrolei ir klientų elgsenos analizei.
                 Visos ataskaitos gali būti filtruojamos pagal laikotarpį ir eksportuojamos CSV formatu.
             </p>
-            
-            <div class="flex flex-wrap gap-2">
-                <div class="badge badge-outline">Realaus laiko duomenys</div>
-                <div class="badge badge-outline">Automatinis atnaujinimas</div>
-                <div class="badge badge-outline">Eksportas</div>
+            <div class="mt-4">
+                <h3 class="font-bold mb-2">Poreikio atveju galima sukurti papildomas ataskaitas:</h3>
+                <ul class="list-disc list-inside text-opacity-70 space-y-1 ml-4">
+                    <li>Pelno ir nuostolio ataskaita</li>
+                    <li>Užsakymų vykdymo efektyvumo ataskaita</li>
+                    <li>Pardavimų kanalų efektyvumo ataskaita</li>
+                    <li>Sezoninė pardavimų analizė</li>
+                </ul>
             </div>
-        </div>
-    </div>
-    
-    <div class="card bg-base-100 shadow-xl border border-base-300">
-        <div class="card-body">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="bg-secondary/10 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                </div>
-                <h2 class="card-title text-secondary">Papildomos ataskaitos</h2>
-            </div>
-            
-            <p class="text-base-content/70 mb-4">Poreikio atveju galima sukurti papildomas ataskaitas:</p>
-            
-            <ul class="space-y-2">
-                <li class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span class="text-sm">Pelno ir nuostolio ataskaita</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span class="text-sm">Užsakymų vykdymo efektyvumo ataskaita</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span class="text-sm">Pardavimų kanalų efektyvumo ataskaita</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span class="text-sm">Sezoninė pardavimų analizė</span>
-                </li>
-            </ul>
         </div>
     </div>
 </div>

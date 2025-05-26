@@ -3,105 +3,37 @@
 {% block title %}Sąskaitos faktūros - LT CRM{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 mb-6">
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-base-content mb-2">Sąskaitos faktūros</h1>
-            <nav class="text-sm breadcrumbs">
-                <ul>
-                    <li><a href="{{ url_for('main.dashboard') }}" class="text-primary hover:text-primary-focus">Skydelis</a></li>
-                    <li><span class="text-base-content/70">Sąskaitos faktūros</span></li>
-                </ul>
-            </nav>
-        </div>
-        
-        <div class="flex flex-wrap gap-3">
-            <a href="{{ url_for('main.invoice_new') }}" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Nauja sąskaita
-            </a>
-            <button class="btn btn-outline btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
-                Eksportuoti
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="stats shadow border border-primary/10">
-        <div class="stat">
-            <div class="stat-figure text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-            </div>
-            <div class="stat-title">Viso sąskaitų</div>
-            <div class="stat-value text-primary">{{ pagination.total if pagination else invoices|length }}</div>
-            <div class="stat-desc">Sistemoje</div>
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">Sąskaitos faktūros</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li>Sąskaitos faktūros</li>
+            </ul>
         </div>
     </div>
     
-    <div class="stats shadow border border-success/10">
-        <div class="stat">
-            <div class="stat-figure text-success">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="stat-title">Apmokėtos</div>
-            <div class="stat-value text-success">{{ invoices|selectattr('status.value', 'equalto', 'paid')|list|length }}</div>
-            <div class="stat-desc">Sąskaitos</div>
-        </div>
-    </div>
-    
-    <div class="stats shadow border border-warning/10">
-        <div class="stat">
-            <div class="stat-figure text-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="stat-title">Laukia apmokėjimo</div>
-            <div class="stat-value text-warning">{{ invoices|selectattr('status.value', 'equalto', 'issued')|list|length }}</div>
-            <div class="stat-desc">Sąskaitos</div>
-        </div>
-    </div>
-    
-    <div class="stats shadow border border-info/10">
-        <div class="stat">
-            <div class="stat-figure text-info">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-            </div>
-            <div class="stat-title">Bendra suma</div>
-            <div class="stat-value text-info">{{ (invoices|selectattr('status.value', 'equalto', 'paid')|sum(attribute='total_amount') or 0)|euro }}</div>
-            <div class="stat-desc">Apmokėta</div>
-        </div>
+    <div class="flex space-x-2 mt-4 md:mt-0">
+        <a href="{{ url_for('main.invoice_new') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nauja sąskaita
+        </a>
     </div>
 </div>
 
 <!-- Search & Filter -->
-<div class="card bg-base-100 shadow-sm mb-6">
+<div class="card bg-base-100 shadow-xl mb-6">
     <div class="card-body">
-        <h2 class="text-lg font-semibold text-base-content mb-4">Paieška ir filtrai</h2>
         <form method="GET" action="{{ url_for('main.invoices') }}">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div class="form-control md:col-span-2">
-                    <label class="label">
-                        <span class="label-text font-medium">Paieška</span>
-                    </label>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-control">
                     <div class="input-group">
                         <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Sąskaitos nr., klientas..." class="input input-bordered w-full" />
-                        <button type="submit" class="btn btn-square btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="submit" class="btn btn-square">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </button>
@@ -109,9 +41,6 @@
                 </div>
                 
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Būsena</span>
-                    </label>
                     <select name="status" class="select select-bordered w-full">
                         <option value="">Visos būsenos</option>
                         <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Juodraštis</option>
@@ -122,32 +51,29 @@
                 </div>
                 
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Periodas</span>
-                    </label>
-                    <div class="flex gap-1">
-                        <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}" class="input input-bordered input-sm flex-1" />
-                        <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}" class="input input-bordered input-sm flex-1" />
+                    <div class="flex space-x-2">
+                        <div class="relative flex-1">
+                            <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}" class="input input-bordered w-full pr-8" placeholder="Data nuo" />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="relative flex-1">
+                            <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}" class="input input-bordered w-full pr-8" placeholder="Data iki" />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">&nbsp;</span>
-                    </label>
-                    <div class="flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                            </svg>
-                            Filtruoti
-                        </button>
-                        <a href="{{ url_for('main.invoices') }}" class="btn btn-outline">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </a>
-                    </div>
+                <div class="form-control flex flex-row space-x-2">
+                    <button type="submit" class="btn btn-primary flex-1">Filtruoti</button>
+                    <a href="{{ url_for('main.invoices') }}" class="btn btn-outline btn-error">Išvalyti</a>
                 </div>
             </div>
         </form>

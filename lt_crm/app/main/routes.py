@@ -2104,16 +2104,11 @@ def customers():
         pagination = query.order_by(Customer.name).paginate(page=page, per_page=per_page)
         customers = pagination.items
         
-        # Calculate stats
-        thirty_days_ago = datetime.now() - timedelta(days=30)
-        new_customers_count = Customer.query.filter(Customer.created_at >= thirty_days_ago).count()
-        
         return render_template(
             "main/customers.html",
             title="Klientai",
             customers=customers,
-            pagination=pagination,
-            new_customers_count=new_customers_count
+            pagination=pagination
         )
     except Exception as e:
         # Log the error
@@ -2127,8 +2122,7 @@ def customers():
             "main/customers.html",
             title="Klientai",
             customers=[],
-            pagination=None,
-            new_customers_count=0
+            pagination=None
         )
 
 
