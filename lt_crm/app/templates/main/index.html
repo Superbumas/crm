@@ -1,40 +1,191 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="text-center py-16">
-    <h1 class="text-4xl font-bold mb-6">{{ _('Welcome to LT CRM') }}</h1>
-    <p class="text-xl mb-8">{{ _('A Customer Relationship Management System for Lithuanian Businesses') }}</p>
-    
-    <div class="flex justify-center space-x-4">
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('main.dashboard') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
-            {{ _('Go to Dashboard') }}
-        </a>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
-            {{ _('Login') }}
-        </a>
-        <a href="{{ url_for('auth.register') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded shadow">
-            {{ _('Register') }}
-        </a>
-        {% endif %}
+{% if current_user.is_authenticated %}
+<!-- Welcome Section for Logged-in Users -->
+<div class="hero min-h-[60vh] bg-gradient-to-br from-primary/10 to-secondary/10">
+    <div class="hero-content text-center">
+        <div class="max-w-md">
+            <div class="avatar placeholder mb-6">
+                <div class="bg-primary text-primary-content rounded-full w-20">
+                    <span class="text-2xl">{{ current_user.name[0].upper() if current_user.name else current_user.username[0].upper() }}</span>
+                </div>
+            </div>
+            <h1 class="text-4xl font-bold mb-4">Sveiki, {{ current_user.name or current_user.username }}!</h1>
+            <p class="text-lg mb-8 opacity-80">Sveiki sugrįžę į LT CRM sistemą. Pasirinkite veiksmą, kurį norite atlikti.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Eiti į skydelį
+                </a>
+                <a href="{{ url_for('main.orders') }}" class="btn btn-outline btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M8 11v6h8v-6M8 11h8" />
+                    </svg>
+                    Užsakymai
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">{{ _('Customer Management') }}</h2>
-        <p>{{ _('Organize and track all your customer interactions in one place.') }}</p>
-    </div>
-    
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">{{ _('Task Tracking') }}</h2>
-        <p>{{ _('Never miss a follow-up with integrated task management.') }}</p>
-    </div>
-    
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">{{ _('Reports & Analytics') }}</h2>
-        <p>{{ _('Get insights into your business relationships and performance.') }}</p>
+<!-- Quick Actions Grid -->
+<div class="container mx-auto px-4 py-12">
+    <h2 class="text-2xl font-bold text-center mb-8">Greiti veiksmai</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-primary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-lg">Klientai</h3>
+                <p class="text-sm opacity-70 mb-4">Valdykite klientų duomenis ir ryšius</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('main.customers') }}" class="btn btn-primary btn-sm">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-secondary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-lg">Produktai</h3>
+                <p class="text-sm opacity-70 mb-4">Tvarkykite produktų katalogą ir atsargas</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('main.products') }}" class="btn btn-secondary btn-sm">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-accent/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-lg">Sąskaitos</h3>
+                <p class="text-sm opacity-70 mb-4">Kurkite ir valdykite sąskaitas faktūras</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('main.invoices') }}" class="btn btn-accent btn-sm">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-info/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-lg">Ataskaitos</h3>
+                <p class="text-sm opacity-70 mb-4">Analizuokite verslo duomenis ir statistikas</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('main.reports') }}" class="btn btn-info btn-sm">Peržiūrėti</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+{% else %}
+<!-- Landing Section for Non-logged-in Users -->
+<div class="hero min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10">
+    <div class="hero-content text-center">
+        <div class="max-w-2xl">
+            <div class="mb-8">
+                <div class="bg-primary rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-content" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-5xl font-bold mb-6">Sveiki atvykę į LT CRM</h1>
+            <p class="text-xl mb-8 opacity-80">Klientų ryšių valdymo sistema, sukurta Lietuvos verslui. Valdykite klientus, užsakymus ir atsargas vienoje vietoje.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Prisijungti
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Registruotis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mx-auto px-4 py-16">
+    <h2 class="text-3xl font-bold text-center mb-12">Sistemos galimybės</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-primary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-xl mb-4">Klientų valdymas</h3>
+                <p class="opacity-70">Organizuokite ir sekite visus klientų duomenis bei sąveikas vienoje vietoje. Valdykite kontaktus, užduotis ir komunikaciją.</p>
+            </div>
+        </div>
+        
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-secondary/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-xl mb-4">Užsakymų sekimas</h3>
+                <p class="opacity-70">Niekada nepraleiskite svarbių veiksmų su integruotu užsakymų valdymu. Sekite statusus ir automatizuokite procesus.</p>
+            </div>
+        </div>
+        
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center">
+                <div class="mx-auto bg-accent/10 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h3 class="card-title text-xl mb-4">Ataskaitos ir analitika</h3>
+                <p class="opacity-70">Gaukite įžvalgas apie savo verslo ryšius ir veiklą. Analizuokite duomenis ir priimkite pagrįstus sprendimus.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Footer -->
+<footer class="footer footer-center p-10 bg-base-200 text-base-content">
+    <div>
+        <div class="grid grid-flow-col gap-4">
+            <a class="link link-hover">Apie mus</a>
+            <a class="link link-hover">Kontaktai</a>
+            <a class="link link-hover">Privatumo politika</a>
+            <a class="link link-hover">Naudojimo sąlygos</a>
+        </div>
+    </div>
+    <div>
+        <p>© 2024 LT CRM. Visos teisės saugomos.</p>
+    </div>
+</footer>
 {% endblock %} 

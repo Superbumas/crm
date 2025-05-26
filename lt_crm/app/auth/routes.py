@@ -14,7 +14,7 @@ from ..api.v1.utils import generate_jwt_token
 def login():
     """User login route."""
     if current_user.is_authenticated:
-        return redirect(url_for("main.index"))
+        return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
         email = request.form.get("email")
@@ -23,7 +23,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user is None or not user.check_password(password):
-            flash("Invalid email or password")
+            flash("Neteisingas el. paštas arba slaptažodis", "error")
             return redirect(url_for("auth.login"))
 
         # Update last login timestamp
@@ -34,7 +34,7 @@ def login():
         
         next_page = request.args.get("next")
         if not next_page or urlparse(next_page).netloc != "":
-            next_page = url_for("main.index")
+            next_page = url_for("main.dashboard")
         
         return redirect(next_page)
 
@@ -52,7 +52,7 @@ def logout():
 def register():
     """User registration route."""
     if current_user.is_authenticated:
-        return redirect(url_for("main.index"))
+        return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
         username = request.form.get("username")
@@ -63,22 +63,22 @@ def register():
         
         # Validate form inputs
         if not username or not email or not name or not password or not password2:
-            flash("All fields are required", "error")
+            flash("Visi laukai yra privalomi", "error")
             return redirect(url_for("auth.register"))
             
         if password != password2:
-            flash("Passwords do not match", "error")
+            flash("Slaptažodžiai nesutampa", "error")
             return redirect(url_for("auth.register"))
             
         # Check if username or email already exists
         user_by_username = User.query.filter_by(username=username).first()
         if user_by_username:
-            flash("Username already in use", "error")
+            flash("Vartotojo vardas jau naudojamas", "error")
             return redirect(url_for("auth.register"))
             
         user_by_email = User.query.filter_by(email=email).first()
         if user_by_email:
-            flash("Email already registered", "error")
+            flash("El. paštas jau užregistruotas", "error")
             return redirect(url_for("auth.register"))
         
         # Create new user
@@ -89,7 +89,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash("Registration successful! Please log in.", "success")
+        flash("Registracija sėkminga! Prašome prisijungti.", "success")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html", title="Register")
@@ -106,21 +106,21 @@ def profile():
         
         # Validate form inputs
         if not current_password or not new_password or not confirm_password:
-            flash("All fields are required", "error")
+            flash("Visi laukai yra privalomi", "error")
             return redirect(url_for("auth.profile"))
             
         if not current_user.check_password(current_password):
-            flash("Current password is incorrect", "error")
+            flash("Dabartinis slaptažodis neteisingas", "error")
             return redirect(url_for("auth.profile"))
             
         if new_password != confirm_password:
-            flash("New passwords do not match", "error")
+            flash("Nauji slaptažodžiai nesutampa", "error")
             return redirect(url_for("auth.profile"))
             
         # Update password
         current_user.set_password(new_password)
         db.session.commit()
-        flash("Password updated successfully")
+        flash("Slaptažodis sėkmingai atnaujintas", "success")
         return redirect(url_for("auth.profile"))
         
     return render_template("auth/profile.html", title="Profile")
