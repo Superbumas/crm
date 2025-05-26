@@ -3,24 +3,88 @@
 {% block title %}Sąskaitos faktūros - LT CRM{% endblock %}
 
 {% block content %}
-<div class="flex flex-col md:flex-row justify-between items-start mb-6">
-    <div>
-        <h1 class="text-2xl font-bold mb-2">Sąskaitos faktūros</h1>
-        <div class="text-sm breadcrumbs">
-            <ul>
-                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
-                <li>Sąskaitos faktūros</li>
-            </ul>
+<!-- Page Header -->
+<div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 mb-6">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-base-content mb-2">Sąskaitos faktūros</h1>
+            <nav class="text-sm breadcrumbs">
+                <ul>
+                    <li><a href="{{ url_for('main.dashboard') }}" class="text-primary hover:text-primary-focus">Skydelis</a></li>
+                    <li><span class="text-base-content/70">Sąskaitos faktūros</span></li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for('main.invoice_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Nauja sąskaita
+            </a>
+            <button class="btn btn-outline btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Eksportuoti
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stats shadow border border-primary/10">
+        <div class="stat">
+            <div class="stat-figure text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <div class="stat-title">Viso sąskaitų</div>
+            <div class="stat-value text-primary">{{ pagination.total if pagination else invoices|length }}</div>
+            <div class="stat-desc">Sistemoje</div>
         </div>
     </div>
     
-    <div class="flex space-x-2 mt-4 md:mt-0">
-        <a href="{{ url_for('main.invoice_new') }}" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Nauja sąskaita
-        </a>
+    <div class="stats shadow border border-success/10">
+        <div class="stat">
+            <div class="stat-figure text-success">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="stat-title">Apmokėtos</div>
+            <div class="stat-value text-success">{{ invoices|selectattr('status.value', 'equalto', 'paid')|list|length }}</div>
+            <div class="stat-desc">Sąskaitos</div>
+        </div>
+    </div>
+    
+    <div class="stats shadow border border-warning/10">
+        <div class="stat">
+            <div class="stat-figure text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="stat-title">Laukia apmokėjimo</div>
+            <div class="stat-value text-warning">{{ invoices|selectattr('status.value', 'equalto', 'issued')|list|length }}</div>
+            <div class="stat-desc">Sąskaitos</div>
+        </div>
+    </div>
+    
+    <div class="stats shadow border border-info/10">
+        <div class="stat">
+            <div class="stat-figure text-info">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+            </div>
+            <div class="stat-title">Bendra suma</div>
+            <div class="stat-value text-info">{{ (invoices|selectattr('status.value', 'equalto', 'paid')|sum(attribute='total_amount') or 0)|euro }}</div>
+            <div class="stat-desc">Apmokėta</div>
+        </div>
     </div>
 </div>
 
