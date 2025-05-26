@@ -129,108 +129,58 @@
         transition: opacity 0.3s ease-in-out;
     }
     
-    /* Comprehensive dropdown visibility fixes */
-    .orders-table {
-        overflow: visible !important;
-    }
-    
-    .card-body {
-        overflow: visible !important;
-    }
-    
+    /* Fix dropdown visibility in table */
     .table-container {
-        overflow-x: auto;
         overflow-y: visible !important;
     }
     
-    /* Ensure all table elements allow overflow */
-    table, thead, tbody, tr, td, th {
-        overflow: visible !important;
-    }
-    
-    /* Dropdown positioning and z-index fixes */
-    .dropdown {
-        position: relative !important;
-    }
-    
+    /* Ensure dropdown content is above other elements */
     .dropdown-content {
+        z-index: 1000 !important;
         position: absolute !important;
-        z-index: 99999 !important;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Fix for dropdown positioning in tables */
+    .dropdown {
+        position: static;
     }
     
     .dropdown.dropdown-end .dropdown-content {
-        right: 0 !important;
-        left: auto !important;
-        top: 100% !important;
-        min-width: 12rem !important;
+        right: 0;
+        left: auto;
     }
     
-    /* Ensure dropdown stays above all other content */
-    .dropdown:focus-within .dropdown-content,
-    .dropdown.dropdown-open .dropdown-content {
-        display: block !important;
-        z-index: 99999 !important;
-    }
-    
-    /* Fix for action column specifically */
-    td:last-child {
-        position: relative !important;
+    /* Ensure table cells don't clip dropdown content */
+    td {
         overflow: visible !important;
     }
     
-    /* Ensure dropdown trigger works properly */
-    .dropdown label[tabindex] {
-        cursor: pointer;
-    }
-    
-    /* Additional z-index boost for dropdowns in tables */
-    .orders-table .dropdown-content {
-        z-index: 999999 !important;
-    }
-    
-    /* Force dropdown to be visible and properly positioned */
-    .orders-table .dropdown.dropdown-end {
-        position: relative !important;
-    }
-    
-    .orders-table .dropdown.dropdown-end .dropdown-content {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        z-index: 999999 !important;
-        display: none;
-        min-width: 12rem !important;
-        background: white !important;
-        border-radius: 0.5rem !important;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    /* Show dropdown when open */
-    .orders-table .dropdown.dropdown-open .dropdown-content,
-    .orders-table .dropdown:focus-within .dropdown-content {
-        display: block !important;
-        z-index: 999999 !important;
-    }
-    
-    /* Ensure the actions column has proper positioning */
-    .orders-table td:last-child,
-    .orders-table th:last-child {
-        position: relative !important;
+    /* Make sure the table row doesn't clip content */
+    tr {
         overflow: visible !important;
     }
     
-    /* Override any potential z-index conflicts */
-    .orders-table .dropdown.dropdown-open {
-        z-index: 999999 !important;
+    /* Ensure table body allows overflow */
+    tbody {
+        overflow: visible !important;
     }
     
-    /* Ensure dropdown content is always on top */
-    .dropdown-content.menu {
-        z-index: 999999 !important;
+    /* Make sure the entire table allows overflow */
+    table {
+        overflow: visible !important;
+    }
+    
+    /* Specific fix for action column dropdowns */
+    .dropdown.dropdown-end {
+        position: relative;
+    }
+    
+    .dropdown.dropdown-end .dropdown-content {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 1050;
+        min-width: 12rem;
     }
 </style>
 {% endblock %}
@@ -426,9 +376,9 @@
         </div>
     </div>
     
-    <div class="card-body p-0" style="overflow: visible !important;">
-        <div class="table-container overflow-x-auto" style="overflow-y: visible !important; overflow-x: auto;">
-            <table class="table w-full" style="overflow: visible !important;">
+    <div class="card-body p-0">
+        <div class="table-container overflow-x-auto" style="overflow-y: visible;">
+            <table class="table w-full">
                 <thead class="bg-base-200/50">
                     <tr>
                         <th class="font-semibold">
@@ -935,59 +885,6 @@ function updatePerPage(value) {
 
 {% block scripts %}
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-<script>
-    // Dropdown functionality fix
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle dropdown clicks
-        document.querySelectorAll('.dropdown label[tabindex]').forEach(function(trigger) {
-            trigger.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Close all other dropdowns
-                document.querySelectorAll('.dropdown').forEach(function(dropdown) {
-                    if (dropdown !== trigger.closest('.dropdown')) {
-                        dropdown.classList.remove('dropdown-open');
-                        dropdown.removeAttribute('open');
-                    }
-                });
-                
-                // Toggle current dropdown
-                const dropdown = trigger.closest('.dropdown');
-                dropdown.classList.toggle('dropdown-open');
-                
-                // Set focus to make it work with DaisyUI
-                if (dropdown.classList.contains('dropdown-open')) {
-                    trigger.focus();
-                } else {
-                    trigger.blur();
-                }
-            });
-        });
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown')) {
-                document.querySelectorAll('.dropdown').forEach(function(dropdown) {
-                    dropdown.classList.remove('dropdown-open');
-                    dropdown.removeAttribute('open');
-                });
-            }
-        });
-        
-        // Handle dropdown menu item clicks
-        document.querySelectorAll('.dropdown-content a, .dropdown-content button').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                // Close the dropdown after clicking an item
-                const dropdown = this.closest('.dropdown');
-                if (dropdown) {
-                    dropdown.classList.remove('dropdown-open');
-                    dropdown.removeAttribute('open');
-                }
-            });
-        });
-    });
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Restore saved statuses from session storage
