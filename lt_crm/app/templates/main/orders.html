@@ -215,11 +215,29 @@
         display: block !important;
     }
     
+    /* Auto-adjust dropdown position to prevent clipping */
+    .orders-table .dropdown.dropdown-end .dropdown-content {
+        transform: translateY(0);
+    }
+    
+    /* Use dropdown-top class for dropdowns near bottom of viewport */
+    .orders-table .dropdown.dropdown-top .dropdown-content {
+        top: auto !important;
+        bottom: 100% !important;
+        transform: translateY(0);
+    }
+    
     /* Ensure the actions column has proper positioning */
     .orders-table td:last-child,
     .orders-table th:last-child {
         position: relative !important;
         overflow: visible !important;
+    }
+    
+    /* Prevent dropdown from going off-screen */
+    .orders-table .dropdown-content {
+        max-height: 300px;
+        overflow-y: auto;
     }
 </style>
 {% endblock %}
@@ -938,6 +956,7 @@ function updatePerPage(value) {
                     if (dropdown !== trigger.closest('.dropdown')) {
                         dropdown.classList.remove('dropdown-open');
                         dropdown.removeAttribute('open');
+                        dropdown.classList.remove('dropdown-top');
                     }
                 });
                 
@@ -945,10 +964,25 @@ function updatePerPage(value) {
                 const dropdown = trigger.closest('.dropdown');
                 dropdown.classList.toggle('dropdown-open');
                 
-                // Set focus to make it work with DaisyUI
+                // Check if dropdown would go off-screen and adjust position
                 if (dropdown.classList.contains('dropdown-open')) {
+                    setTimeout(() => {
+                        const dropdownContent = dropdown.querySelector('.dropdown-content');
+                        if (dropdownContent) {
+                            const rect = dropdownContent.getBoundingClientRect();
+                            const viewportHeight = window.innerHeight;
+                            
+                            // If dropdown goes below viewport, position it above
+                            if (rect.bottom > viewportHeight - 20) {
+                                dropdown.classList.add('dropdown-top');
+                            } else {
+                                dropdown.classList.remove('dropdown-top');
+                            }
+                        }
+                    }, 10);
                     trigger.focus();
                 } else {
+                    dropdown.classList.remove('dropdown-top');
                     trigger.blur();
                 }
             });
