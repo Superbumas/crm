@@ -164,6 +164,49 @@
         .fade-out {
             animation: fadeOut 0.3s ease-in-out forwards;
         }
+        
+        /* Force override accent colors to prevent pink */
+        .btn-accent,
+        .badge-accent,
+        .alert-accent,
+        .progress-accent,
+        .text-accent,
+        .border-accent {
+            --tw-bg-opacity: 1;
+            background-color: rgb(16 185 129 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(16 185 129) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .bg-accent {
+            --tw-bg-opacity: 1;
+            background-color: rgb(16 185 129 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-accent\/10 {
+            background-color: rgb(16 185 129 / 0.1) !important;
+        }
+        
+        .text-accent {
+            --tw-text-opacity: 1;
+            color: rgb(16 185 129 / var(--tw-text-opacity)) !important;
+        }
+        
+        /* Override any DaisyUI accent color variables */
+        :root {
+            --accent: 16 185 129;
+            --ac: 255 255 255;
+        }
+        
+        [data-theme="light"] {
+            --accent: 16 185 129;
+            --ac: 255 255 255;
+        }
+        
+        [data-theme="dark"] {
+            --accent: 16 185 129;
+            --ac: 255 255 255;
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
