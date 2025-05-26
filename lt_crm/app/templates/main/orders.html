@@ -155,7 +155,7 @@
     
     .dropdown-content {
         position: absolute !important;
-        z-index: 9999 !important;
+        z-index: 99999 !important;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
     }
@@ -171,7 +171,7 @@
     .dropdown:focus-within .dropdown-content,
     .dropdown.dropdown-open .dropdown-content {
         display: block !important;
-        z-index: 9999 !important;
+        z-index: 99999 !important;
     }
     
     /* Fix for action column specifically */
@@ -187,7 +187,7 @@
     
     /* Additional z-index boost for dropdowns in tables */
     .orders-table .dropdown-content {
-        z-index: 10000 !important;
+        z-index: 999999 !important;
     }
     
     /* Force dropdown to be visible and properly positioned */
@@ -196,13 +196,16 @@
     }
     
     .orders-table .dropdown.dropdown-end .dropdown-content {
-        position: fixed !important;
-        z-index: 10000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        left: auto !important;
+        z-index: 999999 !important;
         display: none;
         min-width: 12rem !important;
         background: white !important;
         border-radius: 0.5rem !important;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important;
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
     }
     
@@ -210,12 +213,7 @@
     .orders-table .dropdown.dropdown-open .dropdown-content,
     .orders-table .dropdown:focus-within .dropdown-content {
         display: block !important;
-    }
-    
-    /* Ensure smooth positioning */
-    .orders-table .dropdown.dropdown-end .dropdown-content {
-        transform: none !important;
-        transition: opacity 0.2s ease-in-out;
+        z-index: 999999 !important;
     }
     
     /* Ensure the actions column has proper positioning */
@@ -225,10 +223,14 @@
         overflow: visible !important;
     }
     
-    /* Prevent dropdown from going off-screen */
-    .orders-table .dropdown-content {
-        max-height: 300px;
-        overflow-y: auto;
+    /* Override any potential z-index conflicts */
+    .orders-table .dropdown.dropdown-open {
+        z-index: 999999 !important;
+    }
+    
+    /* Ensure dropdown content is always on top */
+    .dropdown-content.menu {
+        z-index: 999999 !important;
     }
 </style>
 {% endblock %}
@@ -947,7 +949,6 @@ function updatePerPage(value) {
                     if (dropdown !== trigger.closest('.dropdown')) {
                         dropdown.classList.remove('dropdown-open');
                         dropdown.removeAttribute('open');
-                        dropdown.classList.remove('dropdown-top');
                     }
                 });
                 
@@ -955,40 +956,8 @@ function updatePerPage(value) {
                 const dropdown = trigger.closest('.dropdown');
                 dropdown.classList.toggle('dropdown-open');
                 
-                // Position dropdown intelligently
+                // Set focus to make it work with DaisyUI
                 if (dropdown.classList.contains('dropdown-open')) {
-                    setTimeout(() => {
-                        const dropdownContent = dropdown.querySelector('.dropdown-content');
-                        if (dropdownContent) {
-                            const triggerRect = trigger.getBoundingClientRect();
-                            const dropdownHeight = dropdownContent.offsetHeight || 200; // fallback height
-                            const viewportHeight = window.innerHeight;
-                            const viewportWidth = window.innerWidth;
-                            
-                            // Calculate optimal position
-                            let top = triggerRect.bottom + 5; // 5px gap below trigger
-                            let left = triggerRect.right - 192; // 192px = 12rem width, align to right
-                            
-                            // Adjust if dropdown would go below viewport
-                            if (top + dropdownHeight > viewportHeight - 20) {
-                                top = triggerRect.top - dropdownHeight - 5; // Position above
-                            }
-                            
-                            // Adjust if dropdown would go off left edge
-                            if (left < 10) {
-                                left = 10;
-                            }
-                            
-                            // Adjust if dropdown would go off right edge
-                            if (left + 192 > viewportWidth - 10) {
-                                left = viewportWidth - 202; // 192px width + 10px margin
-                            }
-                            
-                            // Apply positioning
-                            dropdownContent.style.top = top + 'px';
-                            dropdownContent.style.left = left + 'px';
-                        }
-                    }, 10);
                     trigger.focus();
                 } else {
                     trigger.blur();
