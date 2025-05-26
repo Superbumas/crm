@@ -226,12 +226,119 @@
             color: rgb(16 185 129 / var(--tw-text-opacity)) !important;
         }
         
+        /* Override warning, info, success, error colors to be more muted */
+        .btn-warning,
+        .badge-warning,
+        .alert-warning,
+        .progress-warning,
+        .text-warning,
+        .border-warning {
+            --tw-bg-opacity: 1;
+            background-color: rgb(156 163 175 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(156 163 175) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .btn-info,
+        .badge-info,
+        .alert-info,
+        .progress-info,
+        .text-info,
+        .border-info {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(107 114 128) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .btn-success,
+        .badge-success,
+        .alert-success,
+        .progress-success,
+        .text-success,
+        .border-success {
+            --tw-bg-opacity: 1;
+            background-color: rgb(75 85 99 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(75 85 99) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .btn-error,
+        .badge-error,
+        .alert-error,
+        .progress-error,
+        .text-error,
+        .border-error {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(107 114 128) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        /* Muted background colors */
+        .bg-warning {
+            background-color: rgb(156 163 175 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-warning\/10 {
+            background-color: rgb(156 163 175 / 0.1) !important;
+        }
+        
+        .bg-info {
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-info\/10 {
+            background-color: rgb(107 114 128 / 0.1) !important;
+        }
+        
+        .bg-success {
+            background-color: rgb(75 85 99 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-success\/10 {
+            background-color: rgb(75 85 99 / 0.1) !important;
+        }
+        
+        .bg-error {
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-error\/10 {
+            background-color: rgb(107 114 128 / 0.1) !important;
+        }
+        
+        /* Muted text colors */
+        .text-warning {
+            color: rgb(156 163 175 / var(--tw-text-opacity)) !important;
+        }
+        
+        .text-info {
+            color: rgb(107 114 128 / var(--tw-text-opacity)) !important;
+        }
+        
+        .text-success {
+            color: rgb(75 85 99 / var(--tw-text-opacity)) !important;
+        }
+        
+        .text-error {
+            color: rgb(107 114 128 / var(--tw-text-opacity)) !important;
+        }
+        
         /* Override any DaisyUI color variables */
         :root {
             --accent: 16 185 129;
             --ac: 255 255 255;
             --secondary: 107 114 128;
             --sc: 255 255 255;
+            --warning: 156 163 175;
+            --wc: 255 255 255;
+            --info: 107 114 128;
+            --ic: 255 255 255;
+            --success: 75 85 99;
+            --suc: 255 255 255;
+            --error: 107 114 128;
+            --erc: 255 255 255;
         }
         
         [data-theme="light"] {
@@ -239,6 +346,14 @@
             --ac: 255 255 255;
             --secondary: 107 114 128;
             --sc: 255 255 255;
+            --warning: 156 163 175;
+            --wc: 255 255 255;
+            --info: 107 114 128;
+            --ic: 255 255 255;
+            --success: 75 85 99;
+            --suc: 255 255 255;
+            --error: 107 114 128;
+            --erc: 255 255 255;
         }
         
         [data-theme="dark"] {
@@ -246,6 +361,14 @@
             --ac: 255 255 255;
             --secondary: 107 114 128;
             --sc: 255 255 255;
+            --warning: 156 163 175;
+            --wc: 255 255 255;
+            --info: 107 114 128;
+            --ic: 255 255 255;
+            --success: 75 85 99;
+            --suc: 255 255 255;
+            --error: 107 114 128;
+            --erc: 255 255 255;
         }
     </style>
     {% block styles %}{% endblock %}
