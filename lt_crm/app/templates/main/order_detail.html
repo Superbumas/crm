@@ -397,50 +397,33 @@
         </div>
     </div>
     
-    <!-- Timeline -->
+        <!-- Timeline -->
     <div class="card bg-base-100 shadow-xl mt-6">
         <div class="card-body">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="p-2 bg-primary/10 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <h2 class="card-title text-xl">Užsakymo istorija</h2>
-            </div>
+            <h2 class="card-title mb-6">Užsakymo istorija</h2>
             
-            <div class="relative pl-8">
+            <div class="relative">
                 <!-- Timeline line -->
-                <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-base-300 to-transparent"></div>
+                <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-base-300"></div>
                 
-                <div class="space-y-8">
+                <div class="space-y-6">
                     <!-- Invoice Created Event -->
                     {% if invoices %}
-                    <div class="relative">
-                        <div class="absolute -left-8 w-4 h-4 bg-success rounded-full border-4 border-base-100 shadow-lg"></div>
-                        <div class="bg-gradient-to-r from-success/5 to-transparent border border-success/20 rounded-xl p-4 shadow-sm ml-4">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <h3 class="font-bold text-lg text-success">Sąskaita faktūra sukurta</h3>
-                                </div>
-                                <div class="text-sm text-base-content/70 font-medium">
-                                    {{ invoices[0].created_at.strftime('%Y-%m-%d %H:%M') }}
-                                </div>
+                    <div class="relative flex items-start">
+                        <div class="absolute left-0 w-12 h-12 bg-success rounded-full flex items-center justify-center z-10 border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div class="ml-16 bg-base-200 p-4 rounded-lg flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg">Sąskaita faktūra sukurta</h3>
+                                <span class="text-sm text-base-content/70">{{ invoices[0].created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
                             <div class="space-y-2">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                    </svg>
-                                    <a href="{{ url_for('main.invoice_detail', id=invoices[0].id) }}" class="link link-primary font-medium">
-                                        Sąskaita faktūra #{{ invoices[0].invoice_number }}
-                                    </a>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm text-base-content/70">Būsena:</span>
+                                <p><a href="{{ url_for('main.invoice_detail', id=invoices[0].id) }}" class="link link-primary">Sąskaita faktūra #{{ invoices[0].invoice_number }}</a></p>
+                                <p class="text-sm">
+                                    Būsena: 
                                     <span class="badge
                                         {% if invoices[0].status.value == 'draft' %}badge-ghost
                                         {% elif invoices[0].status.value == 'issued' %}badge-info
@@ -453,7 +436,7 @@
                                         {% elif invoices[0].status.value == 'cancelled' %}Atšaukta
                                         {% else %}{{ invoices[0].status.value }}{% endif %}
                                     </span>
-                                </div>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -461,27 +444,19 @@
                     
                     <!-- Shipped Event -->
                     {% if order.status.value in ['shipped', 'delivered'] and order.shipped_at %}
-                    <div class="relative">
-                        <div class="absolute -left-8 w-4 h-4 bg-info rounded-full border-4 border-base-100 shadow-lg"></div>
-                        <div class="bg-gradient-to-r from-info/5 to-transparent border border-info/20 rounded-xl p-4 shadow-sm ml-4">
-                            <div class="flex justify-between items-start mb-3">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                    </svg>
-                                    <h3 class="font-bold text-lg text-info">Užsakymas išsiųstas</h3>
-                                </div>
-                                <div class="text-sm text-base-content/70 font-medium">
-                                    {{ order.shipped_at.strftime('%Y-%m-%d %H:%M') }}
-                                </div>
+                    <div class="relative flex items-start">
+                        <div class="absolute left-0 w-12 h-12 bg-info rounded-full flex items-center justify-center z-10 border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                        </div>
+                        <div class="ml-16 bg-base-200 p-4 rounded-lg flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg">Užsakymas išsiųstas</h3>
+                                <span class="text-sm text-base-content/70">{{ order.shipped_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
                             {% if order.tracking_number %}
-                            <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span class="text-sm"><span class="font-medium">Siuntinio numeris:</span> {{ order.tracking_number }}</span>
-                            </div>
+                            <p class="text-sm">Siuntinio numeris: <span class="font-mono">{{ order.tracking_number }}</span></p>
                             {% endif %}
                         </div>
                     </div>
@@ -489,77 +464,68 @@
                     
                     <!-- Packed Event -->
                     {% if order.status.value in ['packed', 'shipped', 'delivered'] %}
-                    <div class="relative">
-                        <div class="absolute -left-8 w-4 h-4 bg-warning rounded-full border-4 border-base-100 shadow-lg"></div>
-                        <div class="bg-gradient-to-r from-warning/5 to-transparent border border-warning/20 rounded-xl p-4 shadow-sm ml-4">
+                    <div class="relative flex items-start">
+                        <div class="absolute left-0 w-12 h-12 bg-warning rounded-full flex items-center justify-center z-10 border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                        <div class="ml-16 bg-base-200 p-4 rounded-lg flex-1">
                             <div class="flex justify-between items-start mb-2">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                    <h3 class="font-bold text-lg text-warning">Užsakymas supakuotas</h3>
-                                </div>
-                                <div class="text-sm text-base-content/70 font-medium">
+                                <h3 class="font-bold text-lg">Užsakymas supakuotas</h3>
+                                <span class="text-sm text-base-content/70">
                                     {% if order.updated_at and order.status.value in ['packed', 'shipped', 'delivered'] %}
                                         {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
                                     {% else %}
                                         -
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
-                            <p class="text-sm text-base-content/80">Užsakymas paruoštas siuntimui.</p>
+                            <p class="text-sm">Užsakymas paruoštas siuntimui.</p>
                         </div>
                     </div>
                     {% endif %}
                     
                     <!-- Paid Event -->
                     {% if order.status.value not in ['new', 'cancelled'] %}
-                    <div class="relative">
-                        <div class="absolute -left-8 w-4 h-4 bg-accent rounded-full border-4 border-base-100 shadow-lg"></div>
-                        <div class="bg-gradient-to-r from-accent/5 to-transparent border border-accent/20 rounded-xl p-4 shadow-sm ml-4">
+                    <div class="relative flex items-start">
+                        <div class="absolute left-0 w-12 h-12 bg-accent rounded-full flex items-center justify-center z-10 border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                        <div class="ml-16 bg-base-200 p-4 rounded-lg flex-1">
                             <div class="flex justify-between items-start mb-2">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                    </svg>
-                                    <h3 class="font-bold text-lg text-accent">Mokėjimas gautas</h3>
-                                </div>
-                                <div class="text-sm text-base-content/70 font-medium">
+                                <h3 class="font-bold text-lg">Mokėjimas gautas</h3>
+                                <span class="text-sm text-base-content/70">
                                     {% if order.updated_at %}
                                         {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
                                     {% else %}
                                         -
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-base-content/70">Suma:</span>
-                                <span class="font-medium">{{ order.total_amount|euro }}</span>
-                                {% if order.payment_method %}
-                                <span class="text-sm text-base-content/70">•</span>
-                                <span class="text-sm">{{ order.payment_method }}</span>
-                                {% endif %}
-                            </div>
+                            <p class="text-sm">
+                                Suma: <span class="font-medium">{{ order.total_amount|euro }}</span>
+                                {% if order.payment_method %} • {{ order.payment_method }}{% endif %}
+                            </p>
                         </div>
                     </div>
                     {% endif %}
                     
                     <!-- Order Created Event -->
-                    <div class="relative">
-                        <div class="absolute -left-8 w-4 h-4 bg-primary rounded-full border-4 border-base-100 shadow-lg"></div>
-                        <div class="bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-xl p-4 shadow-sm ml-4">
+                    <div class="relative flex items-start">
+                        <div class="absolute left-0 w-12 h-12 bg-primary rounded-full flex items-center justify-center z-10 border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <div class="ml-16 bg-base-200 p-4 rounded-lg flex-1">
                             <div class="flex justify-between items-start mb-2">
-                                <div class="flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <h3 class="font-bold text-lg text-primary">Užsakymas sukurtas</h3>
-                                </div>
-                                <div class="text-sm text-base-content/70 font-medium">
-                                    {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
-                                </div>
+                                <h3 class="font-bold text-lg">Užsakymas sukurtas</h3>
+                                <span class="text-sm text-base-content/70">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
-                            <p class="text-sm text-base-content/80">Užsakymas #{{ order.order_number }} sukurtas sistemoje ir laukia apdorojimo.</p>
+                            <p class="text-sm">Užsakymas #{{ order.order_number }} sukurtas sistemoje ir laukia apdorojimo.</p>
                         </div>
                     </div>
                 </div>
