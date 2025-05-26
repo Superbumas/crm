@@ -82,7 +82,7 @@
                 </svg>
             </div>
             <div class="stat-title">Nauji šį mėnesį</div>
-            <div class="stat-value text-warning">{{ customers|selectattr('created_at', 'ge', (now - timedelta(days=30)))|list|length if now is defined else 0 }}</div>
+            <div class="stat-value text-warning">{{ new_customers_count or 0 }}</div>
             <div class="stat-desc">Per 30 dienų</div>
         </div>
     </div>
