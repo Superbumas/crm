@@ -3,39 +3,95 @@
 {% block title %}Skydelis - LT CRM{% endblock %}
 
 {% block content %}
-<div class="flex flex-col sm:flex-row justify-between items-start mb-6">
-    <h1 class="text-2xl font-bold text-primary mb-2">Dashboard</h1>
-    
-    <!-- Date Range Filter - Compact Design -->
-    <div class="flex flex-wrap items-center gap-2">
-        <form method="get" class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center">
-                <span class="text-sm mr-1">Nuo:</span>
-                <input type="date" class="input input-bordered input-sm" id="date_from" name="date_from" value="{{ date_from.strftime('%Y-%m-%d') }}">
+<!-- Welcome Header Section -->
+<div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 mb-6">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="avatar placeholder">
+                <div class="bg-primary text-primary-content rounded-full w-12">
+                    <span class="text-lg">{{ current_user.name[0].upper() if current_user.name else current_user.username[0].upper() }}</span>
+                </div>
             </div>
-            <div class="flex items-center">
-                <span class="text-sm mr-1">Iki:</span>
-                <input type="date" class="input input-bordered input-sm" id="date_to" name="date_to" value="{{ date_to.strftime('%Y-%m-%d') }}">
+            <div>
+                <h1 class="text-2xl font-bold text-base-content">Sveiki, {{ current_user.name or current_user.username }}!</h1>
+                <p class="text-base-content/70">Čia yra jūsų verslo veiklos apžvalga</p>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">FILTRUOTI</button>
-        </form>
+        </div>
         
-        <!-- Quick date filter buttons -->
-        <div class="flex gap-1 ml-2">
-            <a href="?date_from={{ (today - timedelta(days=6)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">7 DIENOS</a>
-            <a href="?date_from={{ (today.replace(day=1)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">ŠIS MĖNUO</a>
-            <a href="?date_from={{ (today.replace(month=1, day=1)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">ŠIE METAI</a>
+        <!-- Quick Actions -->
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('main.order_new') }}" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Naujas užsakymas
+            </a>
+            <a href="{{ url_for('main.invoice_new') }}" class="btn btn-secondary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Nauja sąskaita
+            </a>
+            <a href="{{ url_for('main.product_new') }}" class="btn btn-accent btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                Naujas produktas
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter Section -->
+<div class="card bg-base-100 shadow-sm mb-6">
+    <div class="card-body py-4">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <h2 class="text-lg font-semibold text-base-content">Duomenų filtravimas</h2>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <form method="get" class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium">Nuo:</span>
+                        <input type="date" class="input input-bordered input-sm w-auto" id="date_from" name="date_from" value="{{ date_from.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium">Iki:</span>
+                        <input type="date" class="input input-bordered input-sm w-auto" id="date_to" name="date_to" value="{{ date_to.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filtruoti
+                    </button>
+                </form>
+                
+                <!-- Quick date filter buttons -->
+                <div class="divider divider-horizontal"></div>
+                <div class="flex gap-1">
+                    <a href="?date_from={{ (today - timedelta(days=6)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">7 dienos</a>
+                    <a href="?date_from={{ (today.replace(day=1)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">Šis mėnuo</a>
+                    <a href="?date_from={{ (today.replace(month=1, day=1)).strftime('%Y-%m-%d') }}&date_to={{ today.strftime('%Y-%m-%d') }}" class="btn btn-outline btn-xs">Šie metai</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Sales Summary Cards -->
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-xl border border-primary/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Pardavimai</h2>
-            <p class="text-xs text-gray-500 mb-2">{{ date_from.strftime('%Y-%m-%d') }} - {{ date_to.strftime('%Y-%m-%d') }}</p>
-            <p class="text-3xl font-bold">{{ monthly_sales|default(0)|euro }}</p>
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="card-title text-primary">Pardavimai</h2>
+                <div class="bg-primary/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs text-base-content/60 mb-2">{{ date_from.strftime('%Y-%m-%d') }} - {{ date_to.strftime('%Y-%m-%d') }}</p>
+            <p class="text-3xl font-bold text-base-content">{{ monthly_sales|default(0)|euro }}</p>
             <div class="flex items-center mt-2">
                 {% if sales_growth > 0 %}
                 <span class="text-success flex items-center">
@@ -57,29 +113,50 @@
         </div>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-xl border border-secondary/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Naujų užsakymų</h2>
-            <p class="text-3xl font-bold">{{ new_orders|default(0) }}</p>
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="card-title text-secondary">Naujų užsakymų</h2>
+                <div class="bg-secondary/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M8 11v6h8v-6M8 11h8" />
+                    </svg>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-base-content">{{ new_orders|default(0) }}</p>
             <div class="mt-2 text-sm opacity-70">Per pastarąsias 24 val.</div>
         </div>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-xl border border-warning/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Neišsiųstų užsakymų</h2>
-            <p class="text-3xl font-bold">{{ pending_orders|default(0) }}</p>
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="card-title text-warning">Neišsiųstų užsakymų</h2>
+                <div class="bg-warning/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-base-content">{{ pending_orders|default(0) }}</p>
             <div class="mt-2">
-                <a href="{{ url_for('main.orders') }}?status=paid,packed" class="btn btn-sm btn-primary">Peržiūrėti</a>
+                <a href="{{ url_for('main.orders') }}?status=paid,packed" class="btn btn-sm btn-warning">Peržiūrėti</a>
             </div>
         </div>
     </div>
 
     <!-- Sales Charts Section -->
-    <div class="card bg-base-100 shadow-xl lg:col-span-2">
+    <div class="card bg-base-100 shadow-xl lg:col-span-2 border border-info/10">
         <div class="card-body">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="card-title text-primary">Pardavimų statistika</h2>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-info/10 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h2 class="card-title text-info">Pardavimų statistika</h2>
+                </div>
                 <div class="tabs tabs-boxed">
                     <a class="tab tab-active" id="chartMonthly">30 dienų</a>
                     <a class="tab" id="chartWeekly">7 dienos</a>
@@ -93,9 +170,16 @@
     </div>
 
     <!-- Low Stock Alerts -->
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-xl border border-error/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Prekės baigiasi</h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="card-title text-error">Prekės baigiasi</h2>
+                <div class="bg-error/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+            </div>
             {% if low_stock_products %}
             <div class="overflow-x-auto">
                 <table class="table table-compact w-full">
@@ -142,17 +226,31 @@
     </div>
 
     <!-- Order Status Chart -->
-    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+    <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-success/10">
         <div class="card-body">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-1">
-                    <h2 class="card-title text-primary mb-4">Užsakymų būsenos</h2>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-success/10 rounded-full p-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                        </div>
+                        <h2 class="card-title text-success">Užsakymų būsenos</h2>
+                    </div>
                     <div style="height: 200px; position: relative;" class="mx-auto">
                         <canvas id="orderStatusChart"></canvas>
                     </div>
                 </div>
                 <div class="md:col-span-2">
-                    <h2 class="card-title text-primary mb-4">Statistika</h2>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-info/10 rounded-full p-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                            </svg>
+                        </div>
+                        <h2 class="card-title text-info">Statistika</h2>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="stats shadow">
                             <div class="stat">
@@ -191,9 +289,16 @@
     </div>
 
     <!-- Top Products -->
-    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+    <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-secondary/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Populiariausi produktai</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-secondary/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <h2 class="card-title text-secondary">Populiariausi produktai</h2>
+            </div>
             <div class="overflow-x-auto">
                 <table class="table table-zebra w-full">
                     <thead>
@@ -231,9 +336,16 @@
     </div>
 
     <!-- Recent Orders -->
-    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+    <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-primary/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Naujausi užsakymai</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-primary/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </div>
+                <h2 class="card-title text-primary">Naujausi užsakymai</h2>
+            </div>
             <div class="overflow-x-auto">
                 <table class="table table-zebra w-full">
                     <thead>
@@ -295,9 +407,16 @@
     </div>
     
     <!-- Recent Activity Timeline -->
-    <div class="card bg-base-100 shadow-xl lg:col-span-3">
+    <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-accent/10">
         <div class="card-body">
-            <h2 class="card-title text-primary">Paskutiniai veiksmai</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-accent/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="card-title text-accent">Paskutiniai veiksmai</h2>
+            </div>
             
             <ul class="timeline timeline-vertical">
                 {% if recent_activities %}
