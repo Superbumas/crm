@@ -308,60 +308,96 @@
     <!-- Order Items -->
     <div class="card bg-base-100 shadow-xl mt-6">
         <div class="card-body">
-            <h2 class="card-title">Užsakytos prekės</h2>
-            <div class="divider mt-0"></div>
+            <div class="flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <h2 class="card-title">Užsakytos prekės</h2>
+                <div class="badge badge-primary">{{ order.items|length }} prekės</div>
+            </div>
             
             <div class="overflow-x-auto">
-                <table class="table w-full">
+                <table class="table table-zebra w-full">
                     <thead>
-                        <tr>
-                            <th>Kodas</th>
+                        <tr class="bg-base-200">
+                            <th class="w-24">Kodas</th>
                             <th>Prekė</th>
-                            <th class="text-right">Kaina</th>
-                            <th class="text-right">Kiekis</th>
-                            <th class="text-right">Viso</th>
+                            <th class="text-right w-24">Kaina</th>
+                            <th class="text-right w-20">Kiekis</th>
+                            <th class="text-right w-24">Viso</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in order.items %}
-                        <tr>
-                            <td>{{ item.product.sku }}</td>
+                        <tr class="hover">
                             <td>
-                                <div class="font-medium">{{ item.product.name }}</div>
-                                {% if item.variant_info %}
-                                <div class="text-sm opacity-70">{{ item.variant_info }}</div>
-                                {% endif %}
+                                <div class="font-mono text-sm bg-base-200/50 px-2 py-1 rounded">
+                                    {{ item.product.sku }}
+                                </div>
                             </td>
-                            <td class="text-right">{{ item.price|euro }}</td>
-                            <td class="text-right">{{ item.quantity }}</td>
-                            <td class="text-right">{{ item.subtotal|euro }}</td>
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-neutral-focus text-neutral-content rounded w-10 h-10 text-xs">
+                                            {{ item.product.name[:2].upper() }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium">{{ item.product.name }}</div>
+                                        {% if item.variant_info %}
+                                        <div class="text-sm opacity-70">{{ item.variant_info }}</div>
+                                        {% endif %}
+                                        {% if item.product.description %}
+                                        <div class="text-xs opacity-60 max-w-xs truncate">{{ item.product.description }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-right">
+                                <span class="font-medium">{{ item.price|euro }}</span>
+                            </td>
+                            <td class="text-right">
+                                <div class="badge badge-outline">{{ item.quantity }}</div>
+                            </td>
+                            <td class="text-right">
+                                <span class="font-bold">{{ item.subtotal|euro }}</span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-right font-medium">Tarpinė suma:</td>
-                            <td class="text-right">{{ (order.total_amount - (order.shipping_amount or 0) - (order.tax_amount or 0))|euro }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-right font-medium">Pristatymas:</td>
-                            <td class="text-right">{{ (order.shipping_amount or 0)|euro }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-right font-medium">Mokesčiai:</td>
-                            <td class="text-right">{{ (order.tax_amount or 0)|euro }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-right font-bold text-lg">Viso:</td>
-                            <td class="text-right font-bold text-lg">{{ order.total_amount|euro }}</td>
-                        </tr>
-                    </tfoot>
                 </table>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="bg-base-200/30 rounded-lg p-4 mt-4">
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-base-content/70">Tarpinė suma:</span>
+                        <span>{{ (order.total_amount - (order.shipping_amount or 0) - (order.tax_amount or 0))|euro }}</span>
+                    </div>
+                    {% if order.shipping_amount %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-base-content/70">Pristatymas:</span>
+                        <span>{{ order.shipping_amount|euro }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.tax_amount %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-base-content/70">Mokesčiai (PVM):</span>
+                        <span>{{ order.tax_amount|euro }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="divider my-2"></div>
+                    <div class="flex justify-between text-lg font-bold">
+                        <span>Viso mokėti:</span>
+                        <span class="text-primary">{{ order.total_amount|euro }}</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Įvykiai (Events) -->
+    <!-- Timeline -->
     <div class="card bg-base-100 shadow-xl mt-6">
         <div class="card-body">
             <div class="flex items-center gap-3 mb-6">
@@ -373,22 +409,23 @@
                 <h2 class="card-title text-xl">Užsakymo istorija</h2>
             </div>
             
-            <div class="relative">
+            <div class="relative pl-8">
                 <!-- Timeline line -->
                 <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-base-300 to-transparent"></div>
                 
-                <div class="space-y-6">
+                <div class="space-y-8">
                     <!-- Invoice Created Event -->
                     {% if invoices %}
-                    <div class="relative flex items-start gap-4">
-                        <div class="flex-shrink-0 w-16 h-16 bg-success/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                        <div class="flex-grow bg-gradient-to-r from-success/5 to-transparent border border-success/20 rounded-xl p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg text-success">Sąskaita faktūra sukurta</h3>
+                    <div class="relative">
+                        <div class="absolute -left-8 w-4 h-4 bg-success rounded-full border-4 border-base-100 shadow-lg"></div>
+                        <div class="bg-gradient-to-r from-success/5 to-transparent border border-success/20 rounded-xl p-4 shadow-sm ml-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <h3 class="font-bold text-lg text-success">Sąskaita faktūra sukurta</h3>
+                                </div>
                                 <div class="text-sm text-base-content/70 font-medium">
                                     {{ invoices[0].created_at.strftime('%Y-%m-%d %H:%M') }}
                                 </div>
@@ -423,16 +460,17 @@
                     {% endif %}
                     
                     <!-- Shipped Event -->
-                    {% if order.status.value == 'shipped' and order.shipped_at %}
-                    <div class="relative flex items-start gap-4">
-                        <div class="flex-shrink-0 w-16 h-16 bg-info/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                        </div>
-                        <div class="flex-grow bg-gradient-to-r from-info/5 to-transparent border border-info/20 rounded-xl p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg text-info">Užsakymas išsiųstas</h3>
+                    {% if order.status.value in ['shipped', 'delivered'] and order.shipped_at %}
+                    <div class="relative">
+                        <div class="absolute -left-8 w-4 h-4 bg-info rounded-full border-4 border-base-100 shadow-lg"></div>
+                        <div class="bg-gradient-to-r from-info/5 to-transparent border border-info/20 rounded-xl p-4 shadow-sm ml-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    </svg>
+                                    <h3 class="font-bold text-lg text-info">Užsakymas išsiųstas</h3>
+                                </div>
                                 <div class="text-sm text-base-content/70 font-medium">
                                     {{ order.shipped_at.strftime('%Y-%m-%d %H:%M') }}
                                 </div>
@@ -449,17 +487,43 @@
                     </div>
                     {% endif %}
                     
-                    <!-- Status Updated Event -->
-                    {% if order.status.value != 'new' %}
-                    <div class="relative flex items-start gap-4">
-                        <div class="flex-shrink-0 w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        </div>
-                        <div class="flex-grow bg-gradient-to-r from-warning/5 to-transparent border border-warning/20 rounded-xl p-4 shadow-sm">
+                    <!-- Packed Event -->
+                    {% if order.status.value in ['packed', 'shipped', 'delivered'] %}
+                    <div class="relative">
+                        <div class="absolute -left-8 w-4 h-4 bg-warning rounded-full border-4 border-base-100 shadow-lg"></div>
+                        <div class="bg-gradient-to-r from-warning/5 to-transparent border border-warning/20 rounded-xl p-4 shadow-sm ml-4">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg text-warning">Būsena atnaujinta</h3>
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    <h3 class="font-bold text-lg text-warning">Užsakymas supakuotas</h3>
+                                </div>
+                                <div class="text-sm text-base-content/70 font-medium">
+                                    {% if order.updated_at and order.status.value in ['packed', 'shipped', 'delivered'] %}
+                                        {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <p class="text-sm text-base-content/80">Užsakymas paruoštas siuntimui.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Paid Event -->
+                    {% if order.status.value not in ['new', 'cancelled'] %}
+                    <div class="relative">
+                        <div class="absolute -left-8 w-4 h-4 bg-accent rounded-full border-4 border-base-100 shadow-lg"></div>
+                        <div class="bg-gradient-to-r from-accent/5 to-transparent border border-accent/20 rounded-xl p-4 shadow-sm ml-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                    </svg>
+                                    <h3 class="font-bold text-lg text-accent">Mokėjimas gautas</h3>
+                                </div>
                                 <div class="text-sm text-base-content/70 font-medium">
                                     {% if order.updated_at %}
                                         {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
@@ -469,37 +533,28 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-sm text-base-content/70">Užsakymo būsena:</span>
-                                <span class="badge
-                                    {% if order.status.value == 'new' %}badge-primary
-                                    {% elif order.status.value == 'paid' %}badge-success
-                                    {% elif order.status.value == 'shipped' %}badge-info
-                                    {% elif order.status.value == 'cancelled' %}badge-error
-                                    {% else %}badge-ghost{% endif %}">
-                                    {% if order.status.value == 'new' %}Naujas
-                                    {% elif order.status.value == 'processing' %}Apdorojamas
-                                    {% elif order.status.value == 'paid' %}Apmokėtas
-                                    {% elif order.status.value == 'packed' %}Supakuotas
-                                    {% elif order.status.value == 'shipped' %}Išsiųstas
-                                    {% elif order.status.value == 'delivered' %}Pristatytas
-                                    {% elif order.status.value == 'cancelled' %}Atšauktas
-                                    {% else %}{{ order.status.value }}{% endif %}
-                                </span>
+                                <span class="text-sm text-base-content/70">Suma:</span>
+                                <span class="font-medium">{{ order.total_amount|euro }}</span>
+                                {% if order.payment_method %}
+                                <span class="text-sm text-base-content/70">•</span>
+                                <span class="text-sm">{{ order.payment_method }}</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     {% endif %}
                     
                     <!-- Order Created Event -->
-                    <div class="relative flex items-start gap-4">
-                        <div class="flex-shrink-0 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                        </div>
-                        <div class="flex-grow bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-xl p-4 shadow-sm">
+                    <div class="relative">
+                        <div class="absolute -left-8 w-4 h-4 bg-primary rounded-full border-4 border-base-100 shadow-lg"></div>
+                        <div class="bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-xl p-4 shadow-sm ml-4">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg text-primary">Užsakymas sukurtas</h3>
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    <h3 class="font-bold text-lg text-primary">Užsakymas sukurtas</h3>
+                                </div>
                                 <div class="text-sm text-base-content/70 font-medium">
                                     {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
                                 </div>
@@ -512,4 +567,98 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Modal -->
+<div id="loading-modal" class="modal">
+    <div class="modal-box">
+        <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-md"></span>
+            <span>Atnaujinama būsena...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Status update functionality
+    function updateOrderStatus(newStatus) {
+        const modal = document.getElementById('loading-modal');
+        modal.classList.add('modal-open');
+        
+        fetch(`/orders/{{ order.id }}/update-status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `status=${newStatus}`
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            modal.classList.remove('modal-open');
+            
+            // Show success message
+            showToast(data.message || 'Būsena sėkmingai atnaujinta', 'success');
+            
+            // Reload page to show updated status and timeline
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(error => {
+            modal.classList.remove('modal-open');
+            console.error('Error updating status:', error);
+            showToast('Klaida atnaujinant būseną: ' + error.message, 'error');
+        });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            // Create toast container if it doesn't exist
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-4 right-4 z-50 space-y-2';
+            document.body.appendChild(container);
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg max-w-sm`;
+        
+        toast.innerHTML = `
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>${message}</span>
+            </div>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="this.parentElement.remove()">✕</button>
+        `;
+        
+        document.getElementById('toast-container').appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 5000);
+    }
+    
+    // Copy tracking number functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers for copy buttons
+        document.querySelectorAll('[onclick*="navigator.clipboard.writeText"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                showToast('Siuntinio numeris nukopijuotas!', 'success');
+            });
+        });
+    });
+</script>
 {% endblock %} 
