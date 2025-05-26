@@ -39,8 +39,33 @@
             min-height: auto;
         }
         .table-container {
-            overflow: visible;
-            height: auto;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+        .card-body {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+        .overflow-x-auto {
+            overflow-y: visible !important;
+            max-height: none !important;
+        }
+        /* Force remove any height constraints from DaisyUI */
+        .drawer-content,
+        .drawer-content main,
+        .card,
+        .card-body,
+        .table-container,
+        .overflow-x-auto {
+            max-height: none !important;
+            height: auto !important;
+        }
+        /* Ensure only horizontal scroll when needed */
+        .table-container.overflow-x-auto {
+            overflow-x: auto;
+            overflow-y: visible !important;
         }
         .menu-item-compact {
             padding-top: 0.5rem !important;
