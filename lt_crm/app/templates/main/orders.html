@@ -128,6 +128,60 @@
         margin-bottom: 0.5rem;
         transition: opacity 0.3s ease-in-out;
     }
+    
+    /* Fix dropdown visibility in table */
+    .table-container {
+        overflow-y: visible !important;
+    }
+    
+    /* Ensure dropdown content is above other elements */
+    .dropdown-content {
+        z-index: 1000 !important;
+        position: absolute !important;
+    }
+    
+    /* Fix for dropdown positioning in tables */
+    .dropdown {
+        position: static;
+    }
+    
+    .dropdown.dropdown-end .dropdown-content {
+        right: 0;
+        left: auto;
+    }
+    
+    /* Ensure table cells don't clip dropdown content */
+    td {
+        overflow: visible !important;
+    }
+    
+    /* Make sure the table row doesn't clip content */
+    tr {
+        overflow: visible !important;
+    }
+    
+    /* Ensure table body allows overflow */
+    tbody {
+        overflow: visible !important;
+    }
+    
+    /* Make sure the entire table allows overflow */
+    table {
+        overflow: visible !important;
+    }
+    
+    /* Specific fix for action column dropdowns */
+    .dropdown.dropdown-end {
+        position: relative;
+    }
+    
+    .dropdown.dropdown-end .dropdown-content {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 1050;
+        min-width: 12rem;
+    }
 </style>
 {% endblock %}
 
@@ -323,7 +377,7 @@
     </div>
     
     <div class="card-body p-0">
-        <div class="table-container overflow-x-auto">
+        <div class="table-container overflow-x-auto" style="overflow-y: visible;">
             <table class="table w-full">
                 <thead class="bg-base-200/50">
                     <tr>
@@ -928,7 +982,7 @@ function updatePerPage(value) {
                         let toast = document.createElement('div');
                         toast.className = 'toast toast-center toast-success';
                         toast.innerHTML = `<div class="alert alert-success"><span>${data.message}</span></div>`;
-                        document.querySelector('.toast-container').appendChild(toast);
+                        document.getElementById('toast-container').appendChild(toast);
                         
                         // Remove the toast after 3 seconds
                         setTimeout(() => {
@@ -969,7 +1023,7 @@ function updatePerPage(value) {
                     let toast = document.createElement('div');
                     toast.className = 'toast toast-center toast-error';
                     toast.innerHTML = `<div class="alert alert-error"><span>Klaida atnaujinant būseną</span></div>`;
-                    document.querySelector('.toast-container').appendChild(toast);
+                    document.getElementById('toast-container').appendChild(toast);
                     
                     // Remove the toast after 3 seconds
                     setTimeout(() => {
