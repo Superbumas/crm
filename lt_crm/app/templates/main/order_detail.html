@@ -172,104 +172,151 @@
     <!-- Įvykiai (Events) -->
     <div class="card bg-base-100 shadow-xl mt-6">
         <div class="card-body">
-            <h2 class="card-title">Įvykiai</h2>
-            <div class="divider mt-0"></div>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-2 bg-primary/10 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="card-title text-xl">Užsakymo istorija</h2>
+            </div>
             
-            <ul class="timeline timeline-vertical">
-                {% if invoices %}
-                <li class="mb-8">
-                    <div class="timeline-start md:text-end font-medium">{{ invoices[0].created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                    <div class="timeline-middle">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-success"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <div class="timeline-end timeline-box bg-base-200">
-                        <p class="font-bold text-lg">Sąskaita faktūra sukurta</p>
-                        <div class="mt-2">
-                            <a href="{{ url_for('main.invoice_detail', id=invoices[0].id) }}" class="link link-primary">
-                                Sąskaita faktūra #{{ invoices[0].invoice_number }}
-                            </a>
-                        </div>
-                        <div class="mt-2">
-                            Būsena: 
-                            <span class="badge badge-lg
-                                {% if invoices[0].status.value == 'draft' %}badge-ghost
-                                {% elif invoices[0].status.value == 'issued' %}badge-info
-                                {% elif invoices[0].status.value == 'paid' %}badge-success
-                                {% elif invoices[0].status.value == 'cancelled' %}badge-error
-                                {% endif %}">
-                                {% if invoices[0].status.value == 'draft' %}Juodraštis
-                                {% elif invoices[0].status.value == 'issued' %}Išrašyta
-                                {% elif invoices[0].status.value == 'paid' %}Apmokėta
-                                {% elif invoices[0].status.value == 'cancelled' %}Atšaukta
-                                {% else %}{{ invoices[0].status.value }}{% endif %}
-                            </span>
-                        </div>
-                    </div>
-                </li>
-                {% endif %}
+            <div class="relative">
+                <!-- Timeline line -->
+                <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-base-300 to-transparent"></div>
                 
-                {% if order.status.value == 'shipped' and order.shipped_at %}
-                <li class="mb-8">
-                    <div class="timeline-start md:text-end font-medium">{{ order.shipped_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                    <div class="timeline-middle">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-info"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <div class="timeline-end timeline-box bg-base-200">
-                        <p class="font-bold text-lg">Užsakymas išsiųstas</p>
-                        <div class="mt-2">
-                            <span class="font-medium">Siuntinio numeris:</span> {{ order.tracking_number or 'Nenurodyta' }}
+                <div class="space-y-6">
+                    <!-- Invoice Created Event -->
+                    {% if invoices %}
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-success/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div class="flex-grow bg-gradient-to-r from-success/5 to-transparent border border-success/20 rounded-xl p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-success">Sąskaita faktūra sukurta</h3>
+                                <div class="text-sm text-base-content/70 font-medium">
+                                    {{ invoices[0].created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                    </svg>
+                                    <a href="{{ url_for('main.invoice_detail', id=invoices[0].id) }}" class="link link-primary font-medium">
+                                        Sąskaita faktūra #{{ invoices[0].invoice_number }}
+                                    </a>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-base-content/70">Būsena:</span>
+                                    <span class="badge
+                                        {% if invoices[0].status.value == 'draft' %}badge-ghost
+                                        {% elif invoices[0].status.value == 'issued' %}badge-info
+                                        {% elif invoices[0].status.value == 'paid' %}badge-success
+                                        {% elif invoices[0].status.value == 'cancelled' %}badge-error
+                                        {% endif %}">
+                                        {% if invoices[0].status.value == 'draft' %}Juodraštis
+                                        {% elif invoices[0].status.value == 'issued' %}Išrašyta
+                                        {% elif invoices[0].status.value == 'paid' %}Apmokėta
+                                        {% elif invoices[0].status.value == 'cancelled' %}Atšaukta
+                                        {% else %}{{ invoices[0].status.value }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </li>
-                {% endif %}
-                
-                {% if order.status.value != 'new' %}
-                <li class="mb-8">
-                    <div class="timeline-start md:text-end font-medium">
-                        {% if order.updated_at %}
-                            {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </div>
-                    <div class="timeline-middle">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-accent"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <div class="timeline-end timeline-box bg-base-200">
-                        <p class="font-bold text-lg">Būsena atnaujinta</p>
-                        <div class="mt-2">
-                            Užsakymo būsena: 
-                            <span class="badge badge-lg
-                                {% if order.status.value == 'new' %}badge-primary
-                                {% elif order.status.value == 'paid' %}badge-success
-                                {% elif order.status.value == 'shipped' %}badge-info
-                                {% elif order.status.value == 'cancelled' %}badge-error
-                                {% else %}badge-ghost{% endif %}">
-                                {% if order.status.value == 'new' %}Naujas
-                                {% elif order.status.value == 'processing' %}Apdorojamas
-                                {% elif order.status.value == 'paid' %}Apmokėtas
-                                {% elif order.status.value == 'packed' %}Supakuotas
-                                {% elif order.status.value == 'shipped' %}Išsiųstas
-                                {% elif order.status.value == 'delivered' %}Pristatytas
-                                {% elif order.status.value == 'cancelled' %}Atšauktas
-                                {% else %}{{ order.status.value }}{% endif %}
-                            </span>
+                    {% endif %}
+                    
+                    <!-- Shipped Event -->
+                    {% if order.status.value == 'shipped' and order.shipped_at %}
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-info/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                        </div>
+                        <div class="flex-grow bg-gradient-to-r from-info/5 to-transparent border border-info/20 rounded-xl p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-info">Užsakymas išsiųstas</h3>
+                                <div class="text-sm text-base-content/70 font-medium">
+                                    {{ order.shipped_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                            {% if order.tracking_number %}
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span class="text-sm"><span class="font-medium">Siuntinio numeris:</span> {{ order.tracking_number }}</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                </li>
-                {% endif %}
-                
-                <li class="mb-8">
-                    <div class="timeline-start md:text-end font-medium">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                    <div class="timeline-middle">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-primary"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
+                    {% endif %}
+                    
+                    <!-- Status Updated Event -->
+                    {% if order.status.value != 'new' %}
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </div>
+                        <div class="flex-grow bg-gradient-to-r from-warning/5 to-transparent border border-warning/20 rounded-xl p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-warning">Būsena atnaujinta</h3>
+                                <div class="text-sm text-base-content/70 font-medium">
+                                    {% if order.updated_at %}
+                                        {{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-base-content/70">Užsakymo būsena:</span>
+                                <span class="badge
+                                    {% if order.status.value == 'new' %}badge-primary
+                                    {% elif order.status.value == 'paid' %}badge-success
+                                    {% elif order.status.value == 'shipped' %}badge-info
+                                    {% elif order.status.value == 'cancelled' %}badge-error
+                                    {% else %}badge-ghost{% endif %}">
+                                    {% if order.status.value == 'new' %}Naujas
+                                    {% elif order.status.value == 'processing' %}Apdorojamas
+                                    {% elif order.status.value == 'paid' %}Apmokėtas
+                                    {% elif order.status.value == 'packed' %}Supakuotas
+                                    {% elif order.status.value == 'shipped' %}Išsiųstas
+                                    {% elif order.status.value == 'delivered' %}Pristatytas
+                                    {% elif order.status.value == 'cancelled' %}Atšauktas
+                                    {% else %}{{ order.status.value }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="timeline-end timeline-box bg-base-200">
-                        <p class="font-bold text-lg">Užsakymas sukurtas</p>
-                        <p>Užsakymas #{{ order.order_number }} sukurtas sistemoje.</p>
+                    {% endif %}
+                    
+                    <!-- Order Created Event -->
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center border-4 border-base-100 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <div class="flex-grow bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-xl p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-primary">Užsakymas sukurtas</h3>
+                                <div class="text-sm text-base-content/70 font-medium">
+                                    {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                            <p class="text-sm text-base-content/80">Užsakymas #{{ order.order_number }} sukurtas sistemoje ir laukia apdorojimo.</p>
+                        </div>
                     </div>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
