@@ -271,7 +271,7 @@
             color: rgb(255 255 255) !important;
         }
         
-        /* Professional background colors */
+        /* Professional background colors - only for explicit background classes */
         .bg-warning {
             background-color: rgb(217 119 6 / var(--tw-bg-opacity)) !important;
         }
@@ -302,6 +302,11 @@
         
         .bg-error\/10 {
             background-color: rgb(239 68 68 / 0.1) !important;
+        }
+        
+        /* Ensure text elements don't get unwanted backgrounds */
+        span, p, h1, h2, h3, h4, h5, h6, div:not(.btn):not(.badge):not(.alert) {
+            background-color: inherit !important;
         }
         
         /* Professional text colors - only color, no backgrounds */
