@@ -94,9 +94,9 @@
                 </svg>
             </div>
             <div class="stat-title">Prekių kiekis</div>
-            <div class="stat-value text-secondary">{{ order.items|length }}</div>
+            <div class="stat-value text-secondary">{{ order.items|list|length }}</div>
             <div class="stat-desc">
-                {% set total_qty = order.items|sum(attribute='quantity') %}
+                {% set total_qty = order.items|list|sum(attribute='quantity') %}
                 Viso vienetų: {{ total_qty }}
             </div>
         </div>
@@ -313,7 +313,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 <h2 class="card-title">Užsakytos prekės</h2>
-                <div class="badge badge-primary">{{ order.items|length }} prekės</div>
+                <div class="badge badge-primary">{{ order.items|list|length }} prekės</div>
             </div>
             
             <div class="overflow-x-auto">
