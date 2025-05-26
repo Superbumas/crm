@@ -32,7 +32,7 @@
                 </svg>
                 Nauja sąskaita
             </a>
-                            <a href="{{ url_for('main.product_new') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('main.product_new') }}" class="btn btn-accent btn-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
@@ -407,16 +407,16 @@
     </div>
     
     <!-- Recent Activity Timeline -->
-                <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-info/10">
-                <div class="card-body">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="bg-info/10 rounded-full p-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h2 class="card-title text-info">Paskutiniai veiksmai</h2>
-                    </div>
+    <div class="card bg-base-100 shadow-xl lg:col-span-3 border border-accent/10">
+        <div class="card-body">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-accent/10 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="card-title text-accent">Paskutiniai veiksmai</h2>
+            </div>
             
             <ul class="timeline timeline-vertical">
                 {% if recent_activities %}
