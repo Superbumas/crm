@@ -6,6 +6,155 @@
 <style>
     [x-cloak] { display: none !important; }
     
+    /* Enhanced visual hierarchy */
+    .page-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Improved table styling */
+    .products-table {
+        background: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .products-table thead th {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        font-weight: 600;
+        color: #374151;
+        padding: 1rem 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .products-table tbody tr {
+        transition: all 0.15s ease;
+    }
+    
+    .products-table tbody tr:hover {
+        background-color: #f8fafc;
+        transform: scale(1.005);
+    }
+    
+    .products-table tbody td {
+        padding: 0.875rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    /* Enhanced product image styling */
+    .product-image {
+        border: 2px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .product-image:hover {
+        border-color: #3b82f6;
+        transform: scale(1.1);
+    }
+    
+    /* Better badge styling */
+    .stock-badge {
+        font-weight: 600;
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    
+    .stock-high {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .stock-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    
+    .stock-low {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    
+    /* Enhanced action buttons */
+    .action-btn {
+        transition: all 0.15s ease;
+        border-radius: 0.5rem;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Improved search and filter section */
+    .filter-section {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Enhanced pagination */
+    .pagination-wrapper {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
+    }
+    
+    /* Better responsive design */
+    @media (max-width: 768px) {
+        .products-table {
+            font-size: 0.875rem;
+        }
+        
+        .products-table thead th,
+        .products-table tbody td {
+            padding: 0.5rem 0.375rem;
+        }
+        
+        .action-btn {
+            padding: 0.25rem;
+        }
+    }
+    
+    /* Accessibility improvements */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    
+    /* Focus indicators */
+    .focus-visible:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    
     /* Toast styling */
     #toast-container {
         position: fixed;
@@ -22,237 +171,396 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col md:flex-row justify-between items-start mb-6">
-    <div>
-        <h1 class="text-2xl font-bold mb-2">Produktai</h1>
-        <div class="text-sm breadcrumbs">
-            <ul>
-                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
-                <li>Produktai</li>
-            </ul>
+<!-- Page Header with improved visual hierarchy -->
+<div class="page-header p-6 mb-6">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Produktų valdymas</h1>
+            <nav class="text-sm breadcrumbs" aria-label="Breadcrumb">
+                <ul>
+                    <li><a href="{{ url_for('main.dashboard') }}" class="text-blue-600 hover:text-blue-800">Skydelis</a></li>
+                    <li><span class="text-gray-500">Produktai</span></li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for('main.product_new') }}" class="btn btn-primary action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Naujas produktas
+            </a>
+            <label for="export-modal" class="btn btn-outline btn-primary action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Eksportuoti
+            </label>
+            <label for="import-modal" class="btn btn-outline action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Importuoti
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stats-card p-4 rounded-lg">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Viso produktų</p>
+                <p class="text-2xl font-bold text-gray-900">{{ pagination.total if pagination else products|length }}</p>
+            </div>
         </div>
     </div>
     
-    <div class="flex space-x-2 mt-4 md:mt-0">
-        <a href="{{ url_for('main.product_new') }}" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Naujas produktas
-        </a>
-        <label for="export-modal" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
-            Eksportuoti
-        </label>
-        <label for="import-modal" class="btn btn-outline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
-            Importuoti produktus
-        </label>
+    <div class="stats-card p-4 rounded-lg">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Sandėlyje</p>
+                <p class="text-2xl font-bold text-gray-900">{{ products|selectattr('quantity', '>', 0)|list|length }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-card p-4 rounded-lg">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Mažas kiekis</p>
+                <p class="text-2xl font-bold text-gray-900">{{ products|selectattr('quantity', '<=', 10)|selectattr('quantity', '>', 0)|list|length }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-card p-4 rounded-lg">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Pasibaigę</p>
+                <p class="text-2xl font-bold text-gray-900">{{ products|selectattr('quantity', '==', 0)|list|length }}</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Search & Filter -->
-<div class="card bg-base-100 shadow-xl mb-6">
-    <div class="card-body">
-        <form method="GET" action="{{ url_for('main.products') }}">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="form-control">
-                    <div class="input-group">
-                        <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Ieškoti pagal pavadinimą, SKU..." class="input input-bordered w-full" />
-                        <button type="submit" class="btn btn-square">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="form-control">
-                    <select name="category" class="select select-bordered w-full">
-                        <option value="">Visos kategorijos</option>
-                        {% for category in categories %}
-                        <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
-                            {{ category }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-control">
-                    <select name="stock" class="select select-bordered w-full">
-                        <option value="">Visi likučiai</option>
-                        <option value="in_stock" {% if request.args.get('stock') == 'in_stock' %}selected{% endif %}>Yra sandėlyje</option>
-                        <option value="low" {% if request.args.get('stock') == 'low' %}selected{% endif %}>Mažas kiekis</option>
-                        <option value="out_of_stock" {% if request.args.get('stock') == 'out_of_stock' %}selected{% endif %}>Nėra sandėlyje</option>
-                    </select>
-                </div>
-                <div class="form-control flex flex-row space-x-2">
-                    <button type="submit" class="btn btn-primary flex-1">Filtruoti</button>
-                    <a href="{{ url_for('main.products') }}" class="btn btn-outline btn-error">Išvalyti</a>
+<!-- Enhanced Search & Filter Section -->
+<div class="filter-section p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Paieška ir filtrai</h2>
+    <form method="GET" action="{{ url_for('main.products') }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Paieška</span>
+                </label>
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ request.args.get('q', '') }}" 
+                        placeholder="Pavadinimas, SKU, brūkšninis kodas..." 
+                        class="input input-bordered w-full focus-visible"
+                        aria-label="Ieškoti produktų"
+                    />
+                    <button type="submit" class="btn btn-square btn-primary" aria-label="Ieškoti">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- Products Table -->
-<div class="card bg-base-100 shadow-xl overflow-hidden">
-    <div class="card-body p-0">
-        <div class="flex justify-end p-4">
-            <div class="dropdown dropdown-end">
-                <label tabindex="0" class="btn btn-sm btn-outline">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    Stulpeliai
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Kategorija</span>
                 </label>
-                <div tabindex="0" id="column-selector" class="dropdown-content z-[1] menu p-4 bg-base-100 shadow rounded-box w-64">
-                    <h3 class="font-bold mb-2">Rodomi stulpeliai</h3>
-                    <div class="form-control">
-                        {% for col_id, col_info in product_columns.items() %}
-                        <label class="label cursor-pointer justify-start">
-                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mr-2" 
-                                   data-column-id="{{ col_id }}" 
-                                   {% if col_id in selected_columns %}checked{% endif %}
-                                   {% if col_id in ['sku', 'name'] %}disabled{% endif %} />
-                            <span class="label-text">{{ col_info.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                    <div class="mt-4">
-                        <button id="save-columns" class="btn btn-primary btn-sm w-full">Išsaugoti</button>
-                    </div>
+                <select name="category" class="select select-bordered w-full focus-visible" aria-label="Filtruoti pagal kategoriją">
+                    <option value="">Visos kategorijos</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                        {{ category }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Sandėlio būklė</span>
+                </label>
+                <select name="stock" class="select select-bordered w-full focus-visible" aria-label="Filtruoti pagal sandėlio būklę">
+                    <option value="">Visi likučiai</option>
+                    <option value="in_stock" {% if request.args.get('stock') == 'in_stock' %}selected{% endif %}>Yra sandėlyje</option>
+                    <option value="low" {% if request.args.get('stock') == 'low' %}selected{% endif %}>Mažas kiekis</option>
+                    <option value="out_of_stock" {% if request.args.get('stock') == 'out_of_stock' %}selected{% endif %}>Nėra sandėlyje</option>
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">&nbsp;</span>
+                </label>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-1 action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filtruoti
+                    </button>
+                    <a href="{{ url_for('main.products') }}" class="btn btn-outline action-btn" aria-label="Išvalyti filtrus">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
-                <thead>
-                    <tr>
-                        <th>SKU</th>
-                        <th>Nuotrauka</th>
-                        <th>Pavadinimas</th>
-                        {% for col in selected_columns %}
-                        {% if col not in ['sku', 'name'] %}
-                        <th>{{ product_columns[col]['name'] }}</th>
-                        {% endif %}
-                        {% endfor %}
-                        <th>Veiksmai</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if products %}
-                        {% for product in products %}
-                        <tr class="hover" data-product-id="{{ product.id }}">
-                            <td>{{ product.sku }}</td>
-                            <td>
-                                {% if product.main_image_url %}
-                                <div class="avatar">
-                                    <div class="mask mask-squircle w-12 h-12">
-                                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}" />
-                                    </div>
+    </form>
+</div>
+
+<!-- Enhanced Products Table -->
+<div class="products-table mb-6">
+    <!-- Table Controls -->
+    <div class="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+        <div class="flex items-center gap-4">
+            <span class="text-sm font-medium text-gray-700">
+                Rodoma: {{ products|length }} iš {{ pagination.total if pagination else products|length }} produktų
+            </span>
+        </div>
+        
+        <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-sm btn-outline action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                </svg>
+                Stulpeliai
+            </label>
+            <div tabindex="0" id="column-selector" class="dropdown-content z-[1] menu p-4 bg-base-100 shadow-xl rounded-box w-64 border border-gray-200">
+                <h3 class="font-bold mb-3 text-gray-900">Rodomi stulpeliai</h3>
+                <div class="form-control space-y-2">
+                    {% for col_id, col_info in product_columns.items() %}
+                    <label class="label cursor-pointer justify-start p-2 hover:bg-gray-50 rounded">
+                        <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mr-3" 
+                               data-column-id="{{ col_id }}" 
+                               {% if col_id in selected_columns %}checked{% endif %}
+                               {% if col_id in ['sku', 'name'] %}disabled{% endif %} />
+                        <span class="label-text">{{ col_info.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="mt-4">
+                    <button id="save-columns" class="btn btn-primary btn-sm w-full action-btn">Išsaugoti</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Table Content -->
+    <div class="overflow-x-auto">
+        <table class="table w-full" role="table" aria-label="Produktų sąrašas">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-left">SKU</th>
+                    <th scope="col" class="text-left">Nuotrauka</th>
+                    <th scope="col" class="text-left">Pavadinimas</th>
+                    {% for col in selected_columns %}
+                    {% if col not in ['sku', 'name'] %}
+                    <th scope="col" class="text-left">{{ product_columns[col]['name'] }}</th>
+                    {% endif %}
+                    {% endfor %}
+                    <th scope="col" class="text-center">Veiksmai</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                    {% for product in products %}
+                    <tr class="hover" data-product-id="{{ product.id }}">
+                        <td>
+                            <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{{ product.sku }}</code>
+                        </td>
+                        <td>
+                            {% if product.main_image_url %}
+                            <div class="avatar">
+                                <div class="mask mask-squircle w-14 h-14 product-image">
+                                    <img src="{{ product.main_image_url }}" alt="Produkto {{ product.name }} nuotrauka" loading="lazy" />
                                 </div>
-                                {% else %}
-                                <div class="avatar placeholder">
-                                    <div class="mask mask-squircle w-12 h-12 bg-neutral-focus text-neutral-content">
-                                        <span>{{ product.name[:2] }}</span>
-                                    </div>
+                            </div>
+                            {% else %}
+                            <div class="avatar placeholder">
+                                <div class="mask mask-squircle w-14 h-14 bg-gray-200 text-gray-600 product-image">
+                                    <span class="text-lg font-semibold">{{ product.name[:2] }}</span>
                                 </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('main.product_detail', id=product.id) }}" class="font-medium hover:underline">
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                <a href="{{ url_for('main.product_detail', id=product.id) }}" 
+                                   class="font-semibold text-gray-900 hover:text-blue-600 hover:underline transition-colors">
                                     {{ product.name }}
                                 </a>
                                 {% if product.barcode and 'barcode' not in selected_columns %}
-                                <div class="text-xs opacity-60">EAN: {{ product.barcode }}</div>
+                                <div class="text-xs text-gray-500 mt-1">EAN: {{ product.barcode }}</div>
                                 {% endif %}
-                            </td>
-                            
-                            {% for col in selected_columns %}
-                            {% if col not in ['sku', 'name'] %}
-                            <td>
-                                {% if col == 'category' %}
-                                    {{ product.category or '-' }}
-                                {% elif col == 'barcode' %}
-                                    {{ product.barcode or '-' }}
-                                {% elif col == 'price_final' %}
-                                    <div class="font-semibold">{{ product.price_final|euro }}</div>
-                                {% elif col == 'price_old' %}
-                                    <div class="text-xs line-through opacity-60">{{ product.price_old|euro if product.price_old else '-' }}</div>
-                                {% elif col == 'quantity' %}
-                                    <span class="badge {% if product.quantity > 10 %}badge-success{% elif product.quantity > 0 %}badge-warning{% else %}badge-error{% endif %}">
-                                        {{ product.quantity }} vnt.
-                                    </span>
-                                {% elif col == 'manufacturer' %}
-                                    {{ product.manufacturer or '-' }}
-                                {% elif col == 'model' %}
-                                    {{ product.model or '-' }}
-                                {% elif col == 'delivery_days' %}
-                                    {{ product.delivery_days or '-' }} d.
-                                {% elif col == 'warranty_months' %}
-                                    {{ product.warranty_months or '-' }} mėn.
-                                {% elif col == 'weight_kg' %}
-                                    {{ product.weight_kg or '-' }} kg
+                            </div>
+                        </td>
+                        
+                        {% for col in selected_columns %}
+                        {% if col not in ['sku', 'name'] %}
+                        <td>
+                            {% if col == 'category' %}
+                                {% if product.category %}
+                                <span class="badge badge-outline">{{ product.category }}</span>
                                 {% else %}
-                                    {{ getattr(product, col, '-') }}
+                                <span class="text-gray-400">-</span>
                                 {% endif %}
-                            </td>
+                            {% elif col == 'barcode' %}
+                                {% if product.barcode %}
+                                <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{{ product.barcode }}</code>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'price_final' %}
+                                <div class="font-bold text-lg text-gray-900">{{ product.price_final|euro }}</div>
+                            {% elif col == 'price_old' %}
+                                {% if product.price_old %}
+                                <div class="text-sm line-through text-gray-500">{{ product.price_old|euro }}</div>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'quantity' %}
+                                {% if product.quantity > 10 %}
+                                <span class="stock-badge stock-high">{{ product.quantity }} vnt.</span>
+                                {% elif product.quantity > 0 %}
+                                <span class="stock-badge stock-medium">{{ product.quantity }} vnt.</span>
+                                {% else %}
+                                <span class="stock-badge stock-low">Nėra</span>
+                                {% endif %}
+                            {% elif col == 'manufacturer' %}
+                                {% if product.manufacturer %}
+                                <span class="text-gray-700">{{ product.manufacturer }}</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'model' %}
+                                {% if product.model %}
+                                <span class="text-gray-700">{{ product.model }}</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'delivery_days' %}
+                                {% if product.delivery_days %}
+                                <span class="text-gray-700">{{ product.delivery_days }} d.</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'warranty_months' %}
+                                {% if product.warranty_months %}
+                                <span class="text-gray-700">{{ product.warranty_months }} mėn.</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif col == 'weight_kg' %}
+                                {% if product.weight_kg %}
+                                <span class="text-gray-700">{{ product.weight_kg }} kg</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% else %}
+                                {% set value = getattr(product, col, '-') %}
+                                {% if value and value != '-' %}
+                                <span class="text-gray-700">{{ value }}</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
                             {% endif %}
-                            {% endfor %}
-                            
-                            <td>
-                                <div class="flex space-x-1">
-                                    <a href="{{ url_for('main.product_edit', id=product.id) }}" class="btn btn-square btn-sm btn-ghost">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </a>
-                                    <button class="btn btn-square btn-sm btn-ghost" 
-                                            hx-delete="{{ url_for('main.product_delete', id=product.id) }}"
-                                            hx-confirm="Ar tikrai norite ištrinti šį produktą?"
-                                            hx-target="closest tr"
-                                            hx-swap="outerHTML swap:1s">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        </td>
+                        {% endif %}
                         {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="{{ selected_columns|length + 3 }}" class="text-center py-8">
+                        
+                        <td>
+                            <div class="flex justify-center gap-2">
+                                <a href="{{ url_for('main.product_edit', id=product.id) }}" 
+                                   class="btn btn-square btn-sm btn-ghost action-btn tooltip" 
+                                   data-tip="Redaguoti produktą"
+                                   aria-label="Redaguoti produktą {{ product.name }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </a>
+                                <button class="btn btn-square btn-sm btn-ghost action-btn tooltip" 
+                                        data-tip="Ištrinti produktą"
+                                        hx-delete="{{ url_for('main.product_delete', id=product.id) }}"
+                                        hx-confirm="Ar tikrai norite ištrinti produktą '{{ product.name }}'?"
+                                        hx-target="closest tr"
+                                        hx-swap="outerHTML swap:1s"
+                                        aria-label="Ištrinti produktą {{ product.name }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="{{ selected_columns|length + 3 }}" class="text-center py-12">
+                            <div class="flex flex-col items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
                                 {% if request.args.get('q') or request.args.get('category') or request.args.get('stock') %}
-                                    Nerasta produktų pagal pasirinktus filtrus.
-                                    <a href="{{ url_for('main.products') }}" class="btn btn-sm btn-ghost mt-2">Išvalyti filtrus</a>
+                                    <p class="text-gray-500 mb-4">Nerasta produktų pagal pasirinktus filtrus</p>
+                                    <a href="{{ url_for('main.products') }}" class="btn btn-outline action-btn">Išvalyti filtrus</a>
                                 {% else %}
-                                    Dar nėra produktų. <a href="{{ url_for('main.product_new') }}" class="link">Pridėkite naują produktą</a>.
+                                    <p class="text-gray-500 mb-4">Dar nėra produktų sistemoje</p>
+                                    <a href="{{ url_for('main.product_new') }}" class="btn btn-primary action-btn">Pridėti pirmą produktą</a>
                                 {% endif %}
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Pagination -->
+<!-- Enhanced Pagination -->
 {% if pagination and pagination.pages > 1 %}
-<div class="flex justify-center mt-6">
+<div class="pagination-wrapper flex justify-center">
     <div class="btn-group">
         {% if pagination.has_prev %}
-        <a href="{{ url_for('main.products', page=pagination.prev_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">
+        <a href="{{ url_for('main.products', page=pagination.prev_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+           class="btn action-btn" aria-label="Ankstesnis puslapis">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
         </a>
         {% else %}
-        <button class="btn btn-disabled">
+        <button class="btn btn-disabled" disabled aria-label="Ankstesnis puslapis (nepasiekiamas)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -262,23 +570,25 @@
         {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
             {% if page %}
                 {% if page == pagination.page %}
-                <button class="btn btn-active">{{ page }}</button>
+                <button class="btn btn-active" aria-current="page" aria-label="Dabartinis puslapis {{ page }}">{{ page }}</button>
                 {% else %}
-                <a href="{{ url_for('main.products', page=page) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">{{ page }}</a>
+                <a href="{{ url_for('main.products', page=page) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="btn action-btn" aria-label="Puslapis {{ page }}">{{ page }}</a>
                 {% endif %}
             {% else %}
-                <button class="btn btn-disabled">...</button>
+                <button class="btn btn-disabled" disabled aria-label="Daugiau puslapių">...</button>
             {% endif %}
         {% endfor %}
         
         {% if pagination.has_next %}
-        <a href="{{ url_for('main.products', page=pagination.next_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn">
+        <a href="{{ url_for('main.products', page=pagination.next_num) }}{% for key, value in request.args.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+           class="btn action-btn" aria-label="Kitas puslapis">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </a>
         {% else %}
-        <button class="btn btn-disabled">
+        <button class="btn btn-disabled" disabled aria-label="Kitas puslapis (nepasiekiamas)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -288,11 +598,18 @@
 </div>
 {% endif %}
 
-<!-- Import Modal -->
+<!-- Enhanced Import Modal -->
 <input type="checkbox" id="import-modal" class="modal-toggle" />
 <div class="modal">
     <div class="modal-box w-11/12 max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">Importuoti produktus</h3>
+        <div class="flex items-center mb-6">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900">Importuoti produktus</h3>
+        </div>
         <form id="csv-upload-form" method="POST" action="{{ url_for('main.product_import_file') }}" enctype="multipart/form-data" class="space-y-4">
             <div class="form-control">
                 <label class="label">
@@ -349,18 +666,30 @@
             </div>
             
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Importuoti</button>
-                <label for="import-modal" class="btn" id="cancel-import">Atšaukti</label>
+                <button type="submit" class="btn btn-primary action-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Importuoti
+                </button>
+                <label for="import-modal" class="btn btn-outline action-btn" id="cancel-import">Atšaukti</label>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Export Modal -->
+<!-- Enhanced Export Modal -->
 <input type="checkbox" id="export-modal" class="modal-toggle" />
 <div class="modal" x-data="exportModal()" x-cloak>
     <div class="modal-box w-11/12 max-w-5xl">
-        <h3 class="font-bold text-lg mb-4">Eksportuoti produktus</h3>
+        <div class="flex items-center mb-6">
+            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900">Eksportuoti produktus</h3>
+        </div>
         
         <!-- Step indicator -->
         <ul class="steps steps-horizontal w-full mb-8">
@@ -422,8 +751,13 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-primary" @click="goToFieldMapping()">Tęsti</button>
-                <label for="export-modal" class="btn" @click="resetModal()">Atšaukti</label>
+                <button class="btn btn-primary action-btn" @click="goToFieldMapping()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    Tęsti
+                </button>
+                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()">Atšaukti</label>
             </div>
         </div>
         
@@ -473,9 +807,19 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn" @click="step = 1">Atgal</button>
-                <button class="btn btn-primary" @click="generatePreview()" :disabled="!isColumnMapValid">Peržiūrėti</button>
-                <label for="export-modal" class="btn" @click="resetModal()">Atšaukti</label>
+                <button class="btn btn-outline action-btn" @click="step = 1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Atgal
+                </button>
+                <button class="btn btn-primary action-btn" @click="generatePreview()" :disabled="!isColumnMapValid">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Peržiūrėti
+                </button>
+                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()">Atšaukti</label>
             </div>
         </div>
         
@@ -519,18 +863,26 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn" @click="step = 2">Atgal</button>
+                <button class="btn btn-outline action-btn" @click="step = 2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Atgal
+                </button>
                 <button 
-                    class="btn btn-primary" 
+                    class="btn btn-primary action-btn" 
                     @click="downloadExport()" 
                     :disabled="loading || previewData.length === 0"
                     hx-indicator="#download-indicator">
                     <span id="download-indicator" class="htmx-indicator">
                         <span class="loading loading-spinner loading-sm"></span>
                     </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
                     Atsisiųsti
                 </button>
-                <label for="export-modal" class="btn" @click="resetModal()">Uždaryti</label>
+                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()">Uždaryti</label>
             </div>
         </div>
     </div>
