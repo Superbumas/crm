@@ -203,4 +203,33 @@ msgstr "Patvirtinti slaptažodį"
 
 #: app/templates/auth/register.html:30
 msgid "Already have an account?"
-msgstr "Jau turite paskyrą?" 
+msgstr "Jau turite paskyrą?"
+
+# New login page translations
+msgid "Welcome back! Please sign in to your account."
+msgstr "Sveiki sugrįžę! Prašome prisijungti prie savo paskyros."
+
+msgid "Enter your email address"
+msgstr "Įveskite savo el. pašto adresą"
+
+msgid "Enter your password"
+msgstr "Įveskite savo slaptažodį"
+
+msgid "All rights reserved."
+msgstr "Visos teisės saugomos."
+
+# Register page translations
+msgid "Create your account to get started."
+msgstr "Sukurkite paskyrą, kad galėtumėte pradėti."
+
+msgid "Enter your username"
+msgstr "Įveskite savo vartotojo vardą"
+
+msgid "Enter your full name"
+msgstr "Įveskite savo pilną vardą"
+
+msgid "Confirm your password"
+msgstr "Patvirtinkite savo slaptažodį"
+
+msgid "Full Name"
+msgstr "Pilnas vardas" 
