@@ -165,7 +165,7 @@
             animation: fadeOut 0.3s ease-in-out forwards;
         }
         
-        /* Force override accent colors to prevent pink */
+        /* Force override accent and secondary colors to prevent pink */
         .btn-accent,
         .badge-accent,
         .alert-accent,
@@ -176,6 +176,40 @@
             background-color: rgb(16 185 129 / var(--tw-bg-opacity)) !important;
             border-color: rgb(16 185 129) !important;
             color: rgb(255 255 255) !important;
+        }
+        
+        /* Override secondary colors that might be pink */
+        .btn-secondary {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(107 114 128) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgb(75 85 99) !important;
+            border-color: rgb(75 85 99) !important;
+        }
+        
+        .badge-secondary {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+            border-color: rgb(107 114 128) !important;
+            color: rgb(255 255 255) !important;
+        }
+        
+        .text-secondary {
+            --tw-text-opacity: 1;
+            color: rgb(107 114 128 / var(--tw-text-opacity)) !important;
+        }
+        
+        .bg-secondary {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;
+        }
+        
+        .bg-secondary\/10 {
+            background-color: rgb(107 114 128 / 0.1) !important;
         }
         
         .bg-accent {
@@ -192,20 +226,26 @@
             color: rgb(16 185 129 / var(--tw-text-opacity)) !important;
         }
         
-        /* Override any DaisyUI accent color variables */
+        /* Override any DaisyUI color variables */
         :root {
             --accent: 16 185 129;
             --ac: 255 255 255;
+            --secondary: 107 114 128;
+            --sc: 255 255 255;
         }
         
         [data-theme="light"] {
             --accent: 16 185 129;
             --ac: 255 255 255;
+            --secondary: 107 114 128;
+            --sc: 255 255 255;
         }
         
         [data-theme="dark"] {
             --accent: 16 185 129;
             --ac: 255 255 255;
+            --secondary: 107 114 128;
+            --sc: 255 255 255;
         }
     </style>
     {% block styles %}{% endblock %}
