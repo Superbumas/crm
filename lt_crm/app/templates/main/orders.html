@@ -2,60 +2,196 @@
 
 {% block title %}Užsakymai - LT CRM{% endblock %}
 
+{% block styles %}
+<style>
+    [x-cloak] { display: none !important; }
+    
+    /* Enhanced visual hierarchy */
+    .page-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Improved table styling */
+    .orders-table {
+        background: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .orders-table thead th {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        font-weight: 600;
+        color: #374151;
+        padding: 1rem 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .orders-table tbody tr {
+        transition: all 0.15s ease;
+    }
+    
+    .orders-table tbody tr:hover {
+        background-color: #f8fafc;
+        transform: scale(1.005);
+    }
+    
+    .orders-table tbody td {
+        padding: 0.875rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    /* Enhanced action buttons */
+    .action-btn {
+        transition: all 0.15s ease;
+        border-radius: 0.5rem;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Improved search and filter section */
+    .filter-section {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Enhanced pagination */
+    .pagination-wrapper {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
+    }
+    
+    /* Better responsive design */
+    @media (max-width: 768px) {
+        .orders-table {
+            font-size: 0.875rem;
+        }
+        
+        .orders-table thead th,
+        .orders-table tbody td {
+            padding: 0.5rem 0.375rem;
+        }
+        
+        .action-btn {
+            padding: 0.25rem;
+        }
+    }
+    
+    /* Accessibility improvements */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    
+    /* Focus indicators */
+    .focus-visible:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    
+    /* Toast styling */
+    #toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 9999;
+    }
+    
+    #toast-container .alert {
+        margin-bottom: 0.5rem;
+        transition: opacity 0.3s ease-in-out;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Header Section -->
-<div class="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-    <div class="flex items-center gap-4">
-        <div class="p-3 bg-primary/10 rounded-xl">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M8 11v6h8v-6M8 11h8" />
-            </svg>
-        </div>
+<!-- Page Header with improved visual hierarchy -->
+<div class="page-header p-6 mb-6">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-base-content">Užsakymai</h1>
-            <div class="text-sm breadcrumbs opacity-70">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Užsakymų valdymas</h1>
+            <nav class="text-sm breadcrumbs" aria-label="Breadcrumb">
                 <ul>
-                    <li><a href="{{ url_for('main.dashboard') }}" class="hover:text-primary">Skydelis</a></li>
-                    <li class="text-primary">Užsakymai</li>
+                    <li><a href="{{ url_for('main.dashboard') }}" class="text-blue-600 hover:text-blue-800">Skydelis</a></li>
+                    <li><span class="text-gray-500">Užsakymai</span></li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for('main.order_new') }}" class="btn btn-primary action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Naujas užsakymas
+            </a>
+            <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-outline btn-primary action-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    Eksportuoti
+                </label>
+                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="#">CSV formatu</a></li>
+                    <li><a href="#">Excel formatu</a></li>
+                    <li><a href="#">PDF ataskaita</a></li>
                 </ul>
             </div>
-        </div>
-    </div>
-    
-    <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('main.order_new') }}" class="btn btn-primary btn-lg shadow-lg hover:shadow-xl transition-all duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Naujas užsakymas
-        </a>
-        <div class="dropdown dropdown-end">
-            <label tabindex="0" class="btn btn-outline btn-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                </svg>
-                Veiksmai
-            </label>
-            <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300">
-                <li><a href="{{ url_for('main.reports') }}">Ataskaitos</a></li>
-                <li><a href="#">Eksportuoti</a></li>
-                <li><a href="#">Masinis redagavimas</a></li>
-            </ul>
+            <div class="dropdown dropdown-end">
+                <label tabindex="0" class="btn btn-outline action-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                    Veiksmai
+                </label>
+                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="{{ url_for('main.reports') }}">Ataskaitos</a></li>
+                    <li><a href="#">Masinis redagavimas</a></li>
+                    <li><a href="#">Archyvuoti senus</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Search & Filter Section -->
-<div class="card bg-base-100 shadow-xl border border-base-300/50 mb-8">
-    <div class="card-body">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 bg-info/10 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-            </div>
-            <h3 class="text-lg font-semibold">Paieška ir filtrai</h3>
+<div class="filter-section p-6 mb-6">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="p-2 bg-blue-50 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
         </div>
+        <h3 class="text-lg font-semibold text-gray-900">Paieška ir filtrai</h3>
+    </div>
         
         <form method="GET" action="{{ url_for('main.orders') }}" class="space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -158,11 +294,10 @@
             </div>
             {% endif %}
         </form>
-    </div>
 </div>
 
 <!-- Orders Table -->
-<div class="card bg-base-100 shadow-xl border border-base-300/50">
+<div class="orders-table">
     <div class="card-header bg-gradient-to-r from-base-200 to-base-100 p-6 border-b border-base-300/50">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
