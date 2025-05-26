@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{% if customer %}Redaguoti klientą{% else %}Naujas klientas{% endif %} - LT CRM{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">{% if customer %}Redaguoti klientą{% else %}Naujas klientas{% endif %}</h1>
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
+                <li><a href="{{ url_for('main.customers') }}">Klientai</a></li>
+                <li>{% if customer %}{{ customer.name }}{% else %}Naujas{% endif %}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<form method="POST" class="space-y-6">
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Pagrindinė informacija</h2>
+            
+            <!-- Basic Customer Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Vardas / Pavadinimas *</span>
+                    </label>
+                    <input type="text" name="name" value="{{ customer.name if customer else '' }}" 
+                           required class="input input-bordered w-full" 
+                           placeholder="Kliento vardas arba įmonės pavadinimas" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">El. paštas</span>
+                    </label>
+                    <input type="email" name="email" value="{{ customer.email if customer else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="klientas@example.com" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Telefonas</span>
+                    </label>
+                    <input type="tel" name="phone" value="{{ customer.phone if customer else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="+370 600 00000" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Įmonės pavadinimas</span>
+                    </label>
+                    <input type="text" name="company" value="{{ customer.company if customer else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="UAB Įmonės pavadinimas" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Adreso informacija</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Adresas</span>
+                    </label>
+                    <input type="text" name="address" value="{{ customer.address if customer else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="Gatvės pavadinimas 123" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Miestas</span>
+                    </label>
+                    <input type="text" name="city" value="{{ customer.city if customer else '' }}" 
+                           class="input input-bordered w-full" 
+                           placeholder="Vilnius" />
+                </div>
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Šalis</span>
+                    </label>
+                    <select name="country" class="select select-bordered w-full">
+                        <option value="Lithuania" {% if not customer or customer.country == 'Lithuania' %}selected{% endif %}>Lietuva</option>
+                        <option value="Latvia" {% if customer and customer.country == 'Latvia' %}selected{% endif %}>Latvija</option>
+                        <option value="Estonia" {% if customer and customer.country == 'Estonia' %}selected{% endif %}>Estija</option>
+                        <option value="Poland" {% if customer and customer.country == 'Poland' %}selected{% endif %}>Lenkija</option>
+                        <option value="Germany" {% if customer and customer.country == 'Germany' %}selected{% endif %}>Vokietija</option>
+                        <option value="Other" {% if customer and customer.country not in ['Lithuania', 'Latvia', 'Estonia', 'Poland', 'Germany'] %}selected{% endif %}>Kita</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Papildoma informacija</h2>
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Pastabos</span>
+                </label>
+                <textarea name="notes" class="textarea textarea-bordered h-24" 
+                          placeholder="Papildoma informacija apie klientą...">{{ customer.notes if customer else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex gap-4 justify-end">
+        <a href="{{ url_for('main.customers') }}" class="btn btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Atšaukti
+        </a>
+        
+        <button type="submit" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {% if customer %}Atnaujinti klientą{% else %}Sukurti klientą{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %} 

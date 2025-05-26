@@ -2126,6 +2126,193 @@ def customers():
         )
 
 
+@bp.route("/customers/new", methods=["GET", "POST"])
+@login_required
+def customer_new():
+    """Create a new customer."""
+    if request.method == "POST":
+        try:
+            # Get form data
+            name = request.form.get("name")
+            email = request.form.get("email")
+            phone = request.form.get("phone")
+            company = request.form.get("company")
+            address = request.form.get("address")
+            city = request.form.get("city")
+            country = request.form.get("country", "Lithuania")
+            notes = request.form.get("notes")
+            
+            # Validate required fields
+            if not name:
+                flash("Kliento vardas yra privalomas", "error")
+                return render_template(
+                    "main/customer_form.html",
+                    title="Naujas klientas"
+                )
+            
+            # Check if email already exists
+            if email:
+                existing_customer = Customer.query.filter_by(email=email).first()
+                if existing_customer:
+                    flash("Klientas su tokiu el. pašto adresu jau egzistuoja", "error")
+                    return render_template(
+                        "main/customer_form.html",
+                        title="Naujas klientas"
+                    )
+            
+            # Create new customer
+            new_customer = Customer(
+                name=name,
+                email=email,
+                phone=phone,
+                company=company,
+                address=address,
+                city=city,
+                country=country,
+                notes=notes
+            )
+            
+            db.session.add(new_customer)
+            db.session.commit()
+            
+            flash(f"Klientas {name} sėkmingai sukurtas", "success")
+            return redirect(url_for("main.customer_detail", id=new_customer.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error creating customer: {str(e)}")
+            flash(f"Klaida kuriant klientą: {str(e)}", "error")
+            return render_template(
+                "main/customer_form.html",
+                title="Naujas klientas"
+            )
+    
+    return render_template(
+        "main/customer_form.html",
+        title="Naujas klientas"
+    )
+
+
+@bp.route("/customers/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+def customer_edit(id):
+    """Edit an existing customer."""
+    customer = Customer.query.get_or_404(id)
+    
+    if request.method == "POST":
+        try:
+            # Get form data
+            name = request.form.get("name")
+            email = request.form.get("email")
+            phone = request.form.get("phone")
+            company = request.form.get("company")
+            address = request.form.get("address")
+            city = request.form.get("city")
+            country = request.form.get("country", "Lithuania")
+            notes = request.form.get("notes")
+            
+            # Validate required fields
+            if not name:
+                flash("Kliento vardas yra privalomas", "error")
+                return render_template(
+                    "main/customer_form.html",
+                    title=f"Redaguoti klientą: {customer.name}",
+                    customer=customer,
+                    edit_mode=True
+                )
+            
+            # Check if email already exists (excluding current customer)
+            if email:
+                existing_customer = Customer.query.filter(
+                    Customer.email == email,
+                    Customer.id != id
+                ).first()
+                if existing_customer:
+                    flash("Klientas su tokiu el. pašto adresu jau egzistuoja", "error")
+                    return render_template(
+                        "main/customer_form.html",
+                        title=f"Redaguoti klientą: {customer.name}",
+                        customer=customer,
+                        edit_mode=True
+                    )
+            
+            # Update customer data
+            customer.name = name
+            customer.email = email
+            customer.phone = phone
+            customer.company = company
+            customer.address = address
+            customer.city = city
+            customer.country = country
+            customer.notes = notes
+            
+            db.session.commit()
+            
+            flash(f"Klientas {name} sėkmingai atnaujintas", "success")
+            return redirect(url_for("main.customer_detail", id=customer.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating customer: {str(e)}")
+            flash(f"Klaida atnaujinant klientą: {str(e)}", "error")
+            return render_template(
+                "main/customer_form.html",
+                title=f"Redaguoti klientą: {customer.name}",
+                customer=customer,
+                edit_mode=True
+            )
+    
+    return render_template(
+        "main/customer_form.html",
+        title=f"Redaguoti klientą: {customer.name}",
+        customer=customer,
+        edit_mode=True
+    )
+
+
+@bp.route("/customers/<int:id>/delete", methods=["DELETE"])
+@login_required
+def customer_delete(id):
+    """Delete a customer."""
+    customer = Customer.query.get_or_404(id)
+    
+    try:
+        # Check if customer has associated orders
+        orders = Order.query.filter_by(customer_id=id).all()
+        if orders:
+            return jsonify({
+                "success": False,
+                "message": "Negalima ištrinti kliento, nes jam priskirti užsakymai. Pirmiausia ištrinkite užsakymus."
+            }), 400
+        
+        # Check if customer has associated invoices
+        invoices = Invoice.query.filter_by(customer_id=id).all()
+        if invoices:
+            return jsonify({
+                "success": False,
+                "message": "Negalima ištrinti kliento, nes jam priskirtos sąskaitos faktūros. Pirmiausia ištrinkite sąskaitas."
+            }), 400
+        
+        # Get customer name for the success message
+        customer_name = customer.name
+        
+        # Delete the customer
+        db.session.delete(customer)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Klientas {customer_name} sėkmingai ištrintas"
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting customer: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"Klaida trinant klientą: {str(e)}"
+        }), 500
+
+
 @bp.route("/orders/<int:id>/delete", methods=["DELETE"])
 @login_required
 def order_delete(id):
