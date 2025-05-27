@@ -134,7 +134,9 @@ def create_app(test_config=None):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    csrf.init_app(app)
+    # Only initialize CSRF if enabled
+    if app.config.get('WTF_CSRF_ENABLED', True):
+        csrf.init_app(app)
     minify.init_app(app)
     
     # Configure login
@@ -169,6 +171,11 @@ def create_app(test_config=None):
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(api_v1_bp, url_prefix="/api/v1")
+    
+    # Exempt API routes from CSRF protection if CSRF is enabled
+    if app.config.get('WTF_CSRF_ENABLED', True):
+        csrf.exempt(api_bp)
+        csrf.exempt(api_v1_bp)
 
     # Initialize limiter for API v1
     from .api.v1 import limiter
