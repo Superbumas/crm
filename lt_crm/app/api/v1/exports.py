@@ -220,10 +220,10 @@ class ExportPreview(Resource):
             }
         except Exception as e:
             current_app.logger.error(f"Export preview error: {str(e)}")
-            return {
-                "message": f"Export preview error: {str(e)}",
-                "error_type": type(e).__name__
-            }, 500
+            import traceback
+            current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+            # Use ns.abort for proper Flask-RESTX error handling
+            ns.abort(500, f"Export preview error: {str(e)}")
 
 
 @ns.route("/download")
