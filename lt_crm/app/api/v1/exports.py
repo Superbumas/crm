@@ -188,10 +188,7 @@ class ExportPreview(Resource):
             # Validate column map against Product model
             is_valid, invalid_keys = export_service.validate_column_map(column_map, Product)
             if not is_valid:
-                return {
-                    "message": "Invalid column map",
-                    "invalid_keys": invalid_keys
-                }, 400
+                ns.abort(400, f"Invalid column map: {', '.join(invalid_keys)}")
             
             # Build query with filters
             query = build_product_query(filter_criteria).limit(limit)
