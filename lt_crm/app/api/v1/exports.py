@@ -2,7 +2,7 @@
 import io
 import json
 from datetime import datetime
-from flask import request, send_file
+from flask import request, send_file, current_app
 from flask_restx import Namespace, Resource, fields
 from marshmallow import Schema, fields as ma_fields, validate, ValidationError
 from ...models.export import ExportConfig, ExportFormat
@@ -13,6 +13,44 @@ from .utils import token_required, validate_schema
 from . import limiter
 
 ns = Namespace("exports", description="Export operations")
+
+@ns.route("/health")
+class ExportHealth(Resource):
+    """Health check for exports API."""
+    
+    @ns.doc("export_health_check")
+    @ns.response(200, "Health check successful")
+    def get(self):
+        """Simple health check endpoint that doesn't require authentication."""
+        return {
+            "status": "ok",
+            "service": "exports",
+            "timestamp": datetime.now().isoformat()
+        }
+
+@ns.route("/test")
+class ExportTest(Resource):
+    """Test endpoint for debugging exports API."""
+    
+    @ns.doc("export_test")
+    @ns.response(200, "Test successful")
+    def post(self):
+        """Test endpoint that accepts POST requests without authentication."""
+        try:
+            data = request.get_json() or {}
+            return {
+                "status": "ok",
+                "message": "Test endpoint working",
+                "received_data": data,
+                "content_type": request.content_type,
+                "method": request.method
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e),
+                "error_type": type(e).__name__
+            }, 500
 
 # Marshmallow schemas
 class ColumnMapSchema(Schema):
@@ -134,51 +172,58 @@ class ExportPreview(Resource):
     @limiter.limit("30/minute")
     def post(self, current_user, data):
         """Generate a preview of exported data."""
-        # Extract parameters
-        export_format = data["format"]
-        column_map = data["column_map"]
-        filter_criteria = data.get("filter", {})
-        limit = data.get("limit", 20)
-        xml_root = data.get("xml_root", "items")
-        xml_item = data.get("xml_item", "item")
-        template = data.get("template")
-        
-        # Initialize export service
-        export_service = ExportService()
-        
-        # Validate column map against Product model
-        is_valid, invalid_keys = export_service.validate_column_map(column_map, Product)
-        if not is_valid:
+        try:
+            # Extract parameters
+            export_format = data["format"]
+            column_map = data["column_map"]
+            filter_criteria = data.get("filter", {})
+            limit = data.get("limit", 20)
+            xml_root = data.get("xml_root", "items")
+            xml_item = data.get("xml_item", "item")
+            template = data.get("template")
+            
+            # Initialize export service
+            export_service = ExportService()
+            
+            # Validate column map against Product model
+            is_valid, invalid_keys = export_service.validate_column_map(column_map, Product)
+            if not is_valid:
+                return {
+                    "message": "Invalid column map",
+                    "invalid_keys": invalid_keys
+                }, 400
+            
+            # Build query with filters
+            query = build_product_query(filter_criteria).limit(limit)
+            
+            # Log query info for debugging
+            current_app.logger.info(f"Export preview query: {query}")
+            current_app.logger.info(f"Column map: {column_map}")
+            
+            # Generate dataframe
+            df = export_service.build_dataframe(query, column_map)
+            
+            # Log dataframe info for debugging
+            current_app.logger.info(f"Generated dataframe shape: {df.shape}")
+            current_app.logger.info(f"Dataframe columns: {list(df.columns)}")
+            
+            # Return the first rows as JSON
+            preview_data = df.to_dict(orient="records")
+            
             return {
-                "message": "Invalid column map",
-                "invalid_keys": invalid_keys
-            }, 400
-        
-        # Build query with filters
-        query = build_product_query(filter_criteria).limit(limit)
-        
-        # Log query info for debugging
-        current_app.logger.info(f"Export preview query: {query}")
-        current_app.logger.info(f"Column map: {column_map}")
-        
-        # Generate dataframe
-        df = export_service.build_dataframe(query, column_map)
-        
-        # Log dataframe info for debugging
-        current_app.logger.info(f"Generated dataframe shape: {df.shape}")
-        current_app.logger.info(f"Dataframe columns: {list(df.columns)}")
-        
-        # Return the first rows as JSON
-        preview_data = df.to_dict(orient="records")
-        
-        return {
-            "data": preview_data,
-            "count": len(preview_data),
-            "format": export_format,
-            "xml_root": xml_root,
-            "xml_item": xml_item,
-            "template": template
-        }
+                "data": preview_data,
+                "count": len(preview_data),
+                "format": export_format,
+                "xml_root": xml_root,
+                "xml_item": xml_item,
+                "template": template
+            }
+        except Exception as e:
+            current_app.logger.error(f"Export preview error: {str(e)}")
+            return {
+                "message": f"Export preview error: {str(e)}",
+                "error_type": type(e).__name__
+            }, 500
 
 
 @ns.route("/download")
