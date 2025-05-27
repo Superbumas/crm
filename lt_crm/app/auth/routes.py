@@ -38,7 +38,7 @@ def login():
         
         return redirect(next_page)
 
-    return render_template("auth/login.html", title="Sign In")
+    return render_template("auth/login.html", title="Prisijungti")
 
 
 @bp.route("/logout")
@@ -92,7 +92,7 @@ def register():
         flash("Registracija sėkminga! Prašome prisijungti.", "success")
         return redirect(url_for("auth.login"))
 
-    return render_template("auth/register.html", title="Register")
+    return render_template("auth/register.html", title="Registruotis")
 
 
 @bp.route("/profile", methods=["GET", "POST"])
@@ -123,7 +123,7 @@ def profile():
         flash("Slaptažodis sėkmingai atnaujintas", "success")
         return redirect(url_for("auth.profile"))
         
-    return render_template("auth/profile.html", title="Profile")
+    return render_template("auth/profile.html", title="Profilis")
 
 
 @bp.route("/api-token", methods=["GET"])

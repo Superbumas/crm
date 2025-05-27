@@ -141,7 +141,7 @@ def create_app(test_config=None):
     
     # Configure login
     login_manager.login_view = "auth.login"
-    login_manager.login_message = "Please log in to access this page."
+    login_manager.login_message = "Prašome prisijungti, kad galėtumėte pasiekti šį puslapį."
     
     # Configure Babel
     babel.init_app(app, locale_selector=get_locale)

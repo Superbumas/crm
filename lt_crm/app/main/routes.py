@@ -534,7 +534,7 @@ def orders():
         # Rollback the session
         db.session.rollback()
         # Show error message
-        flash(f"An error occurred while loading orders: {str(e)}", "error")
+        flash(f"Įvyko klaida gaunant užsakymus: {str(e)}", "error")
         # Return empty list
         return render_template(
             "main/orders.html",
@@ -599,7 +599,7 @@ def invoices():
         # Rollback the session
         db.session.rollback()
         # Show error message
-        flash(f"An error occurred while loading invoices: {str(e)}", "error")
+        flash(f"Įvyko klaida gaunant sąskaitas: {str(e)}", "error")
         # Return empty list
         return render_template(
             "main/invoices.html",
@@ -686,11 +686,11 @@ def invoice_pdf(id):
         )
     except ImportError:
         # Handle case where WeasyPrint is not installed
-        flash("PDF generation requires the WeasyPrint library", "error")
+        flash("PDF generavimui reikia WeasyPrint bibliotekos", "error")
         return redirect(url_for('main.invoice_detail', id=id))
     except Exception as e:
         current_app.logger.exception("Error generating PDF")
-        flash(f"Error generating PDF: {str(e)}", "error")
+        flash(f"Klaida generuojant PDF: {str(e)}", "error")
         return redirect(url_for('main.invoice_detail', id=id))
 
 
@@ -1362,7 +1362,7 @@ def invoice_new():
                 try:
                     issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Invalid issue date format. Use YYYY-MM-DD.", "error")
+                    flash("Neteisingas išdavimo datos formatas. Naudokite YYYY-MM-DD.", "error")
                     return redirect(url_for("main.invoice_new"))
             
             due_date = None
@@ -1370,7 +1370,7 @@ def invoice_new():
                 try:
                     due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Invalid due date format. Use YYYY-MM-DD.", "error")
+                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite MMMM-MM-DD.", "error")
                     return redirect(url_for("main.invoice_new"))
             
             # Get item data from form
@@ -1466,11 +1466,11 @@ def invoice_new():
                 db.session.add(invoice_item)
             
             db.session.commit()
-            flash(f"Invoice {invoice_number} created successfully", "success")
+            flash(f"Sąskaita faktūra {invoice_number} sėkmingai sukurta", "success")
             return redirect(url_for("main.invoice_detail", id=new_invoice.id))
         except Exception as e:
             db.session.rollback()
-            flash(f"Error creating invoice: {str(e)}", "error")
+            flash(f"Klaida kuriant sąskaitą faktūrą: {str(e)}", "error")
             customers = Customer.query.order_by(Customer.name).all()
             return render_template(
                 "main/invoice_form.html",
@@ -1543,7 +1543,7 @@ def invoice_edit(id):
                 try:
                     issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Invalid issue date format. Use YYYY-MM-DD.", "error")
+                    flash("Neteisingas išdavimo datos formatas. Naudokite MMMM-MM-DD.", "error")
                     return redirect(url_for("main.invoice_edit", id=invoice.id))
             
             due_date = None
@@ -1551,7 +1551,7 @@ def invoice_edit(id):
                 try:
                     due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Invalid due date format. Use YYYY-MM-DD.", "error")
+                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite MMMM-MM-DD.", "error")
                     return redirect(url_for("main.invoice_edit", id=invoice.id))
             
             # Get item data from form
@@ -1776,7 +1776,7 @@ def shipments():
         # Rollback the session
         db.session.rollback()
         # Show error message
-        flash(f"An error occurred while loading shipments: {str(e)}", "error")
+        flash(f"Įvyko klaida gaunant siuntas: {str(e)}", "error")
         # Return empty list
         return render_template(
             "main/shipments.html",
@@ -3002,7 +3002,7 @@ def export_report(report_type):
         
     except Exception as e:
         current_app.logger.exception(f"Error exporting report: {str(e)}")
-        flash(f"Error exporting report: {str(e)}", "error")
+        flash(f"Klaida eksportuojant ataskaitą: {str(e)}", "error")
         return redirect(url_for(f'main.{report_type}_report'))
 
 
