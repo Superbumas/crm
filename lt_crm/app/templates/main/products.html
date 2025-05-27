@@ -691,6 +691,11 @@
             <h3 class="font-bold text-xl text-gray-900">Eksportuoti produktus</h3>
         </div>
         
+        <!-- Debug info (remove in production) -->
+        <div class="text-xs text-gray-500 mb-2" x-show="true">
+            Debug: Current step = <span x-text="step"></span>, Alpine.js loaded = <span x-text="typeof Alpine !== 'undefined'"></span>
+        </div>
+        
         <!-- Step indicator -->
         <ul class="steps steps-horizontal w-full mb-8">
             <li class="step" :class="{'step-primary': step >= 1}">Formato pasirinkimas</li>
@@ -751,13 +756,13 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-primary action-btn" @click="goToFieldMapping()">
+                <button class="btn btn-primary action-btn" @click="goToFieldMapping()" data-step-action="next">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                     Tęsti
                 </button>
-                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()">Atšaukti</label>
+                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()" data-step-action="reset">Atšaukti</label>
             </div>
         </div>
         
@@ -807,19 +812,19 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-outline action-btn" @click="step = 1">
+                <button class="btn btn-outline action-btn" @click="step = 1" data-step-action="prev">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                     Atgal
                 </button>
-                <button class="btn btn-primary action-btn" @click="generatePreview()" :disabled="!isColumnMapValid">
+                <button class="btn btn-primary action-btn" @click="generatePreview()" :disabled="!isColumnMapValid" data-step-action="next">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z" />
                     </svg>
                     Peržiūrėti
                 </button>
-                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()">Atšaukti</label>
+                <label for="export-modal" class="btn btn-outline action-btn" @click="resetModal()" data-step-action="reset">Atšaukti</label>
             </div>
         </div>
         
@@ -863,7 +868,7 @@
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-outline action-btn" @click="step = 2">
+                <button class="btn btn-outline action-btn" @click="step = 2" data-step-action="prev">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -1029,23 +1034,80 @@
             }, 5000);  // Show warnings and errors longer
         }
         
-        // If needed, you could add custom JavaScript here
-        // Check if Alpine.js is loaded
-        if (typeof Alpine === 'undefined') {
-            console.error('Alpine.js is not loaded properly');
-            // Attempt to load Alpine.js if it's not loaded
-            const alpineScript = document.createElement('script');
-            alpineScript.src = 'https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js';
-            alpineScript.defer = true;
-            document.body.appendChild(alpineScript);
-        }
+        // Check if Alpine.js is loaded and working
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine.js initialized successfully');
+        });
         
-        // Add event listener for the export-modal checkbox to reset state when modal is closed
+        // Fallback check for Alpine.js
+        setTimeout(() => {
+            if (typeof Alpine === 'undefined') {
+                console.error('Alpine.js failed to load - implementing fallback step management');
+                
+                // Implement basic step management without Alpine.js
+                window.exportModalFallback = {
+                    currentStep: 1,
+                    showStep: function(step) {
+                        // Hide all steps
+                        document.querySelectorAll('[x-show*="step"]').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                        // Show the requested step
+                        const stepElement = document.querySelector(`[x-show="step === ${step}"]`);
+                        if (stepElement) {
+                            stepElement.style.display = 'block';
+                        }
+                        this.currentStep = step;
+                        console.log('Fallback: Showing step', step);
+                    },
+                    init: function() {
+                        this.showStep(1);
+                        // Add click handlers for navigation buttons
+                        document.addEventListener('click', (e) => {
+                            if (e.target.matches('[data-step-action]')) {
+                                const action = e.target.getAttribute('data-step-action');
+                                if (action === 'next' && this.currentStep < 3) {
+                                    this.showStep(this.currentStep + 1);
+                                } else if (action === 'prev' && this.currentStep > 1) {
+                                    this.showStep(this.currentStep - 1);
+                                } else if (action === 'reset') {
+                                    this.showStep(1);
+                                }
+                            }
+                        });
+                    }
+                };
+                
+                // Initialize fallback when modal is opened
+                document.getElementById('export-modal').addEventListener('change', function(e) {
+                    if (e.target.checked && window.exportModalFallback) {
+                        window.exportModalFallback.init();
+                    }
+                });
+                
+                // Show a user-friendly message
+                const toastContainer = document.getElementById('toast-container') || document.body;
+                const errorToast = document.createElement('div');
+                errorToast.className = 'alert alert-warning mb-2';
+                errorToast.innerHTML = '<span>Puslapio funkcionalumas veiks ribotos galimybės režimu. Bandykite atnaujinti puslapį.</span>';
+                toastContainer.appendChild(errorToast);
+                setTimeout(() => errorToast.remove(), 8000);
+            } else {
+                console.log('Alpine.js is available');
+            }
+        }, 2000);
+        
+        // Add event listener for the export-modal checkbox to reset state when modal is opened/closed
         document.getElementById('export-modal').addEventListener('change', function(e) {
-            if (!e.target.checked) {
-                // When the modal is closed (checkbox unchecked), find the Alpine component and reset it
-                const modalElement = document.querySelector('[x-data="exportModal()"]');
-                if (modalElement && modalElement.__x) {
+            const modalElement = document.querySelector('[x-data="exportModal()"]');
+            if (modalElement && modalElement.__x) {
+                if (e.target.checked) {
+                    // When the modal is opened, ensure we're on step 1
+                    console.log('Modal opened, resetting to step 1');
+                    modalElement.__x.$data.resetModal();
+                } else {
+                    // When the modal is closed, also reset it
+                    console.log('Modal closed, resetting state');
                     modalElement.__x.$data.resetModal();
                 }
             }
@@ -1066,6 +1128,7 @@
             
             // Initialize component and get JWT token
             init() {
+                console.log('Export modal initialized, step:', this.step);
                 this.getJwtToken();
             },
             
@@ -1197,8 +1260,10 @@
             },
             
             goToFieldMapping() {
+                console.log('Going to field mapping, current step:', this.step);
                 this.updateColumnMap();
                 this.step = 2;
+                console.log('Step changed to:', this.step);
             },
             
             async generatePreview() {
@@ -1261,7 +1326,9 @@
                     }
                     
                     this.previewData = result.data || [];
+                    console.log('Moving to preview step, data length:', this.previewData.length);
                     this.step = 3;
+                    console.log('Step changed to:', this.step);
                 } catch (error) {
                     console.error('Preview error details:', error);
                     this.previewError = error.message || 'Nepavyko gauti peržiūros duomenų';
@@ -1367,11 +1434,13 @@
             },
             
             resetModal() {
+                console.log('Resetting modal, current step:', this.step);
                 this.step = 1;
                 this.previewData = [];
                 this.previewError = null;
                 this.saveAsTemplate = false;
                 this.templateName = '';
+                console.log('Modal reset to step:', this.step);
             }
         };
     }

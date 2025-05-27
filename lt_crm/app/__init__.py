@@ -33,7 +33,7 @@ def get_locale():
 csp = {
     'default-src': ['\'self\''],
     'style-src': ['\'self\'', '\'unsafe-inline\'', 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
-    'script-src': ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\'', 'cdn.jsdelivr.net'],
+    'script-src': ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\'', 'cdn.jsdelivr.net', 'unpkg.com', 'cdn.tailwindcss.com'],
     'font-src': ['\'self\'', 'fonts.gstatic.com', 'cdn.jsdelivr.net'],
     'img-src': ['\'self\'', 'data:'],
 }
