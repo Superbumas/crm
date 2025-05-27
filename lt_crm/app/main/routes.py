@@ -1370,7 +1370,7 @@ def invoice_new():
                 try:
                     due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite MMMM-MM-DD.", "error")
+                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite YYYY-MM-DD.", "error")
                     return redirect(url_for("main.invoice_new"))
             
             # Get item data from form
@@ -1543,7 +1543,7 @@ def invoice_edit(id):
                 try:
                     issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Neteisingas išdavimo datos formatas. Naudokite MMMM-MM-DD.", "error")
+                    flash("Neteisingas išdavimo datos formatas. Naudokite YYYY-MM-DD.", "error")
                     return redirect(url_for("main.invoice_edit", id=invoice.id))
             
             due_date = None
@@ -1551,7 +1551,7 @@ def invoice_edit(id):
                 try:
                     due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite MMMM-MM-DD.", "error")
+                    flash("Neteisingas mokėjimo termino datos formatas. Naudokite YYYY-MM-DD.", "error")
                     return redirect(url_for("main.invoice_edit", id=invoice.id))
             
             # Get item data from form
