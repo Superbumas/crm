@@ -13,16 +13,23 @@ def output_json(data, code, headers=None):
     
     This custom encoder properly handles Decimal values by converting them to floats.
     """
+    from flask import make_response
+    
     class DecimalEncoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, Decimal):
                 return float(o)
             return super(DecimalEncoder, self).default(o)
     
-    resp = json.dumps(data, cls=DecimalEncoder) + "\n"
-    resp_headers = headers or {}
-    resp_headers["Content-Type"] = "application/json"
-    return resp, code, resp_headers
+    resp_data = json.dumps(data, cls=DecimalEncoder) + "\n"
+    response = make_response(resp_data, code)
+    response.headers["Content-Type"] = "application/json"
+    
+    if headers:
+        for key, value in headers.items():
+            response.headers[key] = value
+    
+    return response
 
 
 bp = Blueprint("api_v1", __name__, url_prefix="/v1")
