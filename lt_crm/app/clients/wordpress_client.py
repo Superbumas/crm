@@ -166,6 +166,78 @@ class WordPressClient(BaseAPIClient):
             params={"force": force}
         )
     
+    # Product Categories Methods
+    async def get_product_categories(self, page: int = 1, per_page: int = 50) -> List[Dict]:
+        """
+        Get product categories from WooCommerce.
+        
+        Args:
+            page: Page number
+            per_page: Number of categories per page
+        
+        Returns:
+            List[Dict]: List of product categories
+        """
+        return await self.request(
+            "GET", 
+            "/products/categories", 
+            params={"page": page, "per_page": per_page}
+        )
+    
+    async def get_product_category(self, category_id: Union[int, str]) -> Dict:
+        """
+        Get a product category from WooCommerce by ID.
+        
+        Args:
+            category_id: Category ID
+        
+        Returns:
+            Dict: Category data
+        """
+        return await self.request("GET", f"/products/categories/{category_id}")
+    
+    async def create_product_category(self, category_data: Dict) -> Dict:
+        """
+        Create a product category in WooCommerce.
+        
+        Args:
+            category_data: Category data (name, slug, parent, description)
+        
+        Returns:
+            Dict: Created category data
+        """
+        return await self.request("POST", "/products/categories", json=category_data)
+    
+    async def update_product_category(self, category_id: Union[int, str], category_data: Dict) -> Dict:
+        """
+        Update a product category in WooCommerce.
+        
+        Args:
+            category_id: Category ID
+            category_data: Category data to update
+        
+        Returns:
+            Dict: Updated category data
+        """
+        return await self.request("PUT", f"/products/categories/{category_id}", json=category_data)
+    
+    async def delete_product_category(self, category_id: Union[int, str], force: bool = False) -> Dict:
+        """
+        Delete a product category in WooCommerce.
+        
+        Args:
+            category_id: Category ID
+            force: Whether to permanently delete the category
+        
+        Returns:
+            Dict: Deleted category data
+        """
+        return await self.request(
+            "DELETE", 
+            f"/products/categories/{category_id}", 
+            params={"force": force}
+        )
+    
     async def get_orders(
         self, 
         status: Optional[str] = None,

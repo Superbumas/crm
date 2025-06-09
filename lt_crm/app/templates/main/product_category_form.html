@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-6 px-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">{{ title }}</h1>
+        
+        <!-- Breadcrumbs -->
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
+                <li><a href="{{ url_for('main.product_categories') }}">Kategorijos</a></li>
+                {% if parent_category %}
+                    <li><a href="{{ url_for('main.product_categories', parent_id=parent_category.id) }}">{{ parent_category.name }}</a></li>
+                {% endif %}
+                <li>{{ title }}</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.product_category_new') if is_new else url_for('main.product_category_edit', id=category.id) }}" id="category-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Pavadinimas*</span>
+                        </label>
+                        <input type="text" name="name" class="input input-bordered" required 
+                            value="{{ category.name if category else '' }}" 
+                            onkeyup="generateSlug(this.value)">
+                    </div>
+                    
+                    <!-- Slug -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Trumpinys (URL)</span>
+                            <span class="label-text-alt">Generuojamas automatiškai</span>
+                        </label>
+                        <input type="text" name="slug" id="slug-input" class="input input-bordered" 
+                            value="{{ category.slug if category else '' }}">
+                    </div>
+                    
+                    <!-- Parent Category -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Tėvinė kategorija</span>
+                        </label>
+                        <select name="parent_id" class="select select-bordered">
+                            <option value="">Nėra (aukščiausio lygio)</option>
+                            {% for cat in categories %}
+                                {% if (is_new and cat.id != category.id if category else True) or 
+                                      (not is_new and cat.id != category.id) %}
+                                    <option value="{{ cat.id }}" 
+                                        {% if (parent_id and parent_id == cat.id) or 
+                                             (category and category.parent_id == cat.id) %}selected{% endif %}>
+                                        {{ cat.full_name }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Image URL -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Paveiksliuko URL</span>
+                        </label>
+                        <input type="url" name="image_url" class="input input-bordered" 
+                            value="{{ category.image_url if category else '' }}">
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="form-control md:col-span-2">
+                        <label class="label">
+                            <span class="label-text">Aprašymas</span>
+                        </label>
+                        <textarea name="description" class="textarea textarea-bordered h-24">{{ category.description if category else '' }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-end space-x-3">
+                    <a href="{{ url_for('main.product_categories', parent_id=parent_id) }}" class="btn btn-ghost">Atšaukti</a>
+                    <button type="submit" class="btn btn-primary">Išsaugoti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Function to generate a slug from name
+function generateSlug(name) {
+    if (!name) return;
+    
+    // Only generate if slug field is empty or user hasn't modified it
+    const slugInput = document.getElementById('slug-input');
+    if (!slugInput.dataset.userModified) {
+        // Basic slugify - convert to lowercase, replace spaces with hyphens, remove special chars
+        let slug = name.toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-')     // Replace spaces with hyphens
+            .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+        
+        slugInput.value = slug;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark slug as user-modified when user types in it
+    const slugInput = document.getElementById('slug-input');
+    slugInput.addEventListener('input', function() {
+        this.dataset.userModified = true;
+    });
+    
+    // Form validation
+    const form = document.getElementById('category-form');
+    form.addEventListener('submit', function(e) {
+        const nameInput = form.querySelector('input[name="name"]');
+        
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            showToast('error', 'Kategorijos pavadinimas yra privalomas');
+            nameInput.focus();
+        }
+    });
+});
+</script>
+{% endblock %} 

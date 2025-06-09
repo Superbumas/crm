@@ -2,6 +2,7 @@
 import json
 from lt_crm.app.extensions import db
 from lt_crm.app.models.base import TimestampMixin
+import slugify
 
 
 # Define available columns that can be displayed in product listings
@@ -21,6 +22,62 @@ PRODUCT_COLUMNS = {
 }
 
 
+class ProductCategory(TimestampMixin, db.Model):
+    """Product category model for organizing products."""
+    
+    __tablename__ = "product_categories"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(100), nullable=False, unique=True, index=True)
+    description = db.Column(db.Text, nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('product_categories.id'), nullable=True)
+    external_id = db.Column(db.String(50), nullable=True, comment="ID in external system (e.g. WooCommerce)")
+    image_url = db.Column(db.String(255), nullable=True)
+    
+    # Relationships
+    products = db.relationship('Product', backref='product_category', lazy='dynamic')
+    children = db.relationship(
+        'ProductCategory',
+        backref=db.backref('parent', remote_side=[id]),
+        lazy='dynamic'
+    )
+    
+    def __repr__(self):
+        """Return string representation of the category."""
+        return f"<ProductCategory {self.id}: {self.name}>"
+    
+    @property
+    def full_name(self):
+        """Return full category name including parent categories."""
+        if self.parent:
+            return f"{self.parent.full_name} > {self.name}"
+        return self.name
+    
+    @property
+    def product_count(self):
+        """Return the number of products in this category."""
+        return self.products.count()
+    
+    @staticmethod
+    def generate_slug(name):
+        """Generate a slug from the category name."""
+        return slugify.slugify(name)
+    
+    def to_dict(self):
+        """Convert category to dictionary."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'slug': self.slug,
+            'description': self.description,
+            'parent_id': self.parent_id,
+            'external_id': self.external_id,
+            'image_url': self.image_url,
+            'product_count': self.product_count
+        }
+
+
 class Product(TimestampMixin, db.Model):
     """Product model representing products in the CRM."""
 
@@ -36,6 +93,7 @@ class Product(TimestampMixin, db.Model):
     price_final = db.Column(db.Numeric(12, 2), nullable=False)
     price_old = db.Column(db.Numeric(12, 2), nullable=True)
     category = db.Column(db.String(100), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('product_categories.id'), nullable=True)
     main_image_url = db.Column(db.String(255), nullable=True)
     extra_image_urls = db.Column(db.JSON, nullable=True)
     model = db.Column(db.String(100), nullable=True)
@@ -64,3 +122,10 @@ class Product(TimestampMixin, db.Model):
         if isinstance(self.parameters, str):
             return json.loads(self.parameters)
         return self.parameters or {} 
+    
+    @property
+    def category_name(self):
+        """Return category name."""
+        if self.product_category:
+            return self.product_category.name
+        return self.category 

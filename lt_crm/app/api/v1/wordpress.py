@@ -1,7 +1,7 @@
 """WordPress/WooCommerce integration endpoints for API v1."""
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import request, current_app, jsonify
 from flask_restx import Namespace, Resource, fields
 from ...models.product import Product
@@ -42,6 +42,23 @@ wordpress_status_model = ns.model("WordPressStatus", {
     "connected": fields.Boolean(description="Whether the integration is connected"),
     "last_sync": fields.DateTime(description="Last sync timestamp"),
     "stats": fields.Raw(description="Integration statistics")
+})
+
+# Product category models
+wordpress_category_model = ns.model("WordPressCategory", {
+    "name": fields.String(required=True, description="Category name"),
+    "slug": fields.String(description="Category slug"),
+    "parent": fields.Integer(description="Parent category ID"),
+    "description": fields.String(description="Category description"),
+    "image": fields.Raw(description="Category image data")
+})
+
+wordpress_category_update_model = ns.model("WordPressCategoryUpdate", {
+    "name": fields.String(description="Category name"),
+    "slug": fields.String(description="Category slug"),
+    "parent": fields.Integer(description="Parent category ID"),
+    "description": fields.String(description="Category description"),
+    "image": fields.Raw(description="Category image data")
 })
 
 @ns.route("/config")
@@ -312,35 +329,219 @@ class WordPressPullOrders(Resource):
 
 @ns.route("/pull/stats")
 class WordPressPullStats(Resource):
-    """WordPress/WooCommerce pull statistics resource."""
+    """WordPress/WooCommerce pull stats resource."""
     
     @ns.doc("pull_stats_from_wordpress")
     @ns.response(200, "Success")
     @token_required()
     def get(self, current_user):
-        """Pull statistics from WordPress/WooCommerce."""
+        """Pull stats from WordPress/WooCommerce."""
         # Create WordPress client
         client = WordPressClient()
         
-        # In a real implementation, we would call the async method to get stats
-        # For now, we'll just return mock data
+        # Get date range for the last 30 days
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=30)
         
-        # Mock sales data
-        sales_data = {
-            "total_sales": 12345.67,
-            "net_sales": 10000.00,
-            "average_order_value": 123.45,
-            "total_orders": 100,
-            "total_items": 250,
-            "total_tax": 1234.56,
-            "total_shipping": 500.00,
-            "period": "last_month",
-            "data": [
-                {"date": "2023-06-01", "sales": 1234.56, "orders": 10},
-                {"date": "2023-06-02", "sales": 2345.67, "orders": 20},
-                {"date": "2023-06-03", "sales": 3456.78, "orders": 30},
-                # More data points would be here
-            ]
-        }
+        try:
+            # Run stats query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            report = loop.run_until_complete(client.get_sales_report(
+                period="day",
+                date_min=start_date,
+                date_max=end_date
+            ))
+            loop.close()
+            
+            # Extract data from report
+            total_sales = 0
+            total_orders = 0
+            avg_order_value = 0
+            daily_data = []
+            
+            if report and "totals" in report:
+                for date, data in report["totals"].items():
+                    if date == "total":
+                        continue
+                        
+                    daily_sales = float(data.get("sales", "0"))
+                    daily_orders = int(data.get("orders", "0"))
+                    
+                    total_sales += daily_sales
+                    total_orders += daily_orders
+                    
+                    daily_data.append({
+                        "date": date,
+                        "sales": daily_sales,
+                        "orders": daily_orders
+                    })
+            
+            # Calculate average order value
+            if total_orders > 0:
+                avg_order_value = total_sales / total_orders
+                
+            # Sort data by date
+            daily_data.sort(key=lambda x: x["date"])
+            
+            return {
+                "total_sales": total_sales,
+                "total_orders": total_orders,
+                "average_order_value": avg_order_value,
+                "data": daily_data
+            }
+            
+        except Exception as e:
+            current_app.logger.error(f"Error pulling stats from WordPress: {str(e)}")
+            return {"message": f"Error pulling stats: {str(e)}"}, 500
+
+# Category management endpoints
+@ns.route("/categories")
+class WordPressCategories(Resource):
+    """WordPress/WooCommerce product categories resource."""
+    
+    @ns.doc("get_wordpress_categories")
+    @ns.response(200, "Success")
+    @token_required()
+    def get(self, current_user):
+        """Get all product categories from WordPress/WooCommerce."""
+        # Get pagination parameters
+        page, per_page = get_pagination_params()
         
-        return sales_data 
+        # Create WordPress client
+        client = WordPressClient()
+        
+        try:
+            # Run query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            categories = loop.run_until_complete(client.get_product_categories(
+                page=page,
+                per_page=per_page
+            ))
+            loop.close()
+            
+            return {
+                "categories": categories,
+                "total": len(categories),
+                "page": page,
+                "per_page": per_page
+            }
+            
+        except Exception as e:
+            current_app.logger.error(f"Error getting categories from WordPress: {str(e)}")
+            return {"message": f"Error getting categories: {str(e)}"}, 500
+    
+    @ns.doc("create_wordpress_category")
+    @ns.expect(wordpress_category_model)
+    @ns.response(201, "Category created")
+    @ns.response(400, "Validation error")
+    @token_required()
+    def post(self, current_user):
+        """Create a new product category in WordPress/WooCommerce."""
+        data = request.json
+        
+        # Validate required fields
+        if not data.get("name"):
+            return {"message": "Category name is required"}, 400
+        
+        # Create WordPress client
+        client = WordPressClient()
+        
+        try:
+            # Run query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            category = loop.run_until_complete(client.create_product_category(data))
+            loop.close()
+            
+            return category, 201
+            
+        except Exception as e:
+            current_app.logger.error(f"Error creating category in WordPress: {str(e)}")
+            return {"message": f"Error creating category: {str(e)}"}, 500
+
+@ns.route("/categories/<int:category_id>")
+class WordPressCategoryDetail(Resource):
+    """WordPress/WooCommerce product category detail resource."""
+    
+    @ns.doc("get_wordpress_category")
+    @ns.response(200, "Success")
+    @ns.response(404, "Category not found")
+    @token_required()
+    def get(self, current_user, category_id):
+        """Get a product category from WordPress/WooCommerce by ID."""
+        # Create WordPress client
+        client = WordPressClient()
+        
+        try:
+            # Run query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            category = loop.run_until_complete(client.get_product_category(category_id))
+            loop.close()
+            
+            return category
+            
+        except APIClientError as e:
+            current_app.logger.error(f"Error getting category from WordPress: {str(e)}")
+            return {"message": "Category not found"}, 404
+        except Exception as e:
+            current_app.logger.error(f"Error getting category from WordPress: {str(e)}")
+            return {"message": f"Error getting category: {str(e)}"}, 500
+    
+    @ns.doc("update_wordpress_category")
+    @ns.expect(wordpress_category_update_model)
+    @ns.response(200, "Category updated")
+    @ns.response(404, "Category not found")
+    @token_required()
+    def put(self, current_user, category_id):
+        """Update a product category in WordPress/WooCommerce."""
+        data = request.json
+        
+        # Create WordPress client
+        client = WordPressClient()
+        
+        try:
+            # Run query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            category = loop.run_until_complete(client.update_product_category(category_id, data))
+            loop.close()
+            
+            return category
+            
+        except APIClientError as e:
+            current_app.logger.error(f"Error updating category in WordPress: {str(e)}")
+            return {"message": "Category not found"}, 404
+        except Exception as e:
+            current_app.logger.error(f"Error updating category in WordPress: {str(e)}")
+            return {"message": f"Error updating category: {str(e)}"}, 500
+    
+    @ns.doc("delete_wordpress_category")
+    @ns.response(200, "Category deleted")
+    @ns.response(404, "Category not found")
+    @token_required()
+    def delete(self, current_user, category_id):
+        """Delete a product category in WordPress/WooCommerce."""
+        # Get force parameter
+        force = request.args.get("force", "false").lower() == "true"
+        
+        # Create WordPress client
+        client = WordPressClient()
+        
+        try:
+            # Run query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(client.delete_product_category(category_id, force=force))
+            loop.close()
+            
+            return {"message": "Category deleted successfully"}
+            
+        except APIClientError as e:
+            current_app.logger.error(f"Error deleting category from WordPress: {str(e)}")
+            return {"message": "Category not found"}, 404
+        except Exception as e:
+            current_app.logger.error(f"Error deleting category from WordPress: {str(e)}")
+            return {"message": f"Error deleting category: {str(e)}"}, 500 

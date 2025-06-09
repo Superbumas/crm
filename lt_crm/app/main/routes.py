@@ -20,7 +20,7 @@ import logging
 from . import bp
 from lt_crm.app.models.user import User
 from lt_crm.app.extensions import db
-from lt_crm.app.models.product import Product
+from lt_crm.app.models.product import Product, ProductCategory
 from lt_crm.app.models.customer import Customer, Contact, Task
 from lt_crm.app.models.order import Order, OrderItem, OrderStatus
 from lt_crm.app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
@@ -301,8 +301,12 @@ def products():
 @login_required
 def product_new():
     """Add new product page."""
-    categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
+    # Get all categories for the dropdown
+    product_categories = ProductCategory.query.order_by(ProductCategory.name).all()
+    
+    # Legacy categories from existing products (for backwards compatibility)
+    legacy_categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
+    legacy_categories = [c[0] for c in legacy_categories if c[0]]
     
     if request.method == "POST":
         try:
@@ -315,7 +319,7 @@ def product_new():
             delivery_days = request.form.get("delivery_days", type=int)
             price_final = request.form.get("price_final", type=float)
             price_old = request.form.get("price_old", type=float)
-            category = request.form.get("category")
+            category_id = request.form.get("category_id", type=int)
             main_image_url = request.form.get("main_image_url")
             extra_image_urls = request.form.get("extra_image_urls")
             model = request.form.get("model")
@@ -329,7 +333,8 @@ def product_new():
                 return render_template(
                     "main/product_form.html", 
                     title="Naujas produktas",
-                    categories=categories
+                    product_categories=product_categories,
+                    legacy_categories=legacy_categories
                 )
             
             # Check if product SKU already exists
@@ -339,7 +344,8 @@ def product_new():
                 return render_template(
                     "main/product_form.html", 
                     title="Naujas produktas",
-                    categories=categories
+                    product_categories=product_categories,
+                    legacy_categories=legacy_categories
                 )
             
             # Parse extra_image_urls if it's in JSON format
@@ -352,6 +358,13 @@ def product_new():
                     # If it's not valid JSON, just use as-is for pipe-separated values
                     parsed_extra_image_urls = extra_image_urls
             
+            # Get category name if category_id is provided
+            category_name = None
+            if category_id:
+                category = ProductCategory.query.get(category_id)
+                if category:
+                    category_name = category.name
+            
             # Create new product
             product = Product(
                 sku=sku,
@@ -362,7 +375,8 @@ def product_new():
                 delivery_days=delivery_days,
                 price_final=price_final,
                 price_old=price_old,
-                category=category,
+                category=category_name,
+                category_id=category_id,
                 main_image_url=main_image_url,
                 extra_image_urls=parsed_extra_image_urls,
                 model=model,
@@ -384,7 +398,8 @@ def product_new():
     return render_template(
         "main/product_form.html",
         title="Naujas produktas",
-        categories=categories,
+        product_categories=product_categories,
+        legacy_categories=legacy_categories,
     )
 
 
@@ -394,8 +409,12 @@ def product_edit(id):
     """Edit product page."""
     product = Product.query.get_or_404(id)
     
-    categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
+    # Get all categories for the dropdown
+    product_categories = ProductCategory.query.order_by(ProductCategory.name).all()
+    
+    # Legacy categories from existing products (for backwards compatibility)
+    legacy_categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
+    legacy_categories = [c[0] for c in legacy_categories if c[0]]
     
     if request.method == "POST":
         try:
@@ -408,7 +427,7 @@ def product_edit(id):
             delivery_days = request.form.get("delivery_days", type=int)
             price_final = request.form.get("price_final", type=float)
             price_old = request.form.get("price_old", type=float)
-            category = request.form.get("category")
+            category_id = request.form.get("category_id", type=int)
             main_image_url = request.form.get("main_image_url")
             extra_image_urls = request.form.get("extra_image_urls")
             model = request.form.get("model")
@@ -423,7 +442,8 @@ def product_edit(id):
                     "main/product_form.html", 
                     title=f"Redaguoti {product.name}",
                     product=product,
-                    categories=categories
+                    product_categories=product_categories,
+                    legacy_categories=legacy_categories
                 )
             
             # Check if product SKU already exists with different ID
@@ -434,7 +454,8 @@ def product_edit(id):
                     "main/product_form.html", 
                     title=f"Redaguoti {product.name}",
                     product=product,
-                    categories=categories
+                    product_categories=product_categories,
+                    legacy_categories=legacy_categories
                 )
             
             # Parse extra_image_urls if it's in JSON format
@@ -447,6 +468,13 @@ def product_edit(id):
                     # If it's not valid JSON, just use as-is for pipe-separated values
                     parsed_extra_image_urls = extra_image_urls
             
+            # Get category name if category_id is provided
+            category_name = None
+            if category_id:
+                category = ProductCategory.query.get(category_id)
+                if category:
+                    category_name = category.name
+            
             # Update product
             product.sku = sku
             product.name = name
@@ -456,7 +484,8 @@ def product_edit(id):
             product.delivery_days = delivery_days
             product.price_final = price_final
             product.price_old = price_old
-            product.category = category
+            product.category = category_name
+            product.category_id = category_id
             product.main_image_url = main_image_url
             product.extra_image_urls = parsed_extra_image_urls
             product.model = model
@@ -477,7 +506,8 @@ def product_edit(id):
         "main/product_form.html",
         title=f"Redaguoti {product.name}",
         product=product,
-        categories=categories,
+        product_categories=product_categories,
+        legacy_categories=legacy_categories,
     )
 
 

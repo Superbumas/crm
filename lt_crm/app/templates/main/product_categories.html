@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Produktų kategorijos{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-6 px-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Produktų kategorijos</h1>
+        
+        <!-- Breadcrumbs -->
+        <div class="text-sm breadcrumbs">
+            <ul>
+                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
+                <li><a href="{{ url_for('main.product_categories') }}">Kategorijos</a></li>
+                {% for crumb in breadcrumbs %}
+                    {% if loop.last %}
+                        <li>{{ crumb.name }}</li>
+                    {% else %}
+                        <li><a href="{{ url_for('main.product_categories', parent_id=crumb.id) }}">{{ crumb.name }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Top controls -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            {% if current_category %}
+                <h2 class="text-xl">{{ current_category.name }}</h2>
+                <p class="text-gray-600">{{ current_category.description or '' }}</p>
+                {% if current_category.parent %}
+                    <a href="{{ url_for('main.product_categories', parent_id=current_category.parent_id) }}" class="link link-primary mt-2 inline-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Grįžti į aukštesnę kategoriją
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('main.product_categories') }}" class="link link-primary mt-2 inline-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Grįžti į visas kategorijas
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <div>
+            <a href="{{ url_for('main.product_category_new', parent_id=current_category.id if current_category else None) }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nauja kategorija
+            </a>
+        </div>
+    </div>
+    
+    <!-- Categories table -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        {% if categories %}
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th>Pavadinimas</th>
+                        <th>Trumpinys</th>
+                        <th>Produktų skaičius</th>
+                        <th>WooCommerce ID</th>
+                        <th class="text-right">Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('main.product_categories', parent_id=category.id) }}" class="font-medium hover:text-primary">
+                                    {% if category.children.count() > 0 %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                        </svg>
+                                    {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                        </svg>
+                                    {% endif %}
+                                    {{ category.name }}
+                                </a>
+                            </td>
+                            <td>{{ category.slug }}</td>
+                            <td>{{ category.product_count }}</td>
+                            <td>{{ category.external_id or '-' }}</td>
+                            <td class="text-right">
+                                <div class="flex justify-end space-x-2">
+                                    <a href="{{ url_for('main.product_category_edit', id=category.id) }}" class="btn btn-sm btn-outline">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline btn-error delete-category" data-id="{{ category.id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="p-8 text-center">
+                <p class="text-gray-500 mb-4">Nėra sukurtų kategorijų.</p>
+                <a href="{{ url_for('main.product_category_new', parent_id=current_category.id if current_category else None) }}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Sukurti pirmą kategoriją
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Delete category buttons
+    document.querySelectorAll('.delete-category').forEach(button => {
+        button.addEventListener('click', function() {
+            const categoryId = this.getAttribute('data-id');
+            
+            if (confirm('Ar tikrai norite ištrinti šią kategoriją?')) {
+                fetch(`/product-categories/${categoryId}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', data.message);
+                        
+                        // Redirect if provided
+                        if (data.redirect_url) {
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url;
+                            }, 1000);
+                        } else {
+                            // Reload the page
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        }
+                    } else {
+                        showToast('error', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('error', 'Įvyko klaida. Bandykite dar kartą.');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 
