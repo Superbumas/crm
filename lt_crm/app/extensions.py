@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from flask_babel import Babel
 from flask_minify import Minify
 from flask_wtf.csrf import CSRFProtect
+from flask_caching import Cache
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -12,4 +13,5 @@ migrate = Migrate()
 login_manager = LoginManager()
 babel = Babel()
 minify = Minify()
-csrf = CSRFProtect() 
+csrf = CSRFProtect()
+cache = Cache() 

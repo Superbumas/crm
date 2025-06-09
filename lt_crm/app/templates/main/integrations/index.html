@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-8">Integrations</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- WordPress/WooCommerce Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://s.w.org/style/images/about/WordPress-logotype-standard.png" alt="WordPress" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">WordPress/WooCommerce</h2>
+                <p>Integrate your CRM with WordPress and WooCommerce. Sync products, orders, and customers between systems.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ url_for('main.wordpress_integration') }}" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Varle Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Varle.lt_logo.png" alt="Varle" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Varle Marketplace</h2>
+                <p>Integrate with Varle marketplace. Sync your products, manage orders, and track stock levels.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pigu Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Pigu.lt_logo.svg/2560px-Pigu.lt_logo.svg.png" alt="Pigu" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Pigu Marketplace</h2>
+                <p>Integrate with Pigu marketplace. Manage your product listings, orders, and inventory.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Allegro Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Allegro.pl_sklep_logo.svg/2560px-Allegro.pl_sklep_logo.svg.png" alt="Allegro" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Allegro Marketplace</h2>
+                <p>Connect to Allegro marketplace. Expand your reach to customers in Poland and manage orders efficiently.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Amazon Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow opacity-60">
+            <div class="absolute inset-0 flex items-center justify-center z-10">
+                <div class="badge badge-lg">Coming Soon</div>
+            </div>
+            <figure class="px-10 pt-10">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png" alt="Amazon" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Amazon Marketplace</h2>
+                <p>Connect to Amazon marketplace. Expand your global reach and manage sales on the world's largest marketplace.</p>
+                <div class="card-actions justify-end mt-4">
+                    <button class="btn btn-disabled">Coming Soon</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopify Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow opacity-60">
+            <div class="absolute inset-0 flex items-center justify-center z-10">
+                <div class="badge badge-lg">Coming Soon</div>
+            </div>
+            <figure class="px-10 pt-10">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png" alt="Shopify" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Shopify</h2>
+                <p>Integrate with Shopify e-commerce platform. Sync products, orders, and customers between systems.</p>
+                <div class="card-actions justify-end mt-4">
+                    <button class="btn btn-disabled">Coming Soon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider my-12">Accounting Integrations</div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rivile Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://www.rivile.lt/wp-content/uploads/2020/08/rivile-200.png" alt="Rivile" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Rivile</h2>
+                <p>Connect with Rivile accounting system. Synchronize invoices, customers, and products between systems.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finvalda Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow opacity-60">
+            <div class="absolute inset-0 flex items-center justify-center z-10">
+                <div class="badge badge-lg">Coming Soon</div>
+            </div>
+            <figure class="px-10 pt-10">
+                <img src="https://www.fvs.lt/wp-content/uploads/2022/03/finvalda-logo-be-fono.png" alt="Finvalda" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Finvalda</h2>
+                <p>Integrate with Finvalda accounting system. Sync accounting data between your CRM and Finvalda.</p>
+                <div class="card-actions justify-end mt-4">
+                    <button class="btn btn-disabled">Coming Soon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider my-12">Shipping Integrations</div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- LP Express Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://www.lpexpress.lt/images/logos/lpexpress-color.svg" alt="LP Express" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">LP Express</h2>
+                <p>Integrate with LP Express shipping service. Generate shipping labels and track packages directly from CRM.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Omniva Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://www.omniva.lt/photo/47644/omniva_logo_cmyk_2020.jpg" alt="Omniva" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">Omniva</h2>
+                <p>Connect with Omniva shipping service. Generate shipping labels and track deliveries from your CRM.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- DPD Integration -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <figure class="px-10 pt-10">
+                <img src="https://www.dpd.com/wp-content/themes/DPD_NoLogin/images/DPD_logo_redgrad_rgb.svg" alt="DPD" class="h-16 object-contain" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">DPD</h2>
+                <p>Integrate with DPD shipping service. Generate shipping labels and track packages directly from CRM.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="#" class="btn btn-primary">Configure</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

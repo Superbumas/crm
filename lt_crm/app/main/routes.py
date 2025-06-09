@@ -27,6 +27,7 @@ from lt_crm.app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
 from lt_crm.app.models.stock import StockMovement, Shipment, ShipmentItem, ShipmentStatus, MovementReasonCode
 from lt_crm.app.models.settings import CompanySettings
 from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm, CompanySettingsForm
+from lt_crm.app.models.integration import IntegrationSyncLog, IntegrationType
 
 
 @bp.route("/")
@@ -3077,3 +3078,84 @@ def product_columns_api():
         except Exception as e:
             logger.exception(f"Error in product_columns_api: {e}")
             return {"error": str(e), "success": False}, 500
+
+
+@bp.route("/integrations/wordpress")
+@login_required
+def wordpress_integration():
+    """WordPress/WooCommerce integration page."""
+    # Get configuration
+    config = {
+        "api_url": current_app.config.get("WORDPRESS_API_URL", ""),
+        "consumer_key": "********" if current_app.config.get("WOOCOMMERCE_CONSUMER_KEY") else "",
+        "consumer_secret": "********" if current_app.config.get("WOOCOMMERCE_CONSUMER_SECRET") else "",
+    }
+    
+    # Get integration status
+    is_configured = bool(
+        current_app.config.get("WORDPRESS_API_URL") and 
+        current_app.config.get("WOOCOMMERCE_CONSUMER_KEY") and
+        current_app.config.get("WOOCOMMERCE_CONSUMER_SECRET")
+    )
+    
+    # Get last sync log
+    last_sync = IntegrationSyncLog.query.filter_by(
+        integration_type=IntegrationType.ECOMMERCE,
+        provider_name="wordpress"
+    ).order_by(IntegrationSyncLog.created_at.desc()).first()
+    
+    # Get sync statistics
+    sync_stats = {
+        "products_pushed": 0,
+        "orders_pulled": 0,
+        "last_sync_status": None
+    }
+    
+    if last_sync:
+        sync_stats["last_sync_status"] = last_sync.status.value
+        
+        # Get counts from logs
+        products_pushed = IntegrationSyncLog.query.filter_by(
+            integration_type=IntegrationType.ECOMMERCE,
+            provider_name="wordpress",
+            entity_type="product",
+            status="success"
+        ).with_entities(db.func.sum(IntegrationSyncLog.records_processed)).scalar() or 0
+        
+        orders_pulled = IntegrationSyncLog.query.filter_by(
+            integration_type=IntegrationType.ECOMMERCE,
+            provider_name="wordpress",
+            entity_type="order",
+            status="success"
+        ).with_entities(db.func.sum(IntegrationSyncLog.records_processed)).scalar() or 0
+        
+        sync_stats["products_pushed"] = int(products_pushed)
+        sync_stats["orders_pulled"] = int(orders_pulled)
+    
+    # Get sync logs
+    sync_logs = IntegrationSyncLog.query.filter_by(
+        integration_type=IntegrationType.ECOMMERCE,
+        provider_name="wordpress"
+    ).order_by(IntegrationSyncLog.created_at.desc()).limit(10).all()
+    
+    # Prepare response
+    status_data = {
+        "status": "connected" if is_configured else "not_configured",
+        "connected": is_configured,
+        "last_sync": last_sync.created_at if last_sync else None,
+        "stats": sync_stats
+    }
+    
+    return render_template(
+        "main/integrations/wordpress.html",
+        config=config,
+        status=status_data,
+        sync_logs=sync_logs
+    )
+
+
+@bp.route("/integrations")
+@login_required
+def integrations():
+    """Integrations index page."""
+    return render_template("main/integrations/index.html")

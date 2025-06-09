@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+
+{% block title %}WordPress Integration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex items-center mb-8">
+        <h1 class="text-2xl font-bold">WordPress/WooCommerce Integration</h1>
+        {% if status and status.connected %}
+        <div class="ml-4 badge badge-success gap-2">
+            <span class="i-heroicons-check-circle"></span>
+            Connected
+        </div>
+        {% else %}
+        <div class="ml-4 badge badge-warning gap-2">
+            <span class="i-heroicons-exclamation-circle"></span>
+            Not Configured
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Configuration -->
+        <div class="card bg-base-100 shadow-xl col-span-1">
+            <div class="card-body">
+                <h2 class="card-title">Configuration</h2>
+                <form id="wordpress-config-form" class="mt-4">
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">WordPress Site URL</span>
+                        </label>
+                        <input type="url" name="api_url" class="input input-bordered w-full" 
+                               placeholder="https://yourdomain.com" 
+                               value="{{ config.api_url if config else '' }}" required />
+                        <label class="label">
+                            <span class="label-text-alt">Your WordPress site URL</span>
+                        </label>
+                    </div>
+
+                    <div class="form-control w-full mt-2">
+                        <label class="label">
+                            <span class="label-text">WooCommerce Consumer Key</span>
+                        </label>
+                        <input type="text" name="consumer_key" class="input input-bordered w-full" 
+                               placeholder="ck_..." 
+                               value="{{ config.consumer_key if config else '' }}" required />
+                        <label class="label">
+                            <span class="label-text-alt">WooCommerce REST API key</span>
+                        </label>
+                    </div>
+
+                    <div class="form-control w-full mt-2">
+                        <label class="label">
+                            <span class="label-text">WooCommerce Consumer Secret</span>
+                        </label>
+                        <input type="password" name="consumer_secret" class="input input-bordered w-full" 
+                               placeholder="cs_..." 
+                               value="{{ config.consumer_secret if config else '' }}" required />
+                        <label class="label">
+                            <span class="label-text-alt">WooCommerce REST API secret</span>
+                        </label>
+                    </div>
+
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </div>
+                </form>
+                <div class="mt-4 collapse collapse-arrow">
+                    <input type="checkbox" /> 
+                    <div class="collapse-title text-sm font-medium">
+                        How to generate API credentials
+                    </div>
+                    <div class="collapse-content text-sm"> 
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Go to your WordPress admin panel</li>
+                            <li>Navigate to WooCommerce > Settings > Advanced > REST API</li>
+                            <li>Click "Add key"</li>
+                            <li>Enter a description (e.g. "VakaSport CRM")</li>
+                            <li>Set user to an admin account</li>
+                            <li>Set permissions to "Read/Write"</li>
+                            <li>Click "Generate API key"</li>
+                            <li>Copy the Consumer Key and Consumer Secret</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync controls -->
+        <div class="card bg-base-100 shadow-xl col-span-1 lg:col-span-2">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Sync Controls</h2>
+                
+                {% if status and status.connected %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg">Products</h3>
+                            <p class="text-sm">Push products from CRM to WooCommerce</p>
+                            <div class="card-actions mt-4">
+                                <button id="btn-push-all-products" class="btn btn-primary">
+                                    <span class="i-heroicons-arrow-up-tray mr-2"></span>
+                                    Push All Products
+                                </button>
+                                <button id="btn-push-selected-products" class="btn btn-outline">
+                                    Push Selected
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg">Orders</h3>
+                            <p class="text-sm">Pull orders from WooCommerce to CRM</p>
+                            <div class="card-actions mt-4">
+                                <button id="btn-pull-orders" class="btn btn-primary">
+                                    <span class="i-heroicons-arrow-down-tray mr-2"></span>
+                                    Pull Orders
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg">Stock Levels</h3>
+                            <p class="text-sm">Update WooCommerce stock from CRM</p>
+                            <div class="card-actions mt-4">
+                                <button id="btn-sync-stock" class="btn btn-primary">
+                                    <span class="i-heroicons-arrows-right-left mr-2"></span>
+                                    Sync Stock Levels
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-base-200">
+                        <div class="card-body">
+                            <h3 class="card-title text-lg">Statistics</h3>
+                            <p class="text-sm">Get sales statistics from WooCommerce</p>
+                            <div class="card-actions mt-4">
+                                <button id="btn-get-stats" class="btn btn-primary">
+                                    <span class="i-heroicons-chart-bar mr-2"></span>
+                                    Get Statistics
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <span class="i-heroicons-exclamation-triangle"></span>
+                    <span>Please configure the WordPress integration first.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sync history -->
+        <div class="card bg-base-100 shadow-xl col-span-1 lg:col-span-3">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Sync History</h2>
+                
+                {% if sync_logs and sync_logs|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Processed</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Failed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in sync_logs %}
+                            <tr>
+                                <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ log.entity_type }}</td>
+                                <td>
+                                    {% if log.status.value == 'success' %}
+                                    <span class="badge badge-success">Success</span>
+                                    {% elif log.status.value == 'partial' %}
+                                    <span class="badge badge-warning">Partial</span>
+                                    {% elif log.status.value == 'in_progress' %}
+                                    <span class="badge badge-info">In Progress</span>
+                                    {% else %}
+                                    <span class="badge badge-error">Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.records_processed }}</td>
+                                <td>{{ log.records_created }}</td>
+                                <td>{{ log.records_updated }}</td>
+                                <td>{{ log.records_failed }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <span class="i-heroicons-information-circle"></span>
+                    <span>No sync history available.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sync status modal -->
+<dialog id="sync-status-modal" class="modal">
+    <form method="dialog" class="modal-box">
+        <h3 class="font-bold text-lg" id="sync-status-title">Sync in Progress</h3>
+        <div class="py-4">
+            <div id="sync-progress" class="flex flex-col items-center">
+                <div class="loading loading-spinner loading-lg"></div>
+                <p id="sync-message" class="mt-4">Processing...</p>
+            </div>
+            <div id="sync-results" class="mt-4 hidden">
+                <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+                    <div class="stat">
+                        <div class="stat-title">Total</div>
+                        <div class="stat-value" id="sync-total">0</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Success</div>
+                        <div class="stat-value text-success" id="sync-success">0</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Failed</div>
+                        <div class="stat-value text-error" id="sync-failed">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn">Close</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Sales stats modal -->
+<dialog id="sales-stats-modal" class="modal">
+    <form method="dialog" class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg">WooCommerce Sales Statistics</h3>
+        <div class="py-4">
+            <div id="sales-stats-loading" class="flex flex-col items-center">
+                <div class="loading loading-spinner loading-lg"></div>
+                <p class="mt-4">Loading statistics...</p>
+            </div>
+            <div id="sales-stats-content" class="hidden">
+                <div class="stats stats-vertical lg:stats-horizontal shadow w-full mb-4">
+                    <div class="stat">
+                        <div class="stat-title">Total Sales</div>
+                        <div class="stat-value" id="stats-total-sales">€0</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Orders</div>
+                        <div class="stat-value" id="stats-total-orders">0</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-title">Avg. Order</div>
+                        <div class="stat-value" id="stats-avg-order">€0</div>
+                    </div>
+                </div>
+                
+                <div id="sales-chart-container" class="h-64 mt-8">
+                    <canvas id="sales-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn">Close</button>
+        </div>
+    </form>
+</dialog>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration form
+    const configForm = document.getElementById('wordpress-config-form');
+    configForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(configForm);
+        const data = {
+            api_url: formData.get('api_url'),
+            consumer_key: formData.get('consumer_key'),
+            consumer_secret: formData.get('consumer_secret')
+        };
+        
+        fetch('/api/v1/wordpress/config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showToast('success', data.message);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        })
+        .catch(error => {
+            showToast('error', 'Failed to save configuration');
+            console.error('Error:', error);
+        });
+    });
+    
+    // Push all products
+    const btnPushAllProducts = document.getElementById('btn-push-all-products');
+    if (btnPushAllProducts) {
+        btnPushAllProducts.addEventListener('click', function() {
+            const syncModal = document.getElementById('sync-status-modal');
+            const syncTitle = document.getElementById('sync-status-title');
+            const syncMessage = document.getElementById('sync-message');
+            const syncProgress = document.getElementById('sync-progress');
+            const syncResults = document.getElementById('sync-results');
+            
+            syncTitle.textContent = 'Syncing Products to WordPress';
+            syncMessage.textContent = 'Pushing products to WooCommerce...';
+            syncProgress.classList.remove('hidden');
+            syncResults.classList.add('hidden');
+            
+            syncModal.showModal();
+            
+            fetch('/api/v1/wordpress/push/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                },
+                body: JSON.stringify({ push_all: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                syncProgress.classList.add('hidden');
+                syncResults.classList.remove('hidden');
+                
+                document.getElementById('sync-total').textContent = data.summary.total;
+                document.getElementById('sync-success').textContent = data.summary.success;
+                document.getElementById('sync-failed').textContent = data.summary.failed;
+                
+                syncMessage.textContent = data.message;
+            })
+            .catch(error => {
+                syncProgress.classList.add('hidden');
+                syncMessage.textContent = 'Failed to sync products: ' + error.message;
+                console.error('Error:', error);
+            });
+        });
+    }
+    
+    // Pull orders
+    const btnPullOrders = document.getElementById('btn-pull-orders');
+    if (btnPullOrders) {
+        btnPullOrders.addEventListener('click', function() {
+            const syncModal = document.getElementById('sync-status-modal');
+            const syncTitle = document.getElementById('sync-status-title');
+            const syncMessage = document.getElementById('sync-message');
+            const syncProgress = document.getElementById('sync-progress');
+            const syncResults = document.getElementById('sync-results');
+            
+            syncTitle.textContent = 'Syncing Orders from WordPress';
+            syncMessage.textContent = 'Pulling orders from WooCommerce...';
+            syncProgress.classList.remove('hidden');
+            syncResults.classList.add('hidden');
+            
+            syncModal.showModal();
+            
+            fetch('/api/v1/wordpress/pull/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                syncProgress.classList.add('hidden');
+                syncResults.classList.remove('hidden');
+                
+                document.getElementById('sync-total').textContent = data.summary.total;
+                document.getElementById('sync-success').textContent = data.summary.new + data.summary.updated;
+                document.getElementById('sync-failed').textContent = data.summary.failed;
+                
+                syncMessage.textContent = data.message;
+            })
+            .catch(error => {
+                syncProgress.classList.add('hidden');
+                syncMessage.textContent = 'Failed to sync orders: ' + error.message;
+                console.error('Error:', error);
+            });
+        });
+    }
+    
+    // Get statistics
+    const btnGetStats = document.getElementById('btn-get-stats');
+    if (btnGetStats) {
+        btnGetStats.addEventListener('click', function() {
+            const statsModal = document.getElementById('sales-stats-modal');
+            const statsLoading = document.getElementById('sales-stats-loading');
+            const statsContent = document.getElementById('sales-stats-content');
+            
+            statsLoading.classList.remove('hidden');
+            statsContent.classList.add('hidden');
+            
+            statsModal.showModal();
+            
+            fetch('/api/v1/wordpress/pull/stats', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                statsLoading.classList.add('hidden');
+                statsContent.classList.remove('hidden');
+                
+                document.getElementById('stats-total-sales').textContent = '€' + parseFloat(data.total_sales).toLocaleString('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('stats-total-orders').textContent = data.total_orders;
+                document.getElementById('stats-avg-order').textContent = '€' + parseFloat(data.average_order_value).toLocaleString('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                // Create chart if we have chart.js loaded
+                if (typeof Chart !== 'undefined' && data.data && data.data.length > 0) {
+                    const ctx = document.getElementById('sales-chart').getContext('2d');
+                    
+                    const chartData = {
+                        labels: data.data.map(item => item.date),
+                        datasets: [
+                            {
+                                label: 'Sales (€)',
+                                data: data.data.map(item => item.sales),
+                                borderColor: '#36A2EB',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderWidth: 2,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Orders',
+                                data: data.data.map(item => item.orders),
+                                borderColor: '#FF6384',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderWidth: 2,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    };
+                    
+                    const config = {
+                        type: 'line',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            scales: {
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: {
+                                        display: true,
+                                        text: 'Sales (€)'
+                                    }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: {
+                                        display: true,
+                                        text: 'Orders'
+                                    },
+                                    grid: {
+                                        drawOnChartArea: false
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    
+                    new Chart(ctx, config);
+                }
+            })
+            .catch(error => {
+                statsLoading.classList.add('hidden');
+                console.error('Error:', error);
+            });
+        });
+    }
+});
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} fixed bottom-4 right-4 w-auto z-50`;
+    toast.innerHTML = `
+        <span>${message}</span>
+        <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()">×</button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+</script>
+{% endblock %} 
