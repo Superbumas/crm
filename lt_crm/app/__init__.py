@@ -6,7 +6,7 @@ from flask_talisman import Talisman
 from prometheus_flask_exporter import PrometheusMetrics
 from sentry_sdk.integrations.flask import FlaskIntegration
 from flask_wtf.csrf import CSRFProtect
-from .extensions import db, migrate, login_manager, babel, minify, csrf
+from .extensions import db, migrate, login_manager, babel, minify, csrf, cache
 from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
 import json
@@ -138,6 +138,17 @@ def create_app(test_config=None):
     if app.config.get('WTF_CSRF_ENABLED', True):
         csrf.init_app(app)
     minify.init_app(app)
+    
+    # Initialize cache
+    cache_config = {
+        "CACHE_TYPE": app.config.get("CACHE_TYPE", "SimpleCache"),
+        "CACHE_DEFAULT_TIMEOUT": app.config.get("CACHE_DEFAULT_TIMEOUT", 300),
+    }
+    # Add Redis URL if available
+    if app.config.get("CACHE_REDIS_URL"):
+        cache_config["CACHE_REDIS_URL"] = app.config.get("CACHE_REDIS_URL")
+    
+    cache.init_app(app, config=cache_config)
     
     # Configure login
     login_manager.login_view = "auth.login"
