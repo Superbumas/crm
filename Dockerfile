@@ -30,7 +30,8 @@ COPY requirements.txt /app/requirements.txt
 # Install dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install --upgrade numpy==1.24.4 pandas==2.0.3
+    pip install --upgrade numpy==1.24.4 pandas==2.0.3 && \
+    pip install Flask-Caching==2.3.1
 
 # Copy the application code
 COPY . /app/
@@ -44,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # Run the application with Gunicorn
 # The create_app() function is inside lt_crm.app.__init__.py
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "lt_crm.app:create_app()"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "lt_crm.app:create_app()"]
