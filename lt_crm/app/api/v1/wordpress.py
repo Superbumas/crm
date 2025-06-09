@@ -53,16 +53,16 @@ class WordPressConfig(Resource):
     @token_required()
     def get(self, current_user):
         """Get WordPress/WooCommerce integration configuration."""
-        # Get configuration from environment variables
+        from ...models.settings import CompanySettings
+        
+        # Get settings from database
+        settings = CompanySettings.get_instance()
+        
         config = {
-            "api_url": current_app.config.get("WORDPRESS_API_URL", ""),
-            "consumer_key": "***" if current_app.config.get("WOOCOMMERCE_CONSUMER_KEY") else "",
-            "consumer_secret": "***" if current_app.config.get("WOOCOMMERCE_CONSUMER_SECRET") else "",
-            "is_configured": bool(
-                current_app.config.get("WORDPRESS_API_URL") and 
-                current_app.config.get("WOOCOMMERCE_CONSUMER_KEY") and
-                current_app.config.get("WOOCOMMERCE_CONSUMER_SECRET")
-            )
+            "api_url": settings.wordpress_api_url or "",
+            "consumer_key": "***" if settings.wordpress_consumer_key else "",
+            "consumer_secret": "***" if settings.wordpress_consumer_secret else "",
+            "is_configured": settings.wordpress_integration_configured
         }
         
         return config
@@ -74,6 +74,8 @@ class WordPressConfig(Resource):
     @token_required()
     def post(self, current_user):
         """Update WordPress/WooCommerce integration configuration."""
+        from ...models.settings import CompanySettings
+        
         data = request.json
         
         # Validate required fields
@@ -86,13 +88,16 @@ class WordPressConfig(Resource):
         if not data.get("consumer_secret"):
             return {"message": "Consumer secret is required"}, 400
         
-        # In a real application, we would store these in a database or update environment variables
-        # For this implementation, we'll just update the application config
-        current_app.config["WORDPRESS_API_URL"] = data["api_url"]
-        current_app.config["WOOCOMMERCE_CONSUMER_KEY"] = data["consumer_key"]
-        current_app.config["WOOCOMMERCE_CONSUMER_SECRET"] = data["consumer_secret"]
-        
-        return {"message": "WordPress/WooCommerce configuration updated successfully"}
+        # Update settings in database
+        settings = CompanySettings.get_instance()
+        if settings.update_wordpress_settings(
+            api_url=data["api_url"],
+            consumer_key=data["consumer_key"],
+            consumer_secret=data["consumer_secret"]
+        ):
+            return {"message": "WordPress/WooCommerce configuration updated successfully"}
+        else:
+            return {"message": "Failed to update WordPress configuration"}, 500
 
 @ns.route("/status")
 class WordPressStatus(Resource):

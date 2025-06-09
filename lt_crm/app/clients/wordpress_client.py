@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Union
 import httpx
+from flask import current_app
 from .base_client import BaseAPIClient
 from ..exceptions import APIError, APIClientError
 from ..models.order import Order, OrderItem, OrderStatus
@@ -16,17 +17,22 @@ class WordPressClient(BaseAPIClient):
 
     def __init__(self):
         """Initialize the WordPress/WooCommerce API client."""
-        base_url = os.environ.get("WORDPRESS_API_URL", "")
+        from ..models.settings import CompanySettings
+        
+        # Get settings from database
+        settings = CompanySettings.get_instance()
+        
+        base_url = settings.wordpress_api_url or ""
         if not base_url:
             self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-            self.logger.warning("WORDPRESS_API_URL not set in environment variables")
+            self.logger.warning("WordPress API URL not configured in settings")
         
-        self.consumer_key = os.environ.get("WOOCOMMERCE_CONSUMER_KEY", "")
-        self.consumer_secret = os.environ.get("WOOCOMMERCE_CONSUMER_SECRET", "")
+        self.consumer_key = settings.wordpress_consumer_key or ""
+        self.consumer_secret = settings.wordpress_consumer_secret or ""
         
         if not self.consumer_key or not self.consumer_secret:
             self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-            self.logger.warning("WooCommerce API credentials not set in environment variables")
+            self.logger.warning("WooCommerce API credentials not configured in settings")
         
         super().__init__(base_url=base_url)
     

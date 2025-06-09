@@ -289,6 +289,21 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get or refresh JWT token
+    function getJwtToken() {
+        // Try to get from localStorage first
+        let token = localStorage.getItem('jwt_token');
+        
+        // If no token in localStorage, check if it's in a cookie or get a new one
+        if (!token) {
+            // You may need to implement a function to get a new token
+            console.warn('No JWT token found - user may need to login again');
+            showToast('warning', 'Authentication token missing. You may need to log in again.');
+        }
+        
+        return token;
+    }
+
     // Configuration form
     const configForm = document.getElementById('wordpress-config-form');
     configForm.addEventListener('submit', function(e) {
@@ -301,16 +316,38 @@ document.addEventListener('DOMContentLoaded', function() {
             consumer_secret: formData.get('consumer_secret')
         };
         
+        const token = getJwtToken();
+        if (!token) {
+            showToast('error', 'Authentication token missing. Please log in again.');
+            return;
+        }
+        
         fetch('/api/v1/wordpress/config', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                'Authorization': 'Bearer ' + token
             },
             body: JSON.stringify(data)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('jwt_token');
+                    showToast('error', 'Your session has expired. Please log in again.');
+                    setTimeout(() => {
+                        window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    }, 2000);
+                    throw new Error('Authentication failed');
+                }
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Failed to save configuration');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.message) {
                 showToast('success', data.message);
@@ -320,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            showToast('error', 'Failed to save configuration');
+            showToast('error', error.message || 'Failed to save configuration');
             console.error('Error:', error);
         });
     });
@@ -329,6 +366,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnPushAllProducts = document.getElementById('btn-push-all-products');
     if (btnPushAllProducts) {
         btnPushAllProducts.addEventListener('click', function() {
+            const token = getJwtToken();
+            if (!token) {
+                showToast('error', 'Authentication token missing. Please log in again.');
+                return;
+            }
+            
             const syncModal = document.getElementById('sync-status-modal');
             const syncTitle = document.getElementById('sync-status-title');
             const syncMessage = document.getElementById('sync-message');
@@ -347,11 +390,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify({ push_all: true })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('jwt_token');
+                        syncProgress.classList.add('hidden');
+                        syncMessage.textContent = 'Your session has expired. Please log in again.';
+                        setTimeout(() => {
+                            window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                        }, 2000);
+                        throw new Error('Authentication failed');
+                    }
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to sync products');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 syncProgress.classList.add('hidden');
                 syncResults.classList.remove('hidden');
@@ -364,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 syncProgress.classList.add('hidden');
-                syncMessage.textContent = 'Failed to sync products: ' + error.message;
+                syncMessage.textContent = 'Failed to sync products: ' + (error.message || 'Unknown error');
                 console.error('Error:', error);
             });
         });
@@ -374,6 +433,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnPullOrders = document.getElementById('btn-pull-orders');
     if (btnPullOrders) {
         btnPullOrders.addEventListener('click', function() {
+            const token = getJwtToken();
+            if (!token) {
+                showToast('error', 'Authentication token missing. Please log in again.');
+                return;
+            }
+            
             const syncModal = document.getElementById('sync-status-modal');
             const syncTitle = document.getElementById('sync-status-title');
             const syncMessage = document.getElementById('sync-message');
@@ -392,10 +457,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                    'Authorization': 'Bearer ' + token
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('jwt_token');
+                        syncProgress.classList.add('hidden');
+                        syncMessage.textContent = 'Your session has expired. Please log in again.';
+                        setTimeout(() => {
+                            window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                        }, 2000);
+                        throw new Error('Authentication failed');
+                    }
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to sync orders');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 syncProgress.classList.add('hidden');
                 syncResults.classList.remove('hidden');
@@ -408,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 syncProgress.classList.add('hidden');
-                syncMessage.textContent = 'Failed to sync orders: ' + error.message;
+                syncMessage.textContent = 'Failed to sync orders: ' + (error.message || 'Unknown error');
                 console.error('Error:', error);
             });
         });
@@ -418,6 +499,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnGetStats = document.getElementById('btn-get-stats');
     if (btnGetStats) {
         btnGetStats.addEventListener('click', function() {
+            const token = getJwtToken();
+            if (!token) {
+                showToast('error', 'Authentication token missing. Please log in again.');
+                return;
+            }
+            
             const statsModal = document.getElementById('sales-stats-modal');
             const statsLoading = document.getElementById('sales-stats-loading');
             const statsContent = document.getElementById('sales-stats-content');
@@ -429,10 +516,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             fetch('/api/v1/wordpress/pull/stats', {
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                    'Authorization': 'Bearer ' + token,
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('jwt_token');
+                        statsLoading.classList.add('hidden');
+                        showToast('error', 'Your session has expired. Please log in again.');
+                        statsModal.close();
+                        setTimeout(() => {
+                            window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                        }, 2000);
+                        throw new Error('Authentication failed');
+                    }
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to get statistics');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 statsLoading.classList.add('hidden');
                 statsContent.classList.remove('hidden');
@@ -507,7 +612,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 statsLoading.classList.add('hidden');
+                statsContent.classList.add('hidden');
+                showToast('error', error.message || 'Failed to get statistics');
                 console.error('Error:', error);
+                statsModal.close();
             });
         });
     }
@@ -525,6 +633,6 @@ function showToast(type, message) {
     setTimeout(() => {
         toast.remove();
     }, 5000);
-}
-</script>
+  }
+  </script>
 {% endblock %} 
