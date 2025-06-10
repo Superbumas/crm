@@ -1,170 +1,454 @@
 {% extends "base.html" %}
 
-{% block title %}Produktų kategorijos{% endblock %}
+{% block title %}Produktų kategorijos - VakaSport CRM{% endblock %}
+
+{% block styles %}
+<style>
+    .category-tree {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .category-tree ul {
+        list-style-type: none;
+        padding-left: 1.5rem;
+    }
+    
+    .category-tree li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .category-item {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .category-item:hover {
+        border-color: #93c5fd;
+        background-color: #eff6ff;
+        transform: translateX(4px);
+    }
+    
+    .category-name {
+        font-weight: 600;
+        color: #1e40af;
+    }
+    
+    .category-count {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background-color: #dbeafe;
+        color: #1e40af;
+        margin-left: 0.5rem;
+    }
+    
+    .category-description {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .category-actions {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .category-item:hover .category-actions {
+        opacity: 1;
+    }
+    
+    .expand-icon {
+        cursor: pointer;
+        margin-right: 0.5rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mx-auto py-6 px-4">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Produktų kategorijos</h1>
-        
-        <!-- Breadcrumbs -->
-        <div class="text-sm breadcrumbs">
-            <ul>
-                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
-                <li><a href="{{ url_for('main.product_categories') }}">Kategorijos</a></li>
-                {% for crumb in breadcrumbs %}
-                    {% if loop.last %}
-                        <li>{{ crumb.name }}</li>
-                    {% else %}
-                        <li><a href="{{ url_for('main.product_categories', parent_id=crumb.id) }}">{{ crumb.name }}</a></li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-    
-    <!-- Top controls -->
-    <div class="flex justify-between items-center mb-6">
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start mb-8">
         <div>
-            {% if current_category %}
-                <h2 class="text-xl">{{ current_category.name }}</h2>
-                <p class="text-gray-600">{{ current_category.description or '' }}</p>
-                {% if current_category.parent %}
-                    <a href="{{ url_for('main.product_categories', parent_id=current_category.parent_id) }}" class="link link-primary mt-2 inline-block">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Grįžti į aukštesnę kategoriją
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('main.product_categories') }}" class="link link-primary mt-2 inline-block">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Grįžti į visas kategorijas
-                    </a>
-                {% endif %}
-            {% endif %}
-        </div>
-        
-        <div>
-            <a href="{{ url_for('main.product_category_new', parent_id=current_category.id if current_category else None) }}" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-3 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                Nauja kategorija
-            </a>
+                Produktų kategorijos
+            </h1>
+            <div class="text-sm breadcrumbs">
+                <ul>
+                    <li><a href="{{ url_for('main.dashboard') }}" class="text-blue-600 hover:text-blue-800">Skydelis</a></li>
+                    <li><a href="{{ url_for('main.products') }}" class="text-blue-600 hover:text-blue-800">Produktai</a></li>
+                    <li class="text-gray-500">Kategorijos</li>
+                </ul>
+            </div>
+        </div>
+        
+        <button onclick="openAddCategoryModal()" class="btn btn-primary mt-4 md:mt-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nauja kategorija
+        </button>
+    </div>
+    
+    <!-- Main content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Category List Panel -->
+        <div class="lg:col-span-2">
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title mb-6">Kategorijų medis</h2>
+                    
+                    {% if categories %}
+                    <div x-data="{ expandedCategories: [] }">
+                        <ul class="category-tree">
+                            {% for category in category_tree %}
+                                {% include 'main/_category_tree_item.html' %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <p class="text-lg font-medium">Nėra sukurtų kategorijų</p>
+                        <p class="text-sm mt-2">Sukurkite pirmąją kategoriją paspaudę "Nauja kategorija" mygtuką</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div>
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Apie kategorijas</h2>
+                    <p class="text-gray-600 mb-4">
+                        Kategorijos padeda organizuoti produktus į loginius skyrius, kad klientai galėtų lengviau rasti ieškomus produktus.
+                    </p>
+                    <ul class="text-gray-600 space-y-2 mb-4">
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Galite kurti hierarchines kategorijas su neribotu lygių skaičiumi
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Kategorijos automatiškai sinchronizuojamos su WooCommerce, jei integracija aktyvuota
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Produktas gali priklausyti tik vienai kategorijai
+                        </li>
+                    </ul>
+                    <div class="alert alert-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Negalima ištrinti kategorijų, kurios turi produktų arba subkategorijų.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Statistika</h2>
+                    <div class="stats stats-vertical shadow w-full">
+                        <div class="stat">
+                            <div class="stat-title">Kategorijų skaičius</div>
+                            <div class="stat-value">{{ categories|length }}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title">Aukščiausio lygio kategorijos</div>
+                            <div class="stat-value">{{ category_tree|length }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Categories table -->
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        {% if categories %}
-            <table class="table w-full">
-                <thead>
-                    <tr>
-                        <th>Pavadinimas</th>
-                        <th>Trumpinys</th>
-                        <th>Produktų skaičius</th>
-                        <th>WooCommerce ID</th>
-                        <th class="text-right">Veiksmai</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for category in categories %}
-                        <tr>
-                            <td>
-                                <a href="{{ url_for('main.product_categories', parent_id=category.id) }}" class="font-medium hover:text-primary">
-                                    {% if category.children.count() > 0 %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                        </svg>
-                                    {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                        </svg>
-                                    {% endif %}
-                                    {{ category.name }}
-                                </a>
-                            </td>
-                            <td>{{ category.slug }}</td>
-                            <td>{{ category.product_count }}</td>
-                            <td>{{ category.external_id or '-' }}</td>
-                            <td class="text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <a href="{{ url_for('main.product_category_edit', id=category.id) }}" class="btn btn-sm btn-outline">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </a>
-                                    <button class="btn btn-sm btn-outline btn-error delete-category" data-id="{{ category.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="p-8 text-center">
-                <p class="text-gray-500 mb-4">Nėra sukurtų kategorijų.</p>
-                <a href="{{ url_for('main.product_category_new', parent_id=current_category.id if current_category else None) }}" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Sukurti pirmą kategoriją
-                </a>
+    <!-- New Category Modal -->
+    <div id="add-category-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Nauja produktų kategorija</h3>
+            <form id="add-category-form" method="POST" action="{{ url_for('main.product_categories') }}">
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Pavadinimas</span>
+                    </label>
+                    <input type="text" name="name" class="input input-bordered w-full" placeholder="Kategorijos pavadinimas" required>
+                </div>
+                
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Aprašymas</span>
+                    </label>
+                    <textarea name="description" class="textarea textarea-bordered h-24" placeholder="Kategorijos aprašymas (neprivaloma)"></textarea>
+                </div>
+                
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Tėvinė kategorija</span>
+                    </label>
+                    <select name="parent_id" class="select select-bordered w-full">
+                        <option value="">-- Aukščiausio lygio kategorija --</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="modal-action">
+                    <button type="button" class="btn btn-outline" onclick="closeAddCategoryModal()">Atšaukti</button>
+                    <button type="submit" class="btn btn-primary">Sukurti</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-backdrop" onclick="closeAddCategoryModal()"></div>
+    </div>
+    
+    <!-- Edit Category Modal -->
+    <div id="edit-category-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Redaguoti kategoriją</h3>
+            <form id="edit-category-form" 
+                  hx-trigger="submit"
+                  hx-indicator="#edit-spinner">
+                <input type="hidden" id="edit-category-id" name="id">
+                
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Pavadinimas</span>
+                    </label>
+                    <input type="text" id="edit-category-name" name="name" class="input input-bordered w-full" placeholder="Kategorijos pavadinimas" required>
+                </div>
+                
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Aprašymas</span>
+                    </label>
+                    <textarea id="edit-category-description" name="description" class="textarea textarea-bordered h-24" placeholder="Kategorijos aprašymas (neprivaloma)"></textarea>
+                </div>
+                
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Tėvinė kategorija</span>
+                    </label>
+                    <select id="edit-category-parent" name="parent_id" class="select select-bordered w-full">
+                        <option value="">-- Aukščiausio lygio kategorija --</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" class="parent-option">{{ category.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="modal-action">
+                    <div id="edit-spinner" class="htmx-indicator">
+                        <span class="loading loading-spinner loading-xs mr-2"></span>
+                        Saugoma...
+                    </div>
+                    <button type="button" class="btn btn-outline" onclick="closeEditCategoryModal()">Atšaukti</button>
+                    <button type="submit" class="btn btn-primary">Išsaugoti</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-backdrop" onclick="closeEditCategoryModal()"></div>
+    </div>
+    
+    <!-- Confirm Delete Modal -->
+    <div id="delete-category-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Ištrinti kategoriją?</h3>
+            <p class="py-4">Ar tikrai norite ištrinti šią kategoriją? Šio veiksmo negalima atšaukti.</p>
+            <div class="modal-action">
+                <div id="delete-spinner" class="htmx-indicator">
+                    <span class="loading loading-spinner loading-xs mr-2"></span>
+                    Trinama...
+                </div>
+                <button class="btn btn-outline" onclick="closeDeleteCategoryModal()">Atšaukti</button>
+                <button id="confirm-delete-btn" class="btn btn-error">Ištrinti</button>
             </div>
-        {% endif %}
+        </div>
+        <div class="modal-backdrop" onclick="closeDeleteCategoryModal()"></div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Delete category buttons
-    document.querySelectorAll('.delete-category').forEach(button => {
-        button.addEventListener('click', function() {
-            const categoryId = this.getAttribute('data-id');
-            
-            if (confirm('Ar tikrai norite ištrinti šią kategoriją?')) {
-                fetch(`/product-categories/${categoryId}/delete`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('success', data.message);
-                        
-                        // Redirect if provided
-                        if (data.redirect_url) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect_url;
-                            }, 1000);
-                        } else {
-                            // Reload the page
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1000);
-                        }
-                    } else {
-                        showToast('error', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', 'Įvyko klaida. Bandykite dar kartą.');
-                });
-            }
+    // Modal functions
+    function openAddCategoryModal() {
+        document.getElementById('add-category-modal').classList.add('modal-open');
+    }
+    
+    function closeAddCategoryModal() {
+        document.getElementById('add-category-modal').classList.remove('modal-open');
+        document.getElementById('add-category-form').reset();
+    }
+    
+    function openEditCategoryModal(id, name, description, parentId) {
+        const modal = document.getElementById('edit-category-modal');
+        const form = document.getElementById('edit-category-form');
+        const idInput = document.getElementById('edit-category-id');
+        const nameInput = document.getElementById('edit-category-name');
+        const descriptionInput = document.getElementById('edit-category-description');
+        const parentSelect = document.getElementById('edit-category-parent');
+        
+        // Set form action
+        form.setAttribute('hx-post', `/product-categories/${id}/edit`);
+        
+        // Set form values
+        idInput.value = id;
+        nameInput.value = name;
+        descriptionInput.value = description || '';
+        
+        // Reset parent options visibility
+        document.querySelectorAll('.parent-option').forEach(option => {
+            option.style.display = 'block';
         });
+        
+        // Hide self from parent options to prevent circular references
+        const selfOption = parentSelect.querySelector(`option[value="${id}"]`);
+        if (selfOption) {
+            selfOption.style.display = 'none';
+        }
+        
+        // Set parent
+        if (parentId) {
+            parentSelect.value = parentId;
+        } else {
+            parentSelect.value = '';
+        }
+        
+        // Open modal
+        modal.classList.add('modal-open');
+    }
+    
+    function closeEditCategoryModal() {
+        document.getElementById('edit-category-modal').classList.remove('modal-open');
+    }
+    
+    function openDeleteCategoryModal(id) {
+        const modal = document.getElementById('delete-category-modal');
+        const deleteBtn = document.getElementById('confirm-delete-btn');
+        
+        // Set up delete button action
+        deleteBtn.onclick = function() {
+            // Show spinner
+            document.getElementById('delete-spinner').style.display = 'block';
+            
+            // Send delete request
+            fetch(`/product-categories/${id}/delete`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success
+                    closeDeleteCategoryModal();
+                    // Show notification
+                    showToast(data.message, 'success');
+                    // Reload page
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Error
+                    showToast(data.message, 'error');
+                    closeDeleteCategoryModal();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Įvyko klaida trinant kategoriją', 'error');
+                closeDeleteCategoryModal();
+            })
+            .finally(() => {
+                document.getElementById('delete-spinner').style.display = 'none';
+            });
+        };
+        
+        // Open modal
+        modal.classList.add('modal-open');
+    }
+    
+    function closeDeleteCategoryModal() {
+        document.getElementById('delete-category-modal').classList.remove('modal-open');
+    }
+    
+    // Toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} fixed bottom-4 right-4 w-auto max-w-sm z-50`;
+        toast.innerHTML = `
+            <div>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+    
+    // HTMX events
+    document.addEventListener('htmx:afterSwap', function(event) {
+        // Handle form submission response
+        if (event.detail.target.id === 'edit-category-form') {
+            const response = JSON.parse(event.detail.xhr.response);
+            if (response.success) {
+                closeEditCategoryModal();
+                showToast(response.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showToast(response.message, 'error');
+            }
+        }
     });
-});
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide spinners initially
+        document.getElementById('edit-spinner').style.display = 'none';
+        document.getElementById('delete-spinner').style.display = 'none';
+    });
 </script>
 {% endblock %} 

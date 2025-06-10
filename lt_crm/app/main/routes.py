@@ -297,6 +297,162 @@ def products():
     )
 
 
+@bp.route("/product-categories", methods=["GET", "POST"])
+@login_required
+def product_categories():
+    """Product categories management page."""
+    # Get all categories
+    categories = ProductCategory.query.order_by(ProductCategory.name).all()
+    
+    # Process form submission for new category
+    if request.method == "POST":
+        # Get form data
+        name = request.form.get('name')
+        description = request.form.get('description')
+        parent_id = request.form.get('parent_id')
+        if parent_id == '':
+            parent_id = None
+        
+        # Basic validation
+        if not name:
+            flash('Kategorijos pavadinimas yra privalomas', 'error')
+        else:
+            # Generate slug
+            slug = ProductCategory.generate_slug(name)
+            
+            # Check if slug already exists
+            existing = ProductCategory.query.filter_by(slug=slug).first()
+            if existing:
+                flash(f'Kategorija su pavadinimu "{name}" jau egzistuoja', 'error')
+            else:
+                # Create new category
+                category = ProductCategory(
+                    name=name,
+                    slug=slug,
+                    description=description,
+                    parent_id=parent_id
+                )
+                db.session.add(category)
+                
+                try:
+                    db.session.commit()
+                    flash('Kategorija sėkmingai sukurta', 'success')
+                    # Redirect to refresh the page and prevent form resubmission
+                    return redirect(url_for('main.product_categories'))
+                except Exception as e:
+                    db.session.rollback()
+                    current_app.logger.error(f"Error creating category: {str(e)}")
+                    flash('Įvyko klaida kuriant kategoriją', 'error')
+    
+    # Prepare category tree for display
+    def build_category_tree(categories, parent_id=None):
+        tree = []
+        for category in categories:
+            if category.parent_id == parent_id:
+                children = build_category_tree(categories, category.id)
+                tree.append({
+                    'id': category.id,
+                    'name': category.name,
+                    'slug': category.slug,
+                    'description': category.description,
+                    'product_count': category.product_count,
+                    'children': children
+                })
+        return tree
+    
+    category_tree = build_category_tree(categories)
+    
+    return render_template(
+        "main/product_categories.html",
+        title="Produktų kategorijos",
+        categories=categories,
+        category_tree=category_tree
+    )
+
+
+@bp.route("/product-categories/<int:id>/delete", methods=["DELETE"])
+@login_required
+def product_category_delete(id):
+    """Delete a product category."""
+    category = ProductCategory.query.get_or_404(id)
+    
+    # Check if category has products
+    if category.products.count() > 0:
+        return jsonify({
+            'success': False,
+            'message': 'Negalima ištrinti kategorijos, kuri turi produktų'
+        }), 400
+    
+    # Check if category has children
+    if category.children.count() > 0:
+        return jsonify({
+            'success': False,
+            'message': 'Negalima ištrinti kategorijos, kuri turi subkategorijų'
+        }), 400
+    
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Kategorija sėkmingai ištrinta'
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting category: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Įvyko klaida trinant kategoriją'
+        }), 500
+
+
+@bp.route("/product-categories/<int:id>/edit", methods=["POST"])
+@login_required
+def product_category_edit(id):
+    """Edit a product category."""
+    category = ProductCategory.query.get_or_404(id)
+    
+    # Get form data
+    name = request.form.get('name')
+    description = request.form.get('description')
+    parent_id = request.form.get('parent_id')
+    if parent_id == '':
+        parent_id = None
+    
+    # Basic validation
+    if not name:
+        return jsonify({
+            'success': False,
+            'message': 'Kategorijos pavadinimas yra privalomas'
+        }), 400
+    
+    # Check if parent_id is not self or child of self (to prevent circular references)
+    if parent_id and int(parent_id) == category.id:
+        return jsonify({
+            'success': False,
+            'message': 'Kategorija negali būti savo pačios tėvine kategorija'
+        }), 400
+    
+    # Update category
+    category.name = name
+    category.description = description
+    category.parent_id = parent_id
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Kategorija sėkmingai atnaujinta'
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating category: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Įvyko klaida atnaujinant kategoriją'
+        }), 500
+
+
 @bp.route("/products/new", methods=["GET", "POST"])
 @login_required
 def product_new():
