@@ -68,7 +68,69 @@ def init_database(app):
                 
                 return True
             else:
-                app.logger.info(f"Database has {len(has_tables)} tables - no initialization needed")
+                app.logger.info(f"Database has {len(has_tables)} tables - checking for missing tables")
+                
+                # Check for missing tables and create them
+                from .models.product import ProductCategory, Product
+                from .models.customer import Customer, Contact, Task
+                from .models.order import Order, OrderItem
+                from .models.invoice import Invoice, InvoiceItem
+                from .models.stock import StockMovement, Shipment, ShipmentItem
+                from .models.settings import CompanySettings
+                from .models.integration import IntegrationSyncLog
+                
+                # Get list of expected tables from SQLAlchemy models
+                expected_tables = set(db.metadata.tables.keys())
+                existing_tables = set(has_tables)
+                
+                # Find missing tables
+                missing_tables = expected_tables - existing_tables
+                
+                if missing_tables:
+                    app.logger.info(f"Found {len(missing_tables)} missing tables: {', '.join(missing_tables)}")
+                    
+                    # Try to apply migrations first
+                    try:
+                        app.logger.info("Attempting to apply database migrations...")
+                        from flask_migrate import upgrade
+                        upgrade()
+                        app.logger.info("Database migrations applied successfully")
+                    except Exception as migration_error:
+                        app.logger.warning(f"Error applying migrations, falling back to table creation: {str(migration_error)}")
+                        
+                        # Create only the missing tables if migrations failed
+                        for table_name in missing_tables:
+                            if table_name in db.metadata.tables:
+                                db.metadata.tables[table_name].create(db.engine)
+                                app.logger.info(f"Created missing table: {table_name}")
+                
+                # Check for new columns in existing tables
+                column_issues = False
+                for table_name in existing_tables:
+                    if table_name in db.metadata.tables:
+                        try:
+                            existing_columns = set(column['name'] for column in inspector.get_columns(table_name))
+                            expected_columns = set(column.name for column in db.metadata.tables[table_name].columns)
+                            missing_columns = expected_columns - existing_columns
+                            
+                            if missing_columns:
+                                app.logger.info(f"Table {table_name} has {len(missing_columns)} missing columns: {', '.join(missing_columns)}")
+                                column_issues = True
+                        except Exception as column_error:
+                            app.logger.error(f"Error checking columns for table {table_name}: {str(column_error)}")
+                
+                # If we have column issues, try to apply migrations
+                if column_issues:
+                    try:
+                        app.logger.info("Attempting to apply database migrations for column changes...")
+                        from flask_migrate import upgrade
+                        upgrade()
+                        app.logger.info("Database migrations applied successfully")
+                    except Exception as migration_error:
+                        app.logger.warning(f"Error applying migrations for columns: {str(migration_error)}")
+                        app.logger.warning("Manual intervention may be required to add missing columns")
+                
+                app.logger.info("Database schema check complete")
                 return False
         except Exception as e:
             app.logger.error(f"Error during database initialization: {str(e)}")
