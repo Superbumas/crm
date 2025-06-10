@@ -2,302 +2,759 @@
 
 {% block title %}{% if product %}Redaguoti produktą{% else %}Naujas produktas{% endif %} - VakaSport CRM{% endblock %}
 
-{% block content %}
-<div class="flex flex-col md:flex-row justify-between items-start mb-6">
-    <div>
-        <h1 class="text-2xl font-bold mb-2">{% if product %}Redaguoti produktą{% else %}Naujas produktas{% endif %}</h1>
-        <div class="text-sm breadcrumbs">
-            <ul>
-                <li><a href="{{ url_for('main.dashboard') }}">Skydelis</a></li>
-                <li><a href="{{ url_for('main.products') }}">Produktai</a></li>
-                <li>{% if product %}{{ product.name }}{% else %}Naujas{% endif %}</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<form id="product-form" 
-      hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
-      hx-trigger="submit" 
-      hx-target="#form-response"
-      hx-indicator="#form-spinner"
-      class="space-y-6">
+{% block styles %}
+<style>
+    [x-cloak] { display: none !important; }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Pagrindinė informacija</h2>
-            
-            <!-- Basic Product Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Pavadinimas</span>
-                    </label>
-                    <input type="text" name="name" value="{{ product.name if product else '' }}" 
-                           required class="input input-bordered w-full" 
-                           placeholder="Produkto pavadinimas" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">SKU</span>
-                    </label>
-                    <input type="text" name="sku" value="{{ product.sku if product else '' }}" 
-                           required class="input input-bordered w-full" 
-                           placeholder="Unikalus produkto kodas" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Kategorija</span>
-                    </label>
-                    <select name="category_id" class="select select-bordered w-full">
-                        <option value="" {% if not product or not product.category_id %}selected{% endif %}>Pasirinkite...</option>
-                        {% for category in product_categories %}
-                        <option value="{{ category.id }}" {% if product and product.category_id == category.id %}selected{% endif %}>
-                            {{ category.full_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <div class="flex justify-end mt-2">
-                        <a href="{{ url_for('main.product_categories') }}" class="text-sm link link-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Tvarkyti kategorijas
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Barkodas (EAN)</span>
-                    </label>
-                    <input type="text" name="barcode" value="{{ product.barcode if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           placeholder="Produkto barkodas" />
-                </div>
-            </div>
-        </div>
-    </div>
+    /* Enhanced form styling */
+    .form-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Aprašymas</h2>
-            
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text">Produkto aprašymas (HTML)</span>
-                </label>
-                <textarea name="description_html" class="textarea textarea-bordered h-32" 
-                          placeholder="Išsamus produkto aprašymas su HTML">{{ product.description_html if product else '' }}</textarea>
-            </div>
-        </div>
-    </div>
+    .form-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Kainos ir likučiai</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Galutinė kaina (EUR)</span>
-                    </label>
-                    <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
-                           required class="input input-bordered w-full" 
-                           step="0.01" min="0" 
-                           placeholder="0.00" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Sena kaina (EUR)</span>
-                    </label>
-                    <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           step="0.01" min="0" 
-                           placeholder="0.00" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Kiekis sandėlyje</span>
-                    </label>
-                    <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
-                           required class="input input-bordered w-full" 
-                           min="0" step="1" 
-                           placeholder="0" />
-                </div>
-            </div>
-        </div>
-    </div>
+    /* Enhanced preview styling */
+    .description-preview {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        min-height: 120px;
+        transition: all 0.2s ease;
+    }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Papildoma informacija</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Pristatymo trukmė (d.)</span>
-                    </label>
-                    <input type="number" name="delivery_days" value="{{ product.delivery_days if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           min="0" step="1" 
-                           placeholder="0" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Garantija (mėn.)</span>
-                    </label>
-                    <input type="number" name="warranty_months" value="{{ product.warranty_months if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           min="0" step="1" 
-                           placeholder="0" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Gamintojas</span>
-                    </label>
-                    <input type="text" name="manufacturer" value="{{ product.manufacturer if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           placeholder="Gamintojas" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Modelis</span>
-                    </label>
-                    <input type="text" name="model" value="{{ product.model if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           placeholder="Modelis" />
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Svoris (kg)</span>
-                    </label>
-                    <input type="number" name="weight_kg" value="{{ product.weight_kg if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           step="0.001" min="0" 
-                           placeholder="0.000" />
-                </div>
-            </div>
-        </div>
-    </div>
+    .description-preview.has-content {
+        background: white;
+        border-color: #3b82f6;
+        border-style: solid;
+    }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Nuotraukos</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Pagrindinė nuotrauka</span>
-                    </label>
-                    <input type="text" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
-                           class="input input-bordered w-full" 
-                           placeholder="https://example.com/image.jpg" />
-                    
-                    {% if product and product.main_image_url %}
-                    <div class="mt-2">
-                        <img src="{{ product.main_image_url }}" alt="{{ product.name }}" class="max-h-32 rounded-md" />
-                    </div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Papildomos nuotraukos (JSON)</span>
-                    </label>
-                    <textarea name="extra_image_urls" class="textarea textarea-bordered" 
-                              placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
-                </div>
-            </div>
-        </div>
-    </div>
+    .description-preview:empty::before {
+        content: "HTML aprašymas bus rodomas čia...";
+        color: #9ca3af;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 80px;
+    }
     
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h2 class="card-title">Parametrai ir variantai</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Parametrai (JSON)</span>
-                    </label>
-                    <textarea name="parameters" class="textarea textarea-bordered h-32" 
-                              placeholder='{"CPU": "Intel i5", "RAM": "8GB", "Storage": "256GB SSD"}'>{{ product.parameters|tojson if product and product.parameters else '' }}</textarea>
-                </div>
-                
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Variantai (JSON)</span>
-                    </label>
-                    <textarea name="variants" class="textarea textarea-bordered h-32" 
-                              placeholder='[{"Color": "Red", "Size": "M"}, {"Color": "Blue", "Size": "L"}]'>{{ product.variants|tojson if product and product.variants else '' }}</textarea>
-                </div>
-            </div>
-        </div>
-    </div>
+    /* Code preview styling */
+    .code-preview {
+        background: #1f2937;
+        color: #f9fafb;
+        border-radius: 0.5rem;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        max-height: 200px;
+        overflow-y: auto;
+    }
     
-    <!-- Form response area for HTMX -->
-    <div id="form-response"></div>
+    .code-preview::-webkit-scrollbar {
+        width: 8px;
+    }
     
-    <div class="flex justify-between items-center">
-        <a href="{{ url_for('main.products') }}" class="btn btn-outline">Atšaukti</a>
+    .code-preview::-webkit-scrollbar-track {
+        background: #374151;
+        border-radius: 4px;
+    }
+    
+    .code-preview::-webkit-scrollbar-thumb {
+        background: #6b7280;
+        border-radius: 4px;
+    }
+    
+    .code-preview::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    /* Tab styling */
+    .tab-button {
+        transition: all 0.2s ease;
+        border-bottom: 3px solid transparent;
+    }
+    
+    .tab-button.active {
+        border-bottom-color: #3b82f6;
+        background-color: #eff6ff;
+        color: #1d4ed8;
+    }
+    
+    /* Enhanced textarea */
+    .enhanced-textarea {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        resize: vertical;
+        min-height: 150px;
+    }
+    
+    /* Enhanced input styling */
+    .form-control input:focus,
+    .form-control select:focus,
+    .form-control textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    /* Required field indicator */
+    .required::after {
+        content: " *";
+        color: #ef4444;
+        font-weight: bold;
+    }
+    
+    /* Action button styling */
+    .action-btn {
+        transition: all 0.15s ease;
+        border-radius: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Status indicators */
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    
+    .status-error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+    
+    /* Enhanced JSON editor */
+    .json-editor {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        background-color: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    .json-editor:focus {
+        background-color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Image preview styling */
+    .image-preview {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    
+    .image-preview:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .form-card {
+            margin-bottom: 1rem;
+        }
         
-        <div class="flex items-center space-x-2">
-            <div id="form-spinner" class="htmx-indicator">
-                <span class="loading loading-spinner loading-md"></span>
-                <span class="ml-2">Saugoma...</span>
+        .action-btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Enhanced Header -->
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    {% if product %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-3 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Redaguoti produktą
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Naujas produktas
+                    {% endif %}
+                </h1>
+                <div class="text-sm breadcrumbs">
+                    <ul>
+                        <li><a href="{{ url_for('main.dashboard') }}" class="text-blue-600 hover:text-blue-800">Skydelis</a></li>
+                        <li><a href="{{ url_for('main.products') }}" class="text-blue-600 hover:text-blue-800">Produktai</a></li>
+                        <li class="text-gray-500">{% if product %}{{ product.name }}{% else %}Naujas{% endif %}</li>
+                    </ul>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">
-                {% if product %}Išsaugoti{% else %}Sukurti{% endif %}
-            </button>
+            
+            {% if product %}
+            <div class="flex items-center space-x-3 mt-4 md:mt-0">
+                <a href="{{ url_for('main.product_detail', id=product.id) }}" class="action-btn btn btn-outline btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Peržiūrėti
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
-</form>
+
+    <form id="product-form" 
+          hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
+          hx-trigger="submit" 
+          hx-target="#form-response"
+          hx-indicator="#form-spinner"
+          class="space-y-8">
+        
+        <!-- Basic Information Card -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-blue-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Pagrindinė informacija</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold required">Pavadinimas</span>
+                        </label>
+                        <input type="text" name="name" value="{{ product.name if product else '' }}" 
+                               required class="input input-bordered w-full" 
+                               placeholder="Produkto pavadinimas" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold required">SKU</span>
+                        </label>
+                        <input type="text" name="sku" value="{{ product.sku if product else '' }}" 
+                               required class="input input-bordered w-full" 
+                               placeholder="Unikalus produkto kodas" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Kategorija</span>
+                        </label>
+                        <select name="category_id" class="select select-bordered w-full">
+                            <option value="" {% if not product or not product.category_id %}selected{% endif %}>Pasirinkite...</option>
+                            {% for category in product_categories %}
+                            <option value="{{ category.id }}" {% if product and product.category_id == category.id %}selected{% endif %}>
+                                {{ category.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="flex justify-end mt-2">
+                            <a href="{{ url_for('main.product_categories') }}" class="text-sm link link-primary flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Tvarkyti kategorijas
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Barkodas (EAN)</span>
+                        </label>
+                        <input type="text" name="barcode" value="{{ product.barcode if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               placeholder="Produkto barkodas" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Description Card with Preview -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-green-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Produkto aprašymas</h2>
+                </div>
+                
+                <!-- Tab Navigation -->
+                <div class="tabs tabs-boxed mb-6">
+                    <button type="button" class="tab tab-button active" onclick="switchTab('editor')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Redaktorius
+                    </button>
+                    <button type="button" class="tab tab-button" onclick="switchTab('preview')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Peržiūra
+                    </button>
+                    <button type="button" class="tab tab-button" onclick="switchTab('code')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        HTML kodas
+                    </button>
+                </div>
+                
+                <!-- Editor Tab -->
+                <div id="editor-tab" class="tab-content">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">HTML aprašymas</span>
+                            <span class="label-text-alt text-gray-500">Naudokite HTML žymas formatavimui</span>
+                        </label>
+                        <textarea id="description-textarea" name="description_html" 
+                                class="textarea textarea-bordered enhanced-textarea w-full" 
+                                placeholder="<p>Išsamus produkto aprašymas su HTML žymomis...</p>
+<ul>
+    <li>Savybė 1</li>
+    <li>Savybė 2</li>
+</ul>"
+                                oninput="updatePreview()">{{ product.description_html if product else '' }}</textarea>
+                        <div class="label">
+                            <span class="label-text-alt text-gray-500">
+                                Palaikomi HTML elementai: p, ul, ol, li, strong, em, br, h1-h6, a, span
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview Tab -->
+                <div id="preview-tab" class="tab-content hidden">
+                    <div class="mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Peržiūra</span>
+                            <span class="label-text-alt text-gray-500">Kaip aprašymas atrodys klientams</span>
+                        </label>
+                    </div>
+                    <div id="description-preview" class="description-preview prose max-w-none">
+                        <!-- Preview content will be updated here -->
+                    </div>
+                </div>
+                
+                <!-- Code Tab -->
+                <div id="code-tab" class="tab-content hidden">
+                    <div class="mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">HTML kodas</span>
+                            <span class="label-text-alt text-gray-500">Formatuotas HTML kodas</span>
+                        </label>
+                    </div>
+                    <div class="code-preview p-4">
+                        <pre id="html-code-display"><code></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pricing and Stock Card -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-yellow-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Kainos ir likučiai</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold required">Galutinė kaina (EUR)</span>
+                        </label>
+                        <div class="relative">
+                            <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
+                                   required class="input input-bordered w-full pl-8" 
+                                   step="0.01" min="0" 
+                                   placeholder="0.00" />
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Sena kaina (EUR)</span>
+                        </label>
+                        <div class="relative">
+                            <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
+                                   class="input input-bordered w-full pl-8" 
+                                   step="0.01" min="0" 
+                                   placeholder="0.00" />
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold required">Kiekis sandėlyje</span>
+                        </label>
+                        <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
+                               required class="input input-bordered w-full" 
+                               min="0" step="1" 
+                               placeholder="0" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Information Card -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-purple-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Papildoma informacija</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Pristatymo trukmė (d.)</span>
+                        </label>
+                        <input type="number" name="delivery_days" value="{{ product.delivery_days if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               min="0" step="1" 
+                               placeholder="0" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Garantija (mėn.)</span>
+                        </label>
+                        <input type="number" name="warranty_months" value="{{ product.warranty_months if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               min="0" step="1" 
+                               placeholder="0" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Svoris (kg)</span>
+                        </label>
+                        <input type="number" name="weight_kg" value="{{ product.weight_kg if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               step="0.001" min="0" 
+                               placeholder="0.000" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Gamintojas</span>
+                        </label>
+                        <input type="text" name="manufacturer" value="{{ product.manufacturer if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               placeholder="Gamintojas" />
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Modelis</span>
+                        </label>
+                        <input type="text" name="model" value="{{ product.model if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               placeholder="Modelis" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Images Card -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-indigo-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Nuotraukos</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Pagrindinė nuotrauka</span>
+                        </label>
+                        <input type="url" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
+                               class="input input-bordered w-full" 
+                               placeholder="https://example.com/image.jpg" />
+                        
+                        {% if product and product.main_image_url %}
+                        <div class="mt-4">
+                            <div class="image-preview max-w-xs">
+                                <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
+                                     class="w-full h-32 object-cover rounded-lg" 
+                                     onerror="this.style.display='none'" />
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Papildomos nuotraukos (JSON)</span>
+                            <span class="label-text-alt text-gray-500">Nuorodos į papildomas nuotraukas</span>
+                        </label>
+                        <textarea name="extra_image_urls" class="json-editor" 
+                                  placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parameters and Variants Card -->
+        <div class="form-card card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center mb-6">
+                    <div class="bg-red-100 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Parametrai ir variantai</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Parametrai (JSON)</span>
+                            <span class="label-text-alt text-gray-500">Produkto charakteristikos</span>
+                        </label>
+                        <textarea name="parameters" class="json-editor" 
+                                  placeholder='{"CPU": "Intel i5", "RAM": "8GB", "Storage": "256GB SSD"}'>{{ product.parameters|tojson if product and product.parameters else '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Variantai (JSON)</span>
+                            <span class="label-text-alt text-gray-500">Produkto variantai (spalvos, dydžiai)</span>
+                        </label>
+                        <textarea name="variants" class="json-editor" 
+                                  placeholder='[{"Color": "Red", "Size": "M"}, {"Color": "Blue", "Size": "L"}]'>{{ product.variants|tojson if product and product.variants else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Response Area -->
+        <div id="form-response" class="mb-6"></div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <a href="{{ url_for('main.products') }}" class="action-btn btn btn-outline btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Atšaukti
+            </a>
+            
+            <div class="flex items-center space-x-4">
+                <div id="form-spinner" class="htmx-indicator flex items-center">
+                    <span class="loading loading-spinner loading-md mr-2"></span>
+                    <span class="text-gray-600">Saugoma...</span>
+                </div>
+                <button type="submit" class="action-btn btn btn-primary btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize preview on page load
+        updatePreview();
+        
         // Listen for successful form submission
         document.body.addEventListener('htmx:afterSwap', function(evt) {
             if (evt.detail.target.id === 'form-response' && !evt.detail.xhr.response.includes('alert-error')) {
-                // After 3 seconds, redirect to products page if success
+                // Show success message and redirect after 3 seconds
                 setTimeout(function() {
                     window.location.href = "{{ url_for('main.products') }}";
                 }, 3000);
             }
         });
+    });
+    
+    // Tab switching functionality
+    function switchTab(activeTab) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
         
-        // Auto-save functionality for fields that should auto-save
-        const autoSaveFields = document.querySelectorAll('[data-autosave="true"]');
-        autoSaveFields.forEach(field => {
-            field.addEventListener('change', function() {
-                const fieldName = this.name;
-                const fieldValue = this.value;
-                const fieldId = this.id;
-                
-                // Create small form with just this field
-                const formData = new FormData();
-                formData.append(fieldName, fieldValue);
-                formData.append('_autosave', 'true');
-                
-                // Send HTMX request
-                htmx.ajax('POST', "{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}", {
-                    target: '#' + fieldId + '-response',
-                    swap: 'innerHTML',
-                    values: formData
-                });
-            });
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        document.getElementById(activeTab + '-tab').classList.remove('hidden');
+        
+        // Update preview and code when switching tabs
+        if (activeTab === 'preview' || activeTab === 'code') {
+            updatePreview();
+        }
+    }
+    
+    // HTML description preview functionality
+    function updatePreview() {
+        const textarea = document.getElementById('description-textarea');
+        const preview = document.getElementById('description-preview');
+        const codeDisplay = document.getElementById('html-code-display');
+        
+        if (!textarea || !preview || !codeDisplay) return;
+        
+        const htmlContent = textarea.value.trim();
+        
+        // Update preview
+        if (htmlContent) {
+            preview.innerHTML = htmlContent;
+            preview.classList.add('has-content');
+        } else {
+            preview.innerHTML = '';
+            preview.classList.remove('has-content');
+        }
+        
+        // Update code display with formatting
+        if (htmlContent) {
+            codeDisplay.textContent = formatHTML(htmlContent);
+        } else {
+            codeDisplay.textContent = '<!-- HTML kodas bus rodomas čia... -->';
+        }
+    }
+    
+    // Simple HTML formatter
+    function formatHTML(html) {
+        let formatted = html;
+        let indent = 0;
+        const indentSize = 2;
+        
+        // Add line breaks before opening tags
+        formatted = formatted.replace(/</g, '\n<');
+        
+        // Add line breaks after closing tags
+        formatted = formatted.replace(/>/g, '>\n');
+        
+        // Split into lines and apply indentation
+        const lines = formatted.split('\n').filter(line => line.trim());
+        const indentedLines = [];
+        
+        for (let line of lines) {
+            const trimmedLine = line.trim();
+            
+            // Decrease indent for closing tags
+            if (trimmedLine.startsWith('</')) {
+                indent = Math.max(0, indent - indentSize);
+            }
+            
+            // Add indented line
+            if (trimmedLine) {
+                indentedLines.push(' '.repeat(indent) + trimmedLine);
+            }
+            
+            // Increase indent for opening tags (but not self-closing)
+            if (trimmedLine.startsWith('<') && !trimmedLine.startsWith('</') && !trimmedLine.endsWith('/>')) {
+                const tagName = trimmedLine.match(/<(\w+)/);
+                if (tagName && !['br', 'hr', 'img', 'input', 'meta', 'link'].includes(tagName[1])) {
+                    indent += indentSize;
+                }
+            }
+        }
+        
+        return indentedLines.join('\n');
+    }
+    
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.max(120, this.scrollHeight) + 'px';
+        });
+    });
+    
+    // JSON validation for JSON fields
+    document.querySelectorAll('.json-editor').forEach(textarea => {
+        textarea.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && value !== '') {
+                try {
+                    JSON.parse(value);
+                    this.classList.remove('border-red-500');
+                    this.classList.add('border-green-500');
+                } catch (e) {
+                    this.classList.remove('border-green-500');
+                    this.classList.add('border-red-500');
+                }
+            } else {
+                this.classList.remove('border-red-500', 'border-green-500');
+            }
         });
     });
 </script>
