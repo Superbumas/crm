@@ -251,70 +251,121 @@
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
     }
     
-    .wysiwyg-content h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 1rem 0 0.5rem 0;
-        color: #111827;
+    /* Force styles to work in contenteditable */
+    .wysiwyg-content h1,
+    .wysiwyg-content [style*="font-size: 2rem"] {
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+        margin: 1rem 0 0.5rem 0 !important;
+        color: #111827 !important;
+        display: block !important;
     }
     
-    .wysiwyg-content h2 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 1rem 0 0.5rem 0;
-        color: #111827;
+    .wysiwyg-content h2,
+    .wysiwyg-content [style*="font-size: 1.5rem"] {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        margin: 1rem 0 0.5rem 0 !important;
+        color: #111827 !important;
+        display: block !important;
     }
     
-    .wysiwyg-content h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 1rem 0 0.5rem 0;
-        color: #111827;
+    .wysiwyg-content h3,
+    .wysiwyg-content [style*="font-size: 1.25rem"] {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin: 1rem 0 0.5rem 0 !important;
+        color: #111827 !important;
+        display: block !important;
     }
     
     .wysiwyg-content p {
-        margin: 0.5rem 0;
+        margin: 0.5rem 0 !important;
+        display: block !important;
     }
     
     .wysiwyg-content ul, .wysiwyg-content ol {
-        margin: 0.5rem 0;
-        padding-left: 1.5rem;
+        margin: 0.5rem 0 !important;
+        padding-left: 1.5rem !important;
+        display: block !important;
     }
     
     .wysiwyg-content li {
-        margin: 0.25rem 0;
+        margin: 0.25rem 0 !important;
+        display: list-item !important;
+    }
+    
+    .wysiwyg-content ul li {
+        list-style-type: disc !important;
+    }
+    
+    .wysiwyg-content ol li {
+        list-style-type: decimal !important;
+    }
+    
+    .wysiwyg-content strong,
+    .wysiwyg-content b {
+        font-weight: 700 !important;
+    }
+    
+    .wysiwyg-content em,
+    .wysiwyg-content i {
+        font-style: italic !important;
+    }
+    
+    .wysiwyg-content u {
+        text-decoration: underline !important;
     }
     
     .wysiwyg-content a {
-        color: #3b82f6;
-        text-decoration: underline;
+        color: #3b82f6 !important;
+        text-decoration: underline !important;
     }
     
     .wysiwyg-content a:hover {
-        color: #1d4ed8;
+        color: #1d4ed8 !important;
     }
     
     .wysiwyg-content table {
-        border-collapse: collapse;
-        width: 100%;
-        margin: 1rem 0;
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin: 1rem 0 !important;
+        display: table !important;
     }
     
     .wysiwyg-content table td, .wysiwyg-content table th {
-        border: 1px solid #d1d5db;
-        padding: 0.5rem;
-        text-align: left;
+        border: 1px solid #d1d5db !important;
+        padding: 0.5rem !important;
+        text-align: left !important;
+        display: table-cell !important;
     }
     
     .wysiwyg-content table th {
-        background: #f9fafb;
-        font-weight: 600;
+        background: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+    
+    .wysiwyg-content table tr {
+        display: table-row !important;
     }
     
     .wysiwyg-content:empty::before {
         content: "Pradėkite rašyti produkto aprašymą...";
         color: #9ca3af;
         font-style: italic;
+    }
+    
+    /* Text alignment classes */
+    .wysiwyg-content [style*="text-align: left"] {
+        text-align: left !important;
+    }
+    
+    .wysiwyg-content [style*="text-align: center"] {
+        text-align: center !important;
+    }
+    
+    .wysiwyg-content [style*="text-align: right"] {
+        text-align: right !important;
     }
     
     /* Responsive improvements */
@@ -624,57 +675,7 @@
             </div>
         </div>
                 
-                <!-- Pricing and Stock Card -->
-                <div class="form-card card bg-base-100 shadow-xl">
-                    <div class="card-body">
-                        <div class="flex items-center mb-6">
-                            <div class="bg-yellow-100 rounded-full p-3 mr-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                </svg>
-                            </div>
-                            <h2 class="text-xl font-bold text-gray-900">Kainos ir likučiai</h2>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-semibold required">Galutinė kaina (EUR)</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
-                                           required class="input input-bordered w-full pl-8" 
-                                           step="0.01" min="0" 
-                                           placeholder="0.00" />
-                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-semibold">Sena kaina (EUR)</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
-                                           class="input input-bordered w-full pl-8" 
-                                           step="0.01" min="0" 
-                                           placeholder="0.00" />
-                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-semibold required">Kiekis sandėlyje</span>
-                                </label>
-                                <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
-                                       required class="input input-bordered w-full" 
-                                       min="0" step="1" 
-                                       placeholder="0" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
         
         <!-- Additional Information Card -->
         <div class="form-card card bg-base-100 shadow-xl">
@@ -740,49 +741,7 @@
             </div>
         </div>
         
-        <!-- Images Card -->
-        <div class="form-card card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <div class="flex items-center mb-6">
-                    <div class="bg-indigo-100 rounded-full p-3 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-900">Nuotraukos</h2>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Pagrindinė nuotrauka</span>
-                        </label>
-                        <input type="url" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
-                               class="input input-bordered w-full" 
-                               placeholder="https://example.com/image.jpg" />
-                        
-                        {% if product and product.main_image_url %}
-                        <div class="mt-4">
-                            <div class="image-preview max-w-xs">
-                                <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
-                                     class="w-full h-32 object-cover rounded-lg" 
-                                     onerror="this.style.display='none'" />
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Papildomos nuotraukos (JSON)</span>
-                            <span class="label-text-alt text-gray-500">Nuorodos į papildomas nuotraukas</span>
-                        </label>
-                        <textarea name="extra_image_urls" class="json-editor" 
-                                  placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
+
         
         <!-- Parameters and Variants Card -->
         <div class="form-card card bg-base-100 shadow-xl">
@@ -871,39 +830,113 @@
                     </div>
                 </div>
                 
-                <!-- HTML Editor Help -->
-                <div class="card bg-gradient-to-br from-green-50 to-blue-50 shadow-xl">
+                <!-- Pricing and Stock Card -->
+                <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
                         <div class="flex items-center mb-4">
-                            <div class="bg-green-100 rounded-full p-2 mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <div class="bg-yellow-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-semibold">WYSIWYG pagalba</h3>
+                            <h3 class="text-lg font-semibold">Kainos ir likučiai</h3>
                         </div>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex items-start space-x-2">
-                                <span class="font-semibold text-blue-600">B</span>
-                                <span>Paryškinti tekstą</span>
+                        
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">Galutinė kaina (EUR)</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
+                                           required class="input input-bordered w-full pl-8" 
+                                           step="0.01" min="0" 
+                                           placeholder="0.00" />
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                                </div>
                             </div>
-                            <div class="flex items-start space-x-2">
-                                <span class="font-semibold italic text-blue-600">I</span>
-                                <span>Pakreiptas tekstas</span>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold">Sena kaina (EUR)</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
+                                           class="input input-bordered w-full pl-8" 
+                                           step="0.01" min="0" 
+                                           placeholder="0.00" />
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                                </div>
                             </div>
-                            <div class="flex items-start space-x-2">
-                                <span class="font-semibold underline text-blue-600">U</span>
-                                <span>Pabrauktas tekstas</span>
-                            </div>
-                            <div class="flex items-start space-x-2">
-                                <span class="text-blue-600">🔗</span>
-                                <span>Įterpti nuorodą</span>
-                            </div>
-                            <div class="flex items-start space-x-2">
-                                <span class="text-blue-600">⚏</span>
-                                <span>Įterpti lentelę</span>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">Kiekis sandėlyje</span>
+                                </label>
+                                <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
+                                       required class="input input-bordered w-full" 
+                                       min="0" step="1" 
+                                       placeholder="0" />
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Product Photos -->
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-indigo-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold">Produkto nuotraukos</h3>
+                        </div>
+                        
+                        <!-- Main Image -->
+                        <div class="form-control mb-4">
+                            <label class="label">
+                                <span class="label-text font-semibold">Pagrindinė nuotrauka</span>
+                            </label>
+                            <input type="url" name="main_image_url" value="{{ product.main_image_url if product else '' }}" 
+                                   class="input input-bordered w-full text-sm" 
+                                   placeholder="https://example.com/image.jpg" />
+                        </div>
+                        
+                        {% if product and product.main_image_url %}
+                        <div class="mb-4">
+                            <div class="image-preview">
+                                <img src="{{ product.main_image_url }}" alt="{{ product.name }}" 
+                                     class="w-full h-32 object-cover rounded-lg border-2 border-gray-200" 
+                                     onerror="this.style.display='none'" />
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Additional Images -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-semibold">Papildomos nuotraukos (JSON)</span>
+                            </label>
+                            <textarea name="extra_image_urls" class="textarea textarea-bordered w-full text-xs font-mono" 
+                                      rows="3"
+                                      placeholder='["https://example.com/image1.jpg", "https://example.com/image2.jpg"]'>{{ product.extra_image_urls|tojson if product and product.extra_image_urls else '' }}</textarea>
+                        </div>
+                        
+                        {% if product and product.extra_image_urls %}
+                        <div class="mt-4">
+                            <div class="grid grid-cols-2 gap-2">
+                                {% for image_url in product.extra_image_urls %}
+                                <div class="image-preview">
+                                    <img src="{{ image_url }}" alt="Papildoma nuotrauka" 
+                                         class="w-full h-20 object-cover rounded border border-gray-200" 
+                                         onerror="this.style.display='none'" />
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -999,6 +1032,10 @@
         const hiddenTextarea = document.getElementById('description-textarea');
         const htmlTextarea = document.getElementById('html-textarea');
         
+        // Enable design mode for better styling support
+        wysiwygEditor.setAttribute('contenteditable', 'true');
+        wysiwygEditor.style.outline = 'none';
+        
         // Load initial content
         if (hiddenTextarea.value) {
             wysiwygEditor.innerHTML = hiddenTextarea.value;
@@ -1010,12 +1047,52 @@
         // Handle toolbar button states
         wysiwygEditor.addEventListener('keyup', updateToolbarStates);
         wysiwygEditor.addEventListener('mouseup', updateToolbarStates);
+        wysiwygEditor.addEventListener('focus', updateToolbarStates);
+        
+        // Prevent default styling and use our custom styles
+        wysiwygEditor.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+            updateHtmlFromWysiwyg();
+        });
+        
+        // Handle enter key to create proper paragraphs
+        wysiwygEditor.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.execCommand('insertHTML', false, '<p><br></p>');
+                updateHtmlFromWysiwyg();
+            }
+        });
     }
     
     // Execute WYSIWYG commands
     function execCommand(command, value = null) {
-        document.execCommand(command, false, value);
-        document.getElementById('wysiwyg-editor').focus();
+        const editor = document.getElementById('wysiwyg-editor');
+        editor.focus();
+        
+        // Handle format block differently
+        if (command === 'formatBlock' && value) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const selectedText = range.toString();
+                
+                if (selectedText) {
+                    // Wrap selected text in the chosen tag
+                    const tagName = value.replace(/[<>]/g, '');
+                    document.execCommand('insertHTML', false, `<${tagName}>${selectedText}</${tagName}>`);
+                } else {
+                    // Insert empty tag at cursor
+                    const tagName = value.replace(/[<>]/g, '');
+                    document.execCommand('insertHTML', false, `<${tagName}><br></${tagName}>`);
+                }
+            }
+        } else {
+            document.execCommand(command, false, value);
+        }
+        
         updateHtmlFromWysiwyg();
         updateToolbarStates();
     }
