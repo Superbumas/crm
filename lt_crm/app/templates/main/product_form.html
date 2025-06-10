@@ -186,6 +186,137 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
+    /* WYSIWYG Editor Styles */
+    .wysiwyg-toolbar {
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    }
+    
+    .toolbar-btn {
+        padding: 0.5rem;
+        border: 1px solid transparent;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .toolbar-btn:hover {
+        background: #e5e7eb;
+        border-color: #d1d5db;
+    }
+    
+    .toolbar-btn.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #2563eb;
+    }
+    
+    .toolbar-select {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        background: white;
+        color: #374151;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .toolbar-select:hover {
+        border-color: #9ca3af;
+    }
+    
+    .toolbar-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .wysiwyg-content {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #374151;
+        outline: none;
+        overflow-y: auto;
+    }
+    
+    .wysiwyg-content:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    .wysiwyg-content h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 1rem 0 0.5rem 0;
+        color: #111827;
+    }
+    
+    .wysiwyg-content h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 1rem 0 0.5rem 0;
+        color: #111827;
+    }
+    
+    .wysiwyg-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 1rem 0 0.5rem 0;
+        color: #111827;
+    }
+    
+    .wysiwyg-content p {
+        margin: 0.5rem 0;
+    }
+    
+    .wysiwyg-content ul, .wysiwyg-content ol {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+    }
+    
+    .wysiwyg-content li {
+        margin: 0.25rem 0;
+    }
+    
+    .wysiwyg-content a {
+        color: #3b82f6;
+        text-decoration: underline;
+    }
+    
+    .wysiwyg-content a:hover {
+        color: #1d4ed8;
+    }
+    
+    .wysiwyg-content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+    }
+    
+    .wysiwyg-content table td, .wysiwyg-content table th {
+        border: 1px solid #d1d5db;
+        padding: 0.5rem;
+        text-align: left;
+    }
+    
+    .wysiwyg-content table th {
+        background: #f9fafb;
+        font-weight: 600;
+    }
+    
+    .wysiwyg-content:empty::before {
+        content: "Pradėkite rašyti produkto aprašymą...";
+        color: #9ca3af;
+        font-style: italic;
+    }
+    
     /* Responsive improvements */
     @media (max-width: 768px) {
         .form-card {
@@ -195,6 +326,27 @@
         .action-btn {
             width: 100%;
             margin-bottom: 0.5rem;
+        }
+        
+        .wysiwyg-toolbar {
+            padding: 0.75rem;
+        }
+        
+        .wysiwyg-toolbar .flex {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .wysiwyg-toolbar > div > div {
+            border-right: none;
+            padding-right: 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .wysiwyg-toolbar > div > div:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
     }
 </style>
@@ -242,80 +394,74 @@
         </div>
     </div>
 
-    <form id="product-form" 
-          hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
-          hx-trigger="submit" 
-          hx-target="#form-response"
-          hx-indicator="#form-spinner"
-          class="space-y-8">
-        
-        <!-- Basic Information Card -->
-        <div class="form-card card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <div class="flex items-center mb-6">
-                    <div class="bg-blue-100 rounded-full p-3 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-900">Pagrindinė informacija</h2>
-                </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <!-- Left Column - Main Form -->
+        <div class="xl:col-span-2">
+            <form id="product-form" 
+                  hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
+                  hx-trigger="submit" 
+                  hx-target="#form-response"
+                  hx-indicator="#form-spinner"
+                  class="space-y-6">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold required">Pavadinimas</span>
-                        </label>
-                        <input type="text" name="name" value="{{ product.name if product else '' }}" 
-                               required class="input input-bordered w-full" 
-                               placeholder="Produkto pavadinimas" />
-                    </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold required">SKU</span>
-                        </label>
-                        <input type="text" name="sku" value="{{ product.sku if product else '' }}" 
-                               required class="input input-bordered w-full" 
-                               placeholder="Unikalus produkto kodas" />
-                    </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Kategorija</span>
-                        </label>
-                        <select name="category_id" class="select select-bordered w-full">
-                            <option value="" {% if not product or not product.category_id %}selected{% endif %}>Pasirinkite...</option>
-                            {% for category in product_categories %}
-                            <option value="{{ category.id }}" {% if product and product.category_id == category.id %}selected{% endif %}>
-                                {{ category.full_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="flex justify-end mt-2">
-                            <a href="{{ url_for('main.product_categories') }}" class="text-sm link link-primary flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <!-- Basic Information Card -->
+                <div class="form-card card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-blue-100 rounded-full p-3 mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                Tvarkyti kategorijas
-                            </a>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-900">Pagrindinė informacija</h2>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">Pavadinimas</span>
+                                </label>
+                                <input type="text" name="name" value="{{ product.name if product else '' }}" 
+                                       required class="input input-bordered w-full" 
+                                       placeholder="Produkto pavadinimas" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">SKU</span>
+                                </label>
+                                <input type="text" name="sku" value="{{ product.sku if product else '' }}" 
+                                       required class="input input-bordered w-full" 
+                                       placeholder="Unikalus produkto kodas" />
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold">Kategorija</span>
+                                </label>
+                                <select name="category_id" class="select select-bordered w-full">
+                                    <option value="" {% if not product or not product.category_id %}selected{% endif %}>Pasirinkite...</option>
+                                    {% for category in product_categories %}
+                                    <option value="{{ category.id }}" {% if product and product.category_id == category.id %}selected{% endif %}>
+                                        {{ category.full_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold">Barkodas (EAN)</span>
+                                </label>
+                                <input type="text" name="barcode" value="{{ product.barcode if product else '' }}" 
+                                       class="input input-bordered w-full" 
+                                       placeholder="Produkto barkodas" />
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Barkodas (EAN)</span>
-                        </label>
-                        <input type="text" name="barcode" value="{{ product.barcode if product else '' }}" 
-                               class="input input-bordered w-full" 
-                               placeholder="Produkto barkodas" />
-                    </div>
                 </div>
-            </div>
-        </div>
         
-        <!-- Description Card with Preview -->
+        <!-- Custom WYSIWYG Description Editor -->
         <div class="form-card card bg-base-100 shadow-xl">
             <div class="card-body">
                 <div class="flex items-center mb-6">
@@ -324,16 +470,104 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-900">Produkto aprašymas</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Produkto aprašymas</h2>
+                </div>
+                
+                <!-- WYSIWYG Editor Toolbar -->
+                <div class="wysiwyg-toolbar mb-4 p-3 bg-gray-50 rounded-lg border">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Text Formatting -->
+                        <div class="flex items-center gap-1 border-r pr-2">
+                            <button type="button" class="toolbar-btn" onclick="execCommand('bold')" title="Paryškinti">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6 4v12h4.5c2.485 0 4.5-2.015 4.5-4.5S12.985 7 10.5 7H9v2h1.5c.827 0 1.5.673 1.5 1.5S11.327 12 10.5 12H8V6h2.5c.827 0 1.5.673 1.5 1.5S11.327 9 10.5 9H6z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="execCommand('italic')" title="Pasvirti">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8 1l-1 18h2l1-18H8zm4 2v2h2V3h-2z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="execCommand('underline')" title="Pabraukti">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6 3v8c0 2.21 1.79 4 4 4s4-1.79 4-4V3H12v8c0 1.1-.9 2-2 2s-2-.9-2-2V3H6zm-2 14h12v2H4v-2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Headings -->
+                        <div class="flex items-center gap-1 border-r pr-2">
+                            <select class="toolbar-select" onchange="execCommand('formatBlock', this.value)">
+                                <option value="">Stilius</option>
+                                <option value="<h1>">Antraštė 1</option>
+                                <option value="<h2>">Antraštė 2</option>
+                                <option value="<h3>">Antraštė 3</option>
+                                <option value="<p>">Pastraipa</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Lists -->
+                        <div class="flex items-center gap-1 border-r pr-2">
+                            <button type="button" class="toolbar-btn" onclick="execCommand('insertUnorderedList')" title="Sąrašas">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 100 4 2 2 0 000-4zM6 8a2 2 0 11-4 0 2 2 0 014 0zM4 12a2 2 0 100 4 2 2 0 000-4zM6 16a2 2 0 11-4 0 2 2 0 014 0zM8 6h8v2H8V6zM8 10h8v2H8v-2zM8 14h8v2H8v-2z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="execCommand('insertOrderedList')" title="Numeruotas sąrašas">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M3 4h1v1H3V4zm0 3h1v1H3V7zm0 3h1v1H3v-1zm0 3h1v1H3v-1zM6 4h11v2H6V4zm0 4h11v2H6V8zm0 4h11v2H6v-2zm0 4h11v2H6v-2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Alignment -->
+                        <div class="flex items-center gap-1 border-r pr-2">
+                            <button type="button" class="toolbar-btn" onclick="execCommand('justifyLeft')" title="Kairėje">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 4h16v2H2V4zm0 4h10v2H2V8zm0 4h16v2H2v-2zm0 4h10v2H2v-2z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="execCommand('justifyCenter')" title="Centre">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 4h16v2H2V4zm3 4h10v2H5V8zm-3 4h16v2H2v-2zm3 4h10v2H5v-2z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="execCommand('justifyRight')" title="Dešinėje">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 4h16v2H2V4zm6 4h10v2H8V8zm-6 4h16v2H2v-2zm6 4h10v2H8v-2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Links and Media -->
+                        <div class="flex items-center gap-1">
+                            <button type="button" class="toolbar-btn" onclick="insertLink()" title="Nuoroda">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertTable()" title="Lentelė">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M3 3h14a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zm1 2v2h12V5H4zm0 4v2h4V9H4zm6 0v2h6V9h-6zm-6 4v2h4v-2H4zm6 0v2h6v-2h-6z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Tab Navigation -->
-                <div class="tabs tabs-boxed mb-6">
-                    <button type="button" class="tab tab-button active" onclick="switchTab('editor')">
+                <div class="tabs tabs-boxed mb-4">
+                    <button type="button" class="tab tab-button active" onclick="switchTab('wysiwyg')">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        Redaktorius
+                        WYSIWYG
+                    </button>
+                    <button type="button" class="tab tab-button" onclick="switchTab('html')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        HTML
                     </button>
                     <button type="button" class="tab tab-button" onclick="switchTab('preview')">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -342,34 +576,36 @@
                         </svg>
                         Peržiūra
                     </button>
-                    <button type="button" class="tab tab-button" onclick="switchTab('code')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                        HTML kodas
-                    </button>
                 </div>
                 
-                <!-- Editor Tab -->
-                <div id="editor-tab" class="tab-content">
+                <!-- WYSIWYG Editor Tab -->
+                <div id="wysiwyg-tab" class="tab-content">
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text font-semibold">HTML aprašymas</span>
-                            <span class="label-text-alt text-gray-500">Naudokite HTML žymas formatavimui</span>
+                            <span class="label-text font-semibold">Produkto aprašymas</span>
+                            <span class="label-text-alt text-gray-500">Naudokite įrankius teksto formatavimui</span>
                         </label>
-                        <textarea id="description-textarea" name="description_html" 
-                                class="textarea textarea-bordered enhanced-textarea w-full" 
-                                placeholder="<p>Išsamus produkto aprašymas su HTML žymomis...</p>
-<ul>
-    <li>Savybė 1</li>
-    <li>Savybė 2</li>
-</ul>"
-                                oninput="updatePreview()">{{ product.description_html if product else '' }}</textarea>
-                        <div class="label">
-                            <span class="label-text-alt text-gray-500">
-                                Palaikomi HTML elementai: p, ul, ol, li, strong, em, br, h1-h6, a, span
-                            </span>
+                        <div id="wysiwyg-editor" 
+                             class="wysiwyg-content border border-gray-300 rounded-lg p-4 min-h-[300px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                             contenteditable="true"
+                             oninput="updateHtmlFromWysiwyg()">
+                            <!-- Content will be loaded here -->
                         </div>
+                        <textarea id="description-textarea" name="description_html" class="hidden">{{ product.description_html if product else '' }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- HTML Editor Tab -->
+                <div id="html-tab" class="tab-content hidden">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">HTML kodas</span>
+                            <span class="label-text-alt text-gray-500">Redaguokite HTML kodą tiesiogiai</span>
+                        </label>
+                        <textarea id="html-textarea" 
+                                class="textarea textarea-bordered enhanced-textarea w-full font-mono" 
+                                placeholder="<p>Produkto aprašymas...</p>"
+                                oninput="updateWysiwygFromHtml()">{{ product.description_html if product else '' }}</textarea>
                     </div>
                 </div>
                 
@@ -385,73 +621,60 @@
                         <!-- Preview content will be updated here -->
                     </div>
                 </div>
-                
-                <!-- Code Tab -->
-                <div id="code-tab" class="tab-content hidden">
-                    <div class="mb-4">
-                        <label class="label">
-                            <span class="label-text font-semibold">HTML kodas</span>
-                            <span class="label-text-alt text-gray-500">Formatuotas HTML kodas</span>
-                        </label>
-                    </div>
-                    <div class="code-preview p-4">
-                        <pre id="html-code-display"><code></code></pre>
-                    </div>
-                </div>
             </div>
         </div>
-        
-        <!-- Pricing and Stock Card -->
-        <div class="form-card card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <div class="flex items-center mb-6">
-                    <div class="bg-yellow-100 rounded-full p-3 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-900">Kainos ir likučiai</h2>
-                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold required">Galutinė kaina (EUR)</span>
-                        </label>
-                        <div class="relative">
-                            <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
-                                   required class="input input-bordered w-full pl-8" 
-                                   step="0.01" min="0" 
-                                   placeholder="0.00" />
-                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                <!-- Pricing and Stock Card -->
+                <div class="form-card card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-yellow-100 rounded-full p-3 mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-900">Kainos ir likučiai</h2>
                         </div>
-                    </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold">Sena kaina (EUR)</span>
-                        </label>
-                        <div class="relative">
-                            <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
-                                   class="input input-bordered w-full pl-8" 
-                                   step="0.01" min="0" 
-                                   placeholder="0.00" />
-                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">Galutinė kaina (EUR)</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="price_final" value="{{ product.price_final if product else '' }}" 
+                                           required class="input input-bordered w-full pl-8" 
+                                           step="0.01" min="0" 
+                                           placeholder="0.00" />
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold">Sena kaina (EUR)</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="price_old" value="{{ product.price_old if product else '' }}" 
+                                           class="input input-bordered w-full pl-8" 
+                                           step="0.01" min="0" 
+                                           placeholder="0.00" />
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-semibold required">Kiekis sandėlyje</span>
+                                </label>
+                                <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
+                                       required class="input input-bordered w-full" 
+                                       min="0" step="1" 
+                                       placeholder="0" />
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-semibold required">Kiekis sandėlyje</span>
-                        </label>
-                        <input type="number" name="quantity" value="{{ product.quantity if product else 0 }}" 
-                               required class="input input-bordered w-full" 
-                               min="0" step="1" 
-                               placeholder="0" />
                     </div>
                 </div>
-            </div>
-        </div>
         
         <!-- Additional Information Card -->
         <div class="form-card card bg-base-100 shadow-xl">
@@ -595,32 +818,160 @@
             </div>
         </div>
         
-        <!-- Form Response Area -->
-        <div id="form-response" class="mb-6"></div>
-        
-        <!-- Action Buttons -->
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <a href="{{ url_for('main.products') }}" class="action-btn btn btn-outline btn-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Atšaukti
-            </a>
-            
-            <div class="flex items-center space-x-4">
-                <div id="form-spinner" class="htmx-indicator flex items-center">
-                    <span class="loading loading-spinner loading-md mr-2"></span>
-                    <span class="text-gray-600">Saugoma...</span>
+                <!-- Form Response Area -->
+                <div id="form-response" class="mb-6"></div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <a href="{{ url_for('main.products') }}" class="action-btn btn btn-outline btn-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Atšaukti
+                    </a>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div id="form-spinner" class="htmx-indicator flex items-center">
+                            <span class="loading loading-spinner loading-md mr-2"></span>
+                            <span class="text-gray-600">Saugoma...</span>
+                        </div>
+                        <button type="submit" class="action-btn btn btn-primary btn-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
+                        </button>
+                    </div>
                 </div>
-                <button type="submit" class="action-btn btn btn-primary btn-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
-                </button>
+            </form>
+        </div>
+        
+        <!-- Right Sidebar - Quick Actions & Help -->
+        <div class="xl:col-span-1">
+            <div class="space-y-6 sticky top-4">
+                <!-- Category Management -->
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold">Kategorijos</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">Tvarkykite produktų kategorijas</p>
+                        <a href="{{ url_for('main.product_categories') }}" class="btn btn-outline btn-sm w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Tvarkyti kategorijas
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- HTML Editor Help -->
+                <div class="card bg-gradient-to-br from-green-50 to-blue-50 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-green-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold">WYSIWYG pagalba</h3>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-start space-x-2">
+                                <span class="font-semibold text-blue-600">B</span>
+                                <span>Paryškinti tekstą</span>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="font-semibold italic text-blue-600">I</span>
+                                <span>Pakreiptas tekstas</span>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="font-semibold underline text-blue-600">U</span>
+                                <span>Pabrauktas tekstas</span>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="text-blue-600">🔗</span>
+                                <span>Įterpti nuorodą</span>
+                            </div>
+                            <div class="flex items-start space-x-2">
+                                <span class="text-blue-600">⚏</span>
+                                <span>Įterpti lentelę</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                {% if product %}
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold">Statistika</h3>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Sukurta:</span>
+                                <span class="font-medium">{{ product.created_at.strftime('%Y-%m-%d') if product.created_at else 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Paskutinis atnaujinimas:</span>
+                                <span class="font-medium">{{ product.updated_at.strftime('%Y-%m-%d') if product.updated_at else 'N/A' }}</span>
+                            </div>
+                            {% if product.category %}
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Kategorija:</span>
+                                <span class="font-medium">{{ product.category.name }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Quick Actions -->
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-orange-100 rounded-full p-2 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold">Greiti veiksmai</h3>
+                        </div>
+                        <div class="space-y-2">
+                            <a href="{{ url_for('main.products') }}" class="btn btn-outline btn-sm w-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                Visi produktai
+                            </a>
+                            {% if product %}
+                            <a href="{{ url_for('main.product_detail', id=product.id) }}" class="btn btn-outline btn-sm w-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Peržiūrėti produktą
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -628,8 +979,8 @@
 <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize preview on page load
-        updatePreview();
+        // Initialize WYSIWYG editor
+        initializeWysiwygEditor();
         
         // Listen for successful form submission
         document.body.addEventListener('htmx:afterSwap', function(evt) {
@@ -641,6 +992,76 @@
             }
         });
     });
+    
+    // Initialize WYSIWYG Editor
+    function initializeWysiwygEditor() {
+        const wysiwygEditor = document.getElementById('wysiwyg-editor');
+        const hiddenTextarea = document.getElementById('description-textarea');
+        const htmlTextarea = document.getElementById('html-textarea');
+        
+        // Load initial content
+        if (hiddenTextarea.value) {
+            wysiwygEditor.innerHTML = hiddenTextarea.value;
+            htmlTextarea.value = hiddenTextarea.value;
+        }
+        
+        updatePreview();
+        
+        // Handle toolbar button states
+        wysiwygEditor.addEventListener('keyup', updateToolbarStates);
+        wysiwygEditor.addEventListener('mouseup', updateToolbarStates);
+    }
+    
+    // Execute WYSIWYG commands
+    function execCommand(command, value = null) {
+        document.execCommand(command, false, value);
+        document.getElementById('wysiwyg-editor').focus();
+        updateHtmlFromWysiwyg();
+        updateToolbarStates();
+    }
+    
+    // Insert link
+    function insertLink() {
+        const url = prompt('Įveskite nuorodos adresą:');
+        if (url) {
+            const text = window.getSelection().toString() || 'Nuoroda';
+            execCommand('insertHTML', `<a href="${url}" target="_blank">${text}</a>`);
+        }
+    }
+    
+    // Insert table
+    function insertTable() {
+        const rows = prompt('Eilučių skaičius:', '3');
+        const cols = prompt('Stulpelių skaičius:', '3');
+        
+        if (rows && cols) {
+            let table = '<table>';
+            for (let i = 0; i < parseInt(rows); i++) {
+                table += '<tr>';
+                for (let j = 0; j < parseInt(cols); j++) {
+                    table += i === 0 ? '<th>Antraštė</th>' : '<td>Turinys</td>';
+                }
+                table += '</tr>';
+            }
+            table += '</table>';
+            execCommand('insertHTML', table);
+        }
+    }
+    
+    // Update toolbar button states
+    function updateToolbarStates() {
+        const commands = ['bold', 'italic', 'underline'];
+        commands.forEach(cmd => {
+            const btn = document.querySelector(`[onclick="execCommand('${cmd}')"]`);
+            if (btn) {
+                if (document.queryCommandState(cmd)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        });
+    }
     
     // Tab switching functionality
     function switchTab(activeTab) {
@@ -657,21 +1078,87 @@
         
         document.getElementById(activeTab + '-tab').classList.remove('hidden');
         
-        // Update preview and code when switching tabs
-        if (activeTab === 'preview' || activeTab === 'code') {
+        // Sync content between editors when switching
+        if (activeTab === 'html') {
+            syncWysiwygToHtml();
+        } else if (activeTab === 'wysiwyg') {
+            syncHtmlToWysiwyg();
+        } else if (activeTab === 'preview') {
             updatePreview();
         }
     }
     
+    // Update hidden textarea from WYSIWYG
+    function updateHtmlFromWysiwyg() {
+        const wysiwygEditor = document.getElementById('wysiwyg-editor');
+        const hiddenTextarea = document.getElementById('description-textarea');
+        const htmlTextarea = document.getElementById('html-textarea');
+        
+        if (wysiwygEditor && hiddenTextarea) {
+            const cleanedHtml = cleanHtml(wysiwygEditor.innerHTML);
+            hiddenTextarea.value = cleanedHtml;
+            htmlTextarea.value = cleanedHtml;
+            updatePreview();
+        }
+    }
+    
+    // Update WYSIWYG from HTML textarea
+    function updateWysiwygFromHtml() {
+        const htmlTextarea = document.getElementById('html-textarea');
+        const wysiwygEditor = document.getElementById('wysiwyg-editor');
+        const hiddenTextarea = document.getElementById('description-textarea');
+        
+        if (htmlTextarea && wysiwygEditor) {
+            wysiwygEditor.innerHTML = htmlTextarea.value;
+            hiddenTextarea.value = htmlTextarea.value;
+            updatePreview();
+        }
+    }
+    
+    // Sync WYSIWYG to HTML textarea
+    function syncWysiwygToHtml() {
+        const wysiwygEditor = document.getElementById('wysiwyg-editor');
+        const htmlTextarea = document.getElementById('html-textarea');
+        
+        if (wysiwygEditor && htmlTextarea) {
+            htmlTextarea.value = cleanHtml(wysiwygEditor.innerHTML);
+        }
+    }
+    
+    // Sync HTML textarea to WYSIWYG
+    function syncHtmlToWysiwyg() {
+        const htmlTextarea = document.getElementById('html-textarea');
+        const wysiwygEditor = document.getElementById('wysiwyg-editor');
+        
+        if (htmlTextarea && wysiwygEditor) {
+            wysiwygEditor.innerHTML = htmlTextarea.value;
+        }
+    }
+    
+    // Clean HTML content
+    function cleanHtml(html) {
+        // Remove empty paragraphs and clean up
+        let cleaned = html.replace(/<p><br><\/p>/g, '');
+        cleaned = cleaned.replace(/<p><\/p>/g, '');
+        cleaned = cleaned.replace(/<div><br><\/div>/g, '');
+        cleaned = cleaned.replace(/<div><\/div>/g, '');
+        cleaned = cleaned.replace(/&nbsp;/g, ' ');
+        
+        // Remove unwanted attributes but keep essential ones
+        cleaned = cleaned.replace(/style="[^"]*"/g, '');
+        cleaned = cleaned.replace(/class="[^"]*"/g, '');
+        
+        return cleaned.trim();
+    }
+    
     // HTML description preview functionality
     function updatePreview() {
-        const textarea = document.getElementById('description-textarea');
+        const hiddenTextarea = document.getElementById('description-textarea');
         const preview = document.getElementById('description-preview');
-        const codeDisplay = document.getElementById('html-code-display');
         
-        if (!textarea || !preview || !codeDisplay) return;
+        if (!hiddenTextarea || !preview) return;
         
-        const htmlContent = textarea.value.trim();
+        const htmlContent = hiddenTextarea.value.trim();
         
         // Update preview
         if (htmlContent) {
@@ -680,13 +1167,6 @@
         } else {
             preview.innerHTML = '';
             preview.classList.remove('has-content');
-        }
-        
-        // Update code display with formatting
-        if (htmlContent) {
-            codeDisplay.textContent = formatHTML(htmlContent);
-        } else {
-            codeDisplay.textContent = '<!-- HTML kodas bus rodomas čia... -->';
         }
     }
     
