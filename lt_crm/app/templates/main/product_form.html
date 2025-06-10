@@ -1150,6 +1150,15 @@
                 }, 3000);
             }
         });
+        
+        // Debug HTMX events
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            console.log('HTMX Request:', evt.detail);
+        });
+        
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.log('HTMX Error:', evt.detail);
+        });
     });
     
     // Initialize WYSIWYG Editor
