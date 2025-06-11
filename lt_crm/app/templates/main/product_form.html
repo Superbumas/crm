@@ -1175,24 +1175,8 @@
         // Initialize WYSIWYG editor
         initializeWysiwygEditor();
         
-        // Listen for successful form submission
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === 'form-response' && !evt.detail.xhr.response.includes('alert-error')) {
-                // Show success message and redirect after 3 seconds
-                setTimeout(function() {
-                    window.location.href = "{{ url_for('main.products') }}";
-                }, 3000);
-            }
-        });
-        
-        // Debug HTMX events
-        document.body.addEventListener('htmx:beforeRequest', function(evt) {
-            console.log('HTMX Request:', evt.detail);
-        });
-        
-        document.body.addEventListener('htmx:responseError', function(evt) {
-            console.log('HTMX Error:', evt.detail);
-        });
+        // Initialize gallery preview
+        updateGalleryPreview();
     });
     
     // Initialize WYSIWYG Editor
@@ -1702,50 +1686,75 @@
     function updateGalleryPreview() {
         updateFormGalleryImages();
         
+        // Get DOM elements
         const mainImagePreview = document.getElementById('main-image-preview');
         const extraImagesGrid = document.getElementById('extra-images-preview-grid');
         const noPhotosState = document.getElementById('no-photos-state');
         
-        const hasMainImage = formGalleryImages.length > 0;
-        const hasExtraImages = formGalleryImages.length > 1;
+        // Get main image separately
+        const mainImageInput = document.querySelector('input[name="main_image_url"]');
+        const hasMainImage = mainImageInput && mainImageInput.value.trim();
+        
+        // Get extra images separately
+        const extraImagesTextarea = document.getElementById('extra-images-textarea');
+        let extraImages = [];
+        if (extraImagesTextarea && extraImagesTextarea.value.trim()) {
+            try {
+                extraImages = JSON.parse(extraImagesTextarea.value) || [];
+                if (!Array.isArray(extraImages)) {
+                    extraImages = [];
+                }
+            } catch (e) {
+                extraImages = [];
+            }
+        }
         
         // Update main image preview
         if (hasMainImage) {
             mainImagePreview.style.display = 'block';
-            noPhotosState.style.display = 'none';
             const mainImg = document.getElementById('main-image-display');
-            mainImg.src = formGalleryImages[0];
+            mainImg.src = mainImageInput.value.trim();
+            if (noPhotosState) noPhotosState.style.display = 'none';
         } else {
             mainImagePreview.style.display = 'none';
-            noPhotosState.style.display = 'block';
+            if (noPhotosState && extraImages.length === 0) noPhotosState.style.display = 'block';
         }
         
         // Update extra images grid
-        if (hasExtraImages) {
+        if (extraImages.length > 0) {
             extraImagesGrid.style.display = 'block';
             const grid = document.getElementById('extra-images-grid');
             grid.innerHTML = '';
             
-            // Add extra images (skip the first one which is the main image)
-            for (let i = 1; i < formGalleryImages.length; i++) {
-                const div = document.createElement('div');
-                div.className = 'relative group';
-                div.innerHTML = `
-                    <img src="${formGalleryImages[i]}" alt="Papildoma nuotrauka ${i}" 
-                         class="w-full h-20 object-cover rounded border border-gray-200 cursor-pointer transition-all duration-200 group-hover:border-blue-300" 
-                         onclick="openFormGallery(${i})"
-                         onerror="this.parentElement.style.display='none'" />
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded"></div>
-                    <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <button type="button" onclick="openFormGallery(${i})" class="btn btn-circle btn-xs bg-white/90 hover:bg-white text-gray-700 border-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                grid.appendChild(div);
-            }
+            // Add extra images with remove buttons
+            extraImages.forEach((imageUrl, index) => {
+                if (imageUrl && imageUrl.trim()) {
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+                    // Calculate gallery index (main image is 0, extra images start from 1)
+                    const galleryIndex = hasMainImage ? index + 1 : index;
+                    div.innerHTML = `
+                        <img src="${imageUrl.trim()}" alt="Papildoma nuotrauka ${index + 1}" 
+                             class="w-full h-20 object-cover rounded border border-gray-200 cursor-pointer transition-all duration-200 group-hover:border-blue-300" 
+                             onclick="openFormGallery(${galleryIndex})"
+                             onerror="this.parentElement.style.display='none'" />
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded"></div>
+                        <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+                            <button type="button" onclick="openFormGallery(${galleryIndex})" class="btn btn-circle btn-xs bg-white/90 hover:bg-white text-gray-700 border-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </button>
+                            <button type="button" onclick="removeExtraImage(${index})" class="btn btn-circle btn-xs bg-red-500 hover:bg-red-600 text-white border-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                }
+            });
         } else {
             extraImagesGrid.style.display = 'none';
         }
