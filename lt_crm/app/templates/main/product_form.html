@@ -1177,6 +1177,20 @@
         
         // Initialize gallery preview
         updateGalleryPreview();
+        
+        // Add event listeners for main image input
+        const mainImageInput = document.querySelector('input[name="main_image_url"]');
+        if (mainImageInput) {
+            mainImageInput.addEventListener('input', updateGalleryPreview);
+            mainImageInput.addEventListener('change', updateGalleryPreview);
+        }
+        
+        // Add event listeners for extra images textarea
+        const extraImagesTextarea = document.getElementById('extra-images-textarea');
+        if (extraImagesTextarea) {
+            extraImagesTextarea.addEventListener('input', updateGalleryPreview);
+            extraImagesTextarea.addEventListener('change', updateGalleryPreview);
+        }
     });
     
     // Initialize WYSIWYG Editor
@@ -1710,58 +1724,61 @@
         }
         
         // Update main image preview
-        if (hasMainImage) {
+        if (hasMainImage && mainImagePreview) {
             mainImagePreview.style.display = 'block';
             const mainImg = document.getElementById('main-image-display');
-            mainImg.src = mainImageInput.value.trim();
+            if (mainImg) {
+                mainImg.src = mainImageInput.value.trim();
+            }
             if (noPhotosState) noPhotosState.style.display = 'none';
-        } else {
+        } else if (mainImagePreview) {
             mainImagePreview.style.display = 'none';
             if (noPhotosState && extraImages.length === 0) noPhotosState.style.display = 'block';
         }
         
         // Update extra images grid
-        if (extraImages.length > 0) {
+        if (extraImages.length > 0 && extraImagesGrid) {
             extraImagesGrid.style.display = 'block';
             const grid = document.getElementById('extra-images-grid');
-            grid.innerHTML = '';
-            
-            // Add extra images with remove buttons
-            extraImages.forEach((imageUrl, index) => {
-                if (imageUrl && imageUrl.trim()) {
-                    const div = document.createElement('div');
-                    div.className = 'relative group';
-                    // Calculate gallery index (main image is 0, extra images start from 1)
-                    const galleryIndex = hasMainImage ? index + 1 : index;
-                    div.innerHTML = `
-                        <img src="${imageUrl.trim()}" alt="Papildoma nuotrauka ${index + 1}" 
-                             class="w-full h-20 object-cover rounded border border-gray-200 cursor-pointer transition-all duration-200 group-hover:border-blue-300" 
-                             onclick="openFormGallery(${galleryIndex})"
-                             onerror="this.parentElement.style.display='none'" />
-                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded"></div>
-                        <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
-                            <button type="button" onclick="openFormGallery(${galleryIndex})" class="btn btn-circle btn-xs bg-white/90 hover:bg-white text-gray-700 border-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </button>
-                            <button type="button" onclick="removeExtraImage(${index})" class="btn btn-circle btn-xs bg-red-500 hover:bg-red-600 text-white border-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    `;
-                    grid.appendChild(div);
-                }
-            });
-        } else {
+            if (grid) {
+                grid.innerHTML = '';
+                
+                // Add extra images with remove buttons
+                extraImages.forEach((imageUrl, index) => {
+                    if (imageUrl && imageUrl.trim()) {
+                        const div = document.createElement('div');
+                        div.className = 'relative group';
+                        // Calculate gallery index (main image is 0, extra images start from 1)
+                        const galleryIndex = hasMainImage ? index + 1 : index;
+                        div.innerHTML = `
+                            <img src="${imageUrl.trim()}" alt="Papildoma nuotrauka ${index + 1}" 
+                                 class="w-full h-20 object-cover rounded border border-gray-200 cursor-pointer transition-all duration-200 group-hover:border-blue-300" 
+                                 onclick="openFormGallery(${galleryIndex})"
+                                 onerror="this.parentElement.style.display='none'" />
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded"></div>
+                            <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+                                <button type="button" onclick="openFormGallery(${galleryIndex})" class="btn btn-circle btn-xs bg-white/90 hover:bg-white text-gray-700 border-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </button>
+                                <button type="button" onclick="removeExtraImage(${index})" class="btn btn-circle btn-xs bg-red-500 hover:bg-red-600 text-white border-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        `;
+                        grid.appendChild(div);
+                    }
+                });
+            }
+        } else if (extraImagesGrid) {
             extraImagesGrid.style.display = 'none';
         }
     }
     
-    // Initialize gallery preview on page load
-    updateGalleryPreview();
+    // Note: updateGalleryPreview() is called in DOMContentLoaded event
 </script>
 
 <!-- Photo Gallery Modal -->
