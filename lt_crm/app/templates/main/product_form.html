@@ -1093,6 +1093,8 @@
                                 <span class="label-text-alt text-xs text-gray-500">Nuorodos į nuotraukas JSON masyve</span>
                                 <span class="label-text-alt text-xs">
                                     <button type="button" onclick="validateJSON()" class="link link-primary text-xs">Validuoti JSON</button>
+                                    |
+                                    <button type="button" onclick="updateGalleryPreview()" class="link link-primary text-xs">Atnaujinti peržiūrą</button>
                                 </span>
                             </div>
                         </div>
@@ -1705,6 +1707,12 @@
         const extraImagesGrid = document.getElementById('extra-images-preview-grid');
         const noPhotosState = document.getElementById('no-photos-state');
         
+        console.log('updateGalleryPreview called', {
+            mainImagePreview: !!mainImagePreview,
+            extraImagesGrid: !!extraImagesGrid,
+            noPhotosState: !!noPhotosState
+        });
+        
         // Get main image separately
         const mainImageInput = document.querySelector('input[name="main_image_url"]');
         const hasMainImage = mainImageInput && mainImageInput.value.trim();
@@ -1718,7 +1726,11 @@
                 if (!Array.isArray(extraImages)) {
                     extraImages = [];
                 }
+                // Filter out empty strings
+                extraImages = extraImages.filter(url => url && url.trim());
+                console.log('Parsed extra images:', extraImages);
             } catch (e) {
+                console.log('JSON parse error:', e);
                 extraImages = [];
             }
         }
@@ -1738,14 +1750,17 @@
         
         // Update extra images grid
         if (extraImages.length > 0 && extraImagesGrid) {
+            console.log('Showing extra images grid with', extraImages.length, 'images');
             extraImagesGrid.style.display = 'block';
             const grid = document.getElementById('extra-images-grid');
             if (grid) {
+                console.log('Clearing and rebuilding grid');
                 grid.innerHTML = '';
                 
                 // Add extra images with remove buttons
                 extraImages.forEach((imageUrl, index) => {
                     if (imageUrl && imageUrl.trim()) {
+                        console.log('Adding image', index, imageUrl.trim());
                         const div = document.createElement('div');
                         div.className = 'relative group';
                         // Calculate gallery index (main image is 0, extra images start from 1)
@@ -1770,11 +1785,17 @@
                             </div>
                         `;
                         grid.appendChild(div);
+                        console.log('Grid now has', grid.children.length, 'children');
                     }
                 });
+            } else {
+                console.log('Grid element not found!');
             }
         } else if (extraImagesGrid) {
+            console.log('Hiding extra images grid');
             extraImagesGrid.style.display = 'none';
+        } else {
+            console.log('extraImagesGrid element not found!');
         }
     }
     
