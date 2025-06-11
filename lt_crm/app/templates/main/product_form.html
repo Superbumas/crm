@@ -450,11 +450,7 @@
                     {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
                 </button>
                 
-                <!-- Top Save Spinner -->
-                <div id="top-form-spinner" class="htmx-indicator flex items-center">
-                    <span class="loading loading-spinner loading-sm mr-1"></span>
-                    <span class="text-gray-600 text-sm">Saugoma...</span>
-                </div>
+
             </div>
         </div>
     </div>
@@ -463,11 +459,8 @@
         <!-- Left Column - Main Form -->
         <div class="xl:col-span-2">
             <form id="product-form" 
-                  hx-post="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}" 
-                  hx-trigger="submit" 
-                  hx-target="#form-response"
-                  hx-indicator="#form-spinner, #top-form-spinner"
-                  hx-encoding="multipart/form-data"
+                  method="POST"
+                  action="{{ url_for('main.product_edit', id=product.id) if product else url_for('main.product_new') }}"
                   class="space-y-6">
                 
                 <!-- Basic Information Card -->
@@ -804,18 +797,12 @@
                         Atšaukti
                     </a>
                     
-                    <div class="flex items-center space-x-4">
-                        <div id="form-spinner" class="htmx-indicator flex items-center">
-                            <span class="loading loading-spinner loading-md mr-2"></span>
-                            <span class="text-gray-600">Saugoma...</span>
-                        </div>
-                        <button type="submit" class="action-btn btn btn-primary btn-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
-                        </button>
-                    </div>
+                    <button type="submit" class="action-btn btn btn-primary btn-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {% if product %}Išsaugoti pakeitimus{% else %}Sukurti produktą{% endif %}
+                    </button>
                 </div>
             </form>
         </div>
