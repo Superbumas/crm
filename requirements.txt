@@ -32,4 +32,6 @@ flask-cors==3.0.10
 flask-wtf==1.2.1
 lxml==4.9.3
 Flask-Caching==2.3.1
-python-slugify==8.0.1 
+python-slugify==8.0.1
+Pillow==10.1.0
+requests==2.31.0 
