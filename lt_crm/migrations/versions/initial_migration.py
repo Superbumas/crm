@@ -32,7 +32,7 @@ def upgrade():
     # Create products table
     op.create_table('products',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('sku', sa.String(length=50), nullable=False),
+        sa.Column('sku', sa.String(length=100), nullable=False),
         sa.Column('name', sa.String(length=200), nullable=False),
         sa.Column('description_html', sa.Text(), nullable=True),
         sa.Column('barcode', sa.String(length=50), nullable=True),

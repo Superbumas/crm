@@ -84,7 +84,7 @@ class Product(TimestampMixin, db.Model):
     __tablename__ = "products"
 
     id = db.Column(db.Integer, primary_key=True)
-    sku = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    sku = db.Column(db.String(100), unique=True, nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     description_html = db.Column(db.Text, nullable=True)
     barcode = db.Column(db.String(50), nullable=True)
