@@ -6,6 +6,7 @@ from lt_crm.app.extensions import db
 from lt_crm.app.models.product import Product
 from lt_crm.app.models.stock import StockMovement, MovementReasonCode
 from lt_crm.app.models.order import OrderStatus
+from lt_crm.app.services.image_service import process_product_images
 
 
 def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=None):
@@ -69,12 +70,22 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
         try:
             # Convert row to dict, handling NaN values
             product_data = {}
+            image_data = {
+                'main_image_url': None,
+                'extra_image_urls': None
+            }
+            
             for col in df.columns:
                 val = row[col]
                 if pd.notna(val):
                     # Map column name if it exists in the mapping
                     field_name = field_mapping.get(col, col)
-                    product_data[field_name] = val
+                    
+                    # Separate image data for processing after product creation/update
+                    if field_name in ['main_image_url', 'extra_image_urls']:
+                        image_data[field_name] = val
+                    else:
+                        product_data[field_name] = val
             
             # Check for required fields after mapping
             original_sku = product_data.get("sku")
@@ -178,6 +189,19 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                         except Exception as e:
                             summary["error_details"].append(f"Warning for SKU {sku}: Could not create stock movement: {str(e)}")
                 
+                db.session.commit()  # Commit to get product ID
+                
+                # Process images after product is created/updated
+                if image_data['main_image_url'] or image_data['extra_image_urls']:
+                    try:
+                        process_product_images(
+                            product.id,
+                            main_image_url=image_data['main_image_url'],
+                            extra_image_urls=image_data['extra_image_urls']
+                        )
+                    except Exception as e:
+                        summary["error_details"].append(f"Warning for SKU {sku}: Could not process images: {str(e)}")
+                
                 summary["updated"] += 1
             else:
                 # Create new product with only valid fields
@@ -197,48 +221,49 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                     qty = 0
                     valid_product_data["quantity"] = 0
                 
-                # Ensure sku, name, and price_final exist
-                if not all(field in valid_product_data for field in ['sku', 'name', 'price_final']):
-                    summary["skipped"] += 1
-                    summary["error_details"].append(f"Skipped SKU {sku}: Missing required fields")
-                    continue
-                
+                # Create new product
                 try:
                     product = Product(**valid_product_data)
                     db.session.add(product)
-                    db.session.flush()  # Get the product ID
+                    db.session.commit()  # Commit to get product ID
                     
-                    # Record stock movement if quantity > 0
+                    # Process images after product is created
+                    if image_data['main_image_url'] or image_data['extra_image_urls']:
+                        try:
+                            process_product_images(
+                                product.id,
+                                main_image_url=image_data['main_image_url'],
+                                extra_image_urls=image_data['extra_image_urls']
+                            )
+                        except Exception as e:
+                            summary["error_details"].append(f"Warning for SKU {sku}: Could not process images: {str(e)}")
+                    
+                    # Record initial stock movement if quantity > 0
                     if qty > 0:
                         movement = StockMovement(
                             product_id=product.id,
                             qty_delta=qty,
                             reason_code=MovementReasonCode.IMPORT,
-                            note=f"Pradinis importas: {qty}",
+                            note=f"Pradinis likutis: {qty}",
                             channel=channel,
                             reference_id=reference_id,
                             user_id=user_id
                         )
                         db.session.add(movement)
+                        db.session.commit()
                     
                     summary["created"] += 1
                 except Exception as e:
-                    summary["skipped"] += 1
-                    summary["error_details"].append(f"Could not create product with SKU {sku}: {str(e)}")
+                    db.session.rollback()
+                    summary["errors"] += 1
+                    summary["error_details"].append(f"Error creating product {sku}: {str(e)}")
                     continue
-                
+                    
         except Exception as e:
             summary["errors"] += 1
-            summary["error_details"].append(f"Error with SKU {row.get('sku', 'unknown')}: {str(e)}")
-    
-    # Commit all changes
-    try:
-        db.session.commit()
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        raise ValueError(f"Database error during import: {str(e)}")
-    
-    summary["timestamp"] = datetime.now().isoformat()
+            summary["error_details"].append(f"Error processing row: {str(e)}")
+            continue
+            
     return summary
 
 
