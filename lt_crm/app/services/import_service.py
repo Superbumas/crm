@@ -90,10 +90,29 @@ def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=',')
                                low_memory=False, dtype=str)
             except UnicodeDecodeError as e:
                 logger.warning(f"Encoding {encoding} failed: {e}")
-                # Fallback to utf-8 with error handling
-                file_obj.seek(0)
-                df = pd.read_csv(file_obj, encoding='utf-8', delimiter=delimiter, 
-                               low_memory=False, dtype=str, errors='replace')
+                # Try other encodings
+                encodings_to_try = ['utf-8', 'utf-8-sig', 'windows-1252', 'iso-8859-1', 'cp1252']
+                df = None
+                for enc in encodings_to_try:
+                    try:
+                        file_obj.seek(0)
+                        df = pd.read_csv(file_obj, encoding=enc, delimiter=delimiter, 
+                                       low_memory=False, dtype=str)
+                        logger.info(f"Successfully parsed with encoding: {enc}")
+                        break
+                    except UnicodeDecodeError:
+                        logger.warning(f"Encoding {enc} failed, trying next...")
+                        continue
+                
+                if df is None:
+                    # Last resort - read as binary and decode with error handling
+                    file_obj.seek(0)
+                    content = file_obj.read()
+                    if isinstance(content, bytes):
+                        content = content.decode('utf-8', errors='replace')
+                    from io import StringIO
+                    df = pd.read_csv(StringIO(content), delimiter=delimiter, 
+                                   low_memory=False, dtype=str)
         
         logger.info(f"Successfully parsed {len(df)} rows with columns: {list(df.columns)}")
         
