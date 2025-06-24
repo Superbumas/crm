@@ -5,6 +5,7 @@ import pandas as pd
 import chardet
 from werkzeug.utils import secure_filename
 from lt_crm.app.services.inventory import import_products_from_dataframe
+import logging
 
 
 def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=','):
@@ -107,9 +108,12 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
     Raises:
         ValueError: If file is invalid or required columns are missing
     """
+    logger = logging.getLogger("import_service")
     try:
+        logger.info("Starting product import...")
         # Parse the file
         df = parse_product_file(file_obj, encoding=encoding, delimiter=delimiter)
+        logger.info(f"Parsed file with {len(df)} rows and columns: {list(df.columns)}")
         
         # If no header, assign default column names
         if not has_header and len(df.columns) > 0:
@@ -119,11 +123,17 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
         
         # Clean and convert data types
         df = clean_product_dataframe(df)
+        logger.info(f"Cleaned DataFrame. Columns: {list(df.columns)}")
         
         # Validate data
         is_valid, error_msg = validate_product_data(df)
         if not is_valid:
+            logger.error(f"Validation failed: {error_msg}")
             raise ValueError(error_msg)
+        
+        # Log each row before import
+        for idx, row in df.iterrows():
+            logger.info(f"Importing row {idx}: SKU={row.get('sku', '')}, Name={row.get('name', '')}, Price={row.get('price_final', '')}")
         
         # Process products and create stock movements
         summary = import_products_from_dataframe(
@@ -132,10 +142,10 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
             reference_id=reference_id,
             user_id=user_id
         )
-        
+        logger.info(f"Import summary: {summary}")
         return summary
-    
     except Exception as e:
+        logger.exception(f"Error importing products: {str(e)}")
         raise ValueError(f"Error importing products: {str(e)}")
 
 
