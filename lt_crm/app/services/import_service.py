@@ -211,10 +211,14 @@ def clean_product_dataframe(df):
     json_cols = ['extra_image_urls', 'parameters', 'variants', 'delivery_options']
     for col in json_cols:
         if col in df.columns:
+            logger.info(f"Processing JSON column '{col}' with {df[col].notna().sum()} non-null values")
             # If strings that look like JSON, parse them
             df[col] = df[col].apply(lambda x: 
                                    pd.NA if pd.isna(x) else
                                    (try_parse_json(x) if isinstance(x, str) else x))
+            # Log results
+            parsed_count = df[col].apply(lambda x: isinstance(x, list)).sum()
+            logger.info(f"Column '{col}': {parsed_count} values successfully parsed as lists")
     
     return df
 
@@ -223,8 +227,22 @@ def try_parse_json(value):
     """Try to parse a string as JSON, return original string if fails."""
     import json
     try:
-        return json.loads(value)
-    except:
+        # Handle None or empty values
+        if pd.isna(value) or value is None or str(value).strip() == '':
+            return None
+            
+        # Convert to string if not already
+        value_str = str(value).strip()
+        
+        # Try to parse as JSON
+        parsed = json.loads(value_str)
+        logger.info(f"Successfully parsed JSON: {value_str[:100]}... -> {type(parsed)}")
+        return parsed
+    except json.JSONDecodeError as e:
+        logger.warning(f"Failed to parse JSON: {str(value)[:100]}... Error: {str(e)}")
+        return value
+    except Exception as e:
+        logger.warning(f"Unexpected error parsing JSON: {str(value)[:100]}... Error: {str(e)}")
         return value
 
 
