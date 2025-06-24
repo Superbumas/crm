@@ -18,83 +18,78 @@ logger.setLevel(logging.INFO)
 
 def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=','):
     """
-    Parse product file (CSV or XLSX) and return a pandas DataFrame.
+    Parse a product file (CSV, TSV, Excel) into a pandas DataFrame.
     
     Args:
-        file_obj: File object or file path
-        file_format (str, optional): Format override ('csv' or 'xlsx')
+        file_obj: File object (from request.files)
+        file_format (str, optional): Force file format ('csv', 'tsv', 'xlsx', 'xls')
         encoding (str, optional): File encoding (auto-detected if None)
-        delimiter (str, optional): CSV delimiter, defaults to comma
+        delimiter (str, optional): CSV delimiter character
         
     Returns:
-        DataFrame: Parsed data
+        DataFrame: Parsed product data
         
     Raises:
-        ValueError: If file format is not supported or parsing fails
+        ValueError: If file format is unsupported or parsing fails
     """
-    # Determine format from filename if not specified
-    if not file_format and hasattr(file_obj, 'filename'):
-        filename = file_obj.filename.lower()
-        if filename.endswith('.csv'):
-            file_format = 'csv'
-        elif filename.endswith(('.xlsx', '.xls')):
+    # Determine file format from filename if not specified
+    if not file_format:
+        filename = getattr(file_obj, 'filename', '')
+        if filename.lower().endswith('.xlsx'):
             file_format = 'xlsx'
-        elif filename.endswith('.tsv') or filename.endswith('.txt'):
-            file_format = 'csv'
-            delimiter = '\t'
+        elif filename.lower().endswith('.xls'):
+            file_format = 'xls'
+        elif filename.lower().endswith('.tsv'):
+            file_format = 'tsv'
+        elif filename.lower().endswith('.txt'):
+            file_format = 'tsv'  # Assume tab-separated for .txt files
         else:
-            raise ValueError("Unsupported file format. Use CSV, TSV, XLS or XLSX")
+            file_format = 'csv'  # Default to CSV
     
-    # Auto-detect encoding if not specified for CSV files
-    if file_format == 'csv' and not encoding:
-        try:
-            # Get file content for detection
-            if hasattr(file_obj, 'read'):
-                # Save original position
-                if hasattr(file_obj, 'tell'):
-                    pos = file_obj.tell()
-                
-                # Read sample for encoding detection
-                sample = file_obj.read(min(1024 * 1024, file_obj.content_length if hasattr(file_obj, 'content_length') else 1024 * 1024))
-                
-                # Return to original position
-                if hasattr(file_obj, 'seek'):
-                    file_obj.seek(pos)
-                    
-                # Detect encoding from sample
-                if isinstance(sample, str):
-                    # If already decoded, assume utf-8
-                    encoding = 'utf-8'
-                else:
-                    detected = chardet.detect(sample)
-                    encoding = detected['encoding'] or 'utf-8'
-            else:
-                encoding = 'utf-8'  # Fallback
-        except Exception:
-            encoding = 'utf-8'  # Fallback to UTF-8 on error
-    
-    # Handle different input types with error handling
     try:
-        if isinstance(file_obj, str):  # File path
-            if file_format == 'csv':
-                return pd.read_csv(file_obj, encoding=encoding or 'utf-8', delimiter=delimiter, 
-                                  on_bad_lines='skip', dtype=str)
-            elif file_format == 'xlsx':
-                return pd.read_excel(file_obj, dtype=str)
-        elif hasattr(file_obj, 'read'):  # File-like object
-            if file_format == 'csv':
-                # For streaming file objects
-                content = file_obj.read()
-                if isinstance(content, bytes):
-                    content = content.decode(encoding or 'utf-8')
-                return pd.read_csv(io.StringIO(content), delimiter=delimiter, 
-                                  on_bad_lines='skip', dtype=str)
-            elif file_format == 'xlsx':
-                return pd.read_excel(file_obj, dtype=str)
+        if file_format in ['xlsx', 'xls']:
+            # Parse Excel file
+            df = pd.read_excel(file_obj, engine='openpyxl' if file_format == 'xlsx' else 'xlrd')
+        else:
+            # Parse CSV/TSV file
+            if file_format == 'tsv':
+                delimiter = '\t'
+            
+            # Auto-detect encoding if not specified
+            if not encoding:
+                # Read a sample to detect encoding
+                sample = file_obj.read(10000)
+                file_obj.seek(0)  # Reset file position
+                
+                # Try to detect encoding
+                detected = chardet.detect(sample)
+                encoding = detected.get('encoding', 'utf-8')
+                logger.info(f"Auto-detected encoding: {encoding}")
+            
+            # Parse CSV with detected/specified encoding
+            df = pd.read_csv(file_obj, encoding=encoding, delimiter=delimiter, 
+                           low_memory=False, dtype=str)
+        
+        logger.info(f"Successfully parsed {len(df)} rows with columns: {list(df.columns)}")
+        
+        # Debug: Check extra_image_urls column specifically
+        if 'extra_image_urls' in df.columns:
+            non_null_count = df['extra_image_urls'].notna().sum()
+            logger.info(f"extra_image_urls column found with {non_null_count} non-null values")
+            
+            # Log first few non-null values for debugging
+            sample_values = df['extra_image_urls'].dropna().head(3)
+            for idx, value in sample_values.items():
+                logger.info(f"Sample extra_image_urls[{idx}]: {str(value)[:200]}...")
+        else:
+            logger.warning("extra_image_urls column not found in CSV")
+            logger.info(f"Available columns: {list(df.columns)}")
+        
+        return df
+        
     except Exception as e:
-        raise ValueError(f"Failed to parse file: {str(e)}")
-    
-    raise ValueError("Could not parse file. Unsupported format or invalid file")
+        logger.exception(f"Error parsing file: {str(e)}")
+        raise ValueError(f"Error parsing file: {str(e)}")
 
 
 def import_products(file_obj, channel=None, reference_id=None, user_id=None, encoding=None, delimiter=',', has_header=True):
