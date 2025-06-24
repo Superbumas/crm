@@ -77,7 +77,19 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
             
             for col in df.columns:
                 val = row[col]
-                if pd.notna(val):
+                # Handle pandas arrays and scalar values safely
+                try:
+                    # Check if value is not null/NaN - handle both scalar and array cases
+                    if pd.isna(val) or (hasattr(val, '__len__') and len(val) == 0):
+                        continue
+                    
+                    # Convert to string if it's an array with single element
+                    if hasattr(val, '__len__') and hasattr(val, '__getitem__') and not isinstance(val, str):
+                        if len(val) == 1:
+                            val = str(val[0])
+                        elif len(val) > 1:
+                            val = str(val)  # Convert entire array to string
+                    
                     # Map column name if it exists in the mapping
                     field_name = field_mapping.get(col, col)
                     
@@ -86,6 +98,9 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                         image_data[field_name] = val
                     else:
                         product_data[field_name] = val
+                except Exception as e:
+                    # If there's any issue with this value, skip it and continue
+                    continue
             
             # Check for required fields after mapping
             original_sku = product_data.get("sku")
