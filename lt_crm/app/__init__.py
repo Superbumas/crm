@@ -11,6 +11,7 @@ from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
 import json
 from decimal import Decimal
+from lt_crm.config import PRODUCT_IMAGES_DIR
 
 
 # Custom JSON encoder to handle Decimal objects
@@ -177,6 +178,9 @@ def create_app(test_config=None):
 
     if test_config:
         app.config.update(test_config)
+
+    # Add product images directory to config
+    app.config['PRODUCT_IMAGES_DIR'] = PRODUCT_IMAGES_DIR
 
     # Initialize Sentry for error tracking (only in production)
     if not app.debug and not app.testing and os.environ.get("SENTRY_DSN"):
