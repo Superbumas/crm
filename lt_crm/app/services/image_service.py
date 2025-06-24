@@ -52,8 +52,11 @@ def download_and_store_image(image_url, product_sku, is_main=True):
         original_ext = os.path.splitext(parsed.path)[1].lower()
         if not original_ext:
             original_ext = f".{img.format.lower()}" if img.format else ".jpg"
-            
-        filename = secure_filename(f"{'main' if is_main else 'extra'}_{product_sku}{original_ext}")
+        
+        # Create a filesystem-safe filename while preserving the SKU
+        # Replace problematic characters but keep the SKU readable
+        safe_sku = product_sku.replace('/', '-').replace('\\', '-').replace(':', '-').replace('*', '-').replace('?', '-').replace('"', '-').replace('<', '-').replace('>', '-').replace('|', '-')
+        filename = f"{'main' if is_main else 'extra'}_{safe_sku}{original_ext}"
         logger.info(f"Generated filename: {filename} for SKU {product_sku}")
         
         # Determine storage directory based on SKU
