@@ -9,7 +9,7 @@ services:
       - ./lt_crm/infra/nginx/conf.d:/etc/nginx/conf.d
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-      - static_volume:/app/static
+      - static_volume:/app/lt_crm/static
     depends_on:
       - web
     restart: unless-stopped
@@ -41,7 +41,7 @@ services:
     volumes:
       - ./lt_crm:/app/lt_crm
       - ./lt_crm/migrations:/app/migrations
-      - static_volume:/app/static
+      - static_volume:/app/lt_crm/static
     depends_on:
       postgres:
         condition: service_healthy
