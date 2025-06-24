@@ -35,7 +35,8 @@ def check_and_fix_image_urls():
                     external_urls += 1
                     
                     # Try to find corresponding local file
-                    expected_filename = f"main_{product.sku.replace('/', '-').replace('\\', '-').replace(':', '-').replace('*', '-').replace('?', '-').replace('\"', '-').replace('<', '-').replace('>', '-').replace('|', '-')}"
+                    safe_sku = product.sku.replace('/', '-').replace('\\', '-').replace(':', '-').replace('*', '-').replace('?', '-').replace('"', '-').replace('<', '-').replace('>', '-').replace('|', '-')
+                    expected_filename = f"main_{safe_sku}"
                     
                     # Check for common extensions
                     for ext in ['.jpg', '.png', '.webp', '.jpeg']:
