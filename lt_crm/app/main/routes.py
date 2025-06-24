@@ -243,7 +243,7 @@ def dashboard():
 @bp.route("/products")
 @login_required
 def products():
-    """Products list page."""
+    """Product list page with pagination and search."""
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
@@ -273,6 +273,16 @@ def products():
     pagination = query.order_by(Product.created_at.desc()).paginate(page=page, per_page=per_page)
     products = pagination.items
     
+    # Fix image URLs for all products before passing to template
+    for product in products:
+        product.main_image_url = get_image_url(product.main_image_url)
+        if product.extra_image_urls:
+            if isinstance(product.extra_image_urls, str):
+                extra_urls = product.extra_image_urls.split('|')
+            else:
+                extra_urls = product.extra_image_urls
+            product.extra_image_urls = [get_image_url(url) for url in extra_urls]
+    
     # Get unique categories for filter dropdown
     categories = db.session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
     categories = [c[0] for c in categories if c[0]]
@@ -295,6 +305,9 @@ def products():
         categories=categories,
         product_columns=PRODUCT_COLUMNS,
         selected_columns=selected_columns,
+        search_query=request.args.get('q', ''),
+        category_filter=request.args.get('category', ''),
+        stock_filter=request.args.get('stock', '')
     )
 
 
