@@ -1212,6 +1212,16 @@ def product_import_file():
         if delimiter == '\\t':
             delimiter = '\t'
         
+        # Get user ID safely
+        user_id = current_user.id if hasattr(current_user, 'id') and current_user.is_authenticated else None
+        
+        print(f"=== STARTING IMPORT ===")
+        print(f"File: {file.filename}")
+        print(f"User ID: {user_id}")
+        print(f"Encoding: {encoding}")
+        print(f"Delimiter: {delimiter}")
+        print(f"Has header: {has_header}")
+        
         # Use our improved import service
         from lt_crm.app.services.import_service import import_products
         
@@ -1220,18 +1230,25 @@ def product_import_file():
             file_obj=file,
             channel="web",
             reference_id=None,
-            user_id=current_user.id,
+            user_id=user_id,
             encoding=encoding or None,
             delimiter=delimiter,
             has_header=has_header
         )
         
+        print(f"=== IMPORT RESULT ===")
+        print(f"Result: {result}")
+        
         # Show success message
         flash(f"Sėkmingai importuota: {result.get('created', 0)} sukurta, {result.get('updated', 0)} atnaujinta, {result.get('skipped', 0)} praleista", "success")
         
     except ValueError as e:
+        print(f"=== IMPORT ERROR ===")
+        print(f"ValueError: {str(e)}")
         flash(f"Klaida importuojant: {str(e)}", "error")
     except Exception as e:
+        print(f"=== IMPORT EXCEPTION ===")
+        print(f"Exception: {str(e)}")
         current_app.logger.exception("Error importing products")
         flash(f"Klaida importuojant produktus: {str(e)}", "error")
     

@@ -8,6 +8,15 @@ from werkzeug.utils import secure_filename
 from flask import current_app
 from lt_crm.app.extensions import db
 from lt_crm.app.models.product import Product
+import logging
+
+# Set up logger for image service
+logger = logging.getLogger("image_service")
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 def download_and_store_image(image_url, product_sku, is_main=True):
     """
@@ -21,18 +30,23 @@ def download_and_store_image(image_url, product_sku, is_main=True):
     Returns:
         str: Local path to the stored image or None if failed
     """
+    logger.info(f"Starting image download for SKU {product_sku}: {image_url}")
     try:
         # Validate URL
         parsed = urlparse(image_url)
         if not parsed.scheme or not parsed.netloc:
+            logger.error(f"Invalid URL format for SKU {product_sku}: {image_url}")
             return None
             
+        logger.info(f"Downloading image from {image_url}")
         # Download image
         response = requests.get(image_url, timeout=10)
         response.raise_for_status()
+        logger.info(f"Downloaded {len(response.content)} bytes for SKU {product_sku}")
         
         # Open image to validate and get format
         img = Image.open(BytesIO(response.content))
+        logger.info(f"Image format: {img.format}, size: {img.size} for SKU {product_sku}")
         
         # Generate filename
         original_ext = os.path.splitext(parsed.path)[1].lower()
@@ -40,6 +54,7 @@ def download_and_store_image(image_url, product_sku, is_main=True):
             original_ext = f".{img.format.lower()}" if img.format else ".jpg"
             
         filename = secure_filename(f"{'main' if is_main else 'extra'}_{product_sku}{original_ext}")
+        logger.info(f"Generated filename: {filename} for SKU {product_sku}")
         
         # Determine storage directory based on SKU
         sku_num = int(''.join(filter(str.isdigit, product_sku)) or '0')
@@ -47,11 +62,13 @@ def download_and_store_image(image_url, product_sku, is_main=True):
         
         # Create directory if it doesn't exist
         storage_dir = os.path.join(current_app.config['PRODUCT_IMAGES_DIR'], range_dir)
+        logger.info(f"Storage directory: {storage_dir} for SKU {product_sku}")
         os.makedirs(storage_dir, exist_ok=True)
         
         # Save image
         img_path = os.path.join(storage_dir, filename)
         img.save(img_path, quality=85, optimize=True)
+        logger.info(f"Image saved successfully to {img_path} for SKU {product_sku}")
         
         # If webp, also save in original format for compatibility
         if img.format.lower() == 'webp':
@@ -59,10 +76,14 @@ def download_and_store_image(image_url, product_sku, is_main=True):
             non_webp_filename = os.path.splitext(filename)[0] + non_webp_ext
             non_webp_path = os.path.join(storage_dir, non_webp_filename)
             img.convert('RGB').save(non_webp_path, 'JPEG', quality=85, optimize=True)
+            logger.info(f"Also saved WebP as JPG: {non_webp_path} for SKU {product_sku}")
             
-        return os.path.join(range_dir, filename)
+        relative_path = os.path.join(range_dir, filename)
+        logger.info(f"Returning relative path: {relative_path} for SKU {product_sku}")
+        return relative_path
         
     except Exception as e:
+        logger.error(f"Failed to download image {image_url} for SKU {product_sku}: {str(e)}")
         current_app.logger.error(f"Failed to download image {image_url}: {str(e)}")
         return None
 
