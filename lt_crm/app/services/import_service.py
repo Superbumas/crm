@@ -7,6 +7,14 @@ from werkzeug.utils import secure_filename
 from lt_crm.app.services.inventory import import_products_from_dataframe
 import logging
 
+# Ensure import_service logger outputs INFO-level logs to the console
+logger = logging.getLogger("import_service")
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 
 def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=','):
     """
@@ -108,9 +116,8 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
     Raises:
         ValueError: If file is invalid or required columns are missing
     """
-    logger = logging.getLogger("import_service")
+    logger.info("Starting product import...")
     try:
-        logger.info("Starting product import...")
         # Parse the file
         df = parse_product_file(file_obj, encoding=encoding, delimiter=delimiter)
         logger.info(f"Parsed file with {len(df)} rows and columns: {list(df.columns)}")
