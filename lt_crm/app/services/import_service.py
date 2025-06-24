@@ -246,11 +246,19 @@ def clean_product_dataframe(df):
                 if default is not None:
                     df[col] = default
     
+    # DEBUG: Log all column names to see what we actually have
+    logger.info(f"ALL COLUMNS IN DATAFRAME: {list(df.columns)}")
+    logger.info(f"COLUMN TYPES: {dict(df.dtypes)}")
+    
     # Convert JSON fields if they're strings
     json_cols = ['extra_image_urls', 'parameters', 'variants', 'delivery_options']
     for col in json_cols:
         if col in df.columns:
-            logger.info(f"Processing JSON column '{col}' with {df[col].notna().sum()} non-null values")
+            logger.info(f"FOUND JSON COLUMN '{col}' with {df[col].notna().sum()} non-null values")
+            # Log first few values to see what we're working with
+            sample_values = df[col].dropna().head(3).tolist()
+            logger.info(f"SAMPLE VALUES for '{col}': {sample_values}")
+            
             # If strings that look like JSON, parse them
             df[col] = df[col].apply(lambda x: 
                                    pd.NA if pd.isna(x) else
@@ -258,6 +266,8 @@ def clean_product_dataframe(df):
             # Log results
             parsed_count = df[col].apply(lambda x: isinstance(x, list)).sum()
             logger.info(f"Column '{col}': {parsed_count} values successfully parsed as lists")
+        else:
+            logger.warning(f"JSON COLUMN '{col}' NOT FOUND in DataFrame!")
     
     return df
 
