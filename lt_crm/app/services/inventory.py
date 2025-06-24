@@ -84,8 +84,13 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                         continue
                     
                     # Convert to string if it's an array with single element
+                    # BUT preserve lists for JSON fields like extra_image_urls
                     if hasattr(val, '__len__') and hasattr(val, '__getitem__') and not isinstance(val, str):
-                        if len(val) == 1:
+                        # Keep lists for JSON fields
+                        if col in ['extra_image_urls', 'parameters', 'variants', 'delivery_options']:
+                            # Keep as list for JSON fields
+                            pass
+                        elif len(val) == 1:
                             val = str(val[0])
                         elif len(val) > 1:
                             val = str(val)  # Convert entire array to string
