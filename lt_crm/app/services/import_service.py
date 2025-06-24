@@ -64,11 +64,36 @@ def parse_product_file(file_obj, file_format=None, encoding=None, delimiter=',')
                 # Try to detect encoding
                 detected = chardet.detect(sample)
                 encoding = detected.get('encoding', 'utf-8')
-                logger.info(f"Auto-detected encoding: {encoding}")
+                
+                # If chardet suggests a problematic encoding, try common alternatives
+                if encoding and encoding.lower() in ['charmap', 'windows-1252', 'cp1252']:
+                    # Try UTF-8 first, then UTF-8 with BOM, then the detected encoding
+                    for test_encoding in ['utf-8', 'utf-8-sig', 'windows-1252', 'iso-8859-1']:
+                        try:
+                            file_obj.seek(0)
+                            test_df = pd.read_csv(file_obj, encoding=test_encoding, delimiter=delimiter, 
+                                               low_memory=False, dtype=str, nrows=5)
+                            encoding = test_encoding
+                            logger.info(f"Successfully tested encoding: {encoding}")
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                        except Exception:
+                            continue
+                    file_obj.seek(0)  # Reset for final read
+                
+                logger.info(f"Using encoding: {encoding}")
             
             # Parse CSV with detected/specified encoding
-            df = pd.read_csv(file_obj, encoding=encoding, delimiter=delimiter, 
-                           low_memory=False, dtype=str)
+            try:
+                df = pd.read_csv(file_obj, encoding=encoding, delimiter=delimiter, 
+                               low_memory=False, dtype=str)
+            except UnicodeDecodeError as e:
+                logger.warning(f"Encoding {encoding} failed: {e}")
+                # Fallback to utf-8 with error handling
+                file_obj.seek(0)
+                df = pd.read_csv(file_obj, encoding='utf-8', delimiter=delimiter, 
+                               low_memory=False, dtype=str, errors='replace')
         
         logger.info(f"Successfully parsed {len(df)} rows with columns: {list(df.columns)}")
         
