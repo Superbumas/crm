@@ -28,6 +28,7 @@ from lt_crm.app.models.stock import StockMovement, Shipment, ShipmentItem, Shipm
 from lt_crm.app.models.settings import CompanySettings
 from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm, CompanySettingsForm
 from lt_crm.app.models.integration import IntegrationSyncLog, IntegrationType
+from lt_crm.app.services.image_service import get_image_url
 
 
 @bp.route("/")
@@ -1122,6 +1123,15 @@ def product_detail(id):
             'updated_at': row.updated_at
         })
         stock_movements.append(movement)
+    
+    # Patch image URLs for template
+    product.main_image_url = get_image_url(product.main_image_url)
+    if product.extra_image_urls:
+        if isinstance(product.extra_image_urls, str):
+            extra_urls = product.extra_image_urls.split('|')
+        else:
+            extra_urls = product.extra_image_urls
+        product.extra_image_urls = [get_image_url(url) for url in extra_urls]
     
     return render_template(
         "main/product_detail.html",
