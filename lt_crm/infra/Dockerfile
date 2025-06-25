@@ -35,5 +35,5 @@ COPY lt_crm/ .
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Run the application with Gunicorn - optimized for memory usage
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-class", "sync", "--timeout", "60", "--worker-connections", "1000", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload", "app:create_app()"] 
+# Run the application with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "--timeout", "120", "app:create_app()"] 

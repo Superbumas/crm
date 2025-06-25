@@ -7,7 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import json
 from decimal import Decimal
-from lt_crm.app.extensions import cache
+from app.extensions import cache
 
 
 # Custom function to handle Decimal serialization in flask-restx
