@@ -95,6 +95,17 @@ def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=
                         elif len(val) > 1:
                             val = str(val)  # Convert entire array to string
                     
+                    # Handle JSON parsing for extra_image_urls if it's a string
+                    if col == 'extra_image_urls' and isinstance(val, str):
+                        try:
+                            import json
+                            val = json.loads(val)
+                            print(f"Parsed extra_image_urls JSON: {val}")
+                        except (json.JSONDecodeError, TypeError):
+                            print(f"Failed to parse extra_image_urls as JSON: {val}")
+                            # If not valid JSON, keep as string for later processing
+                            pass
+                    
                     # Map column name if it exists in the mapping
                     field_name = field_mapping.get(col, col)
                     
