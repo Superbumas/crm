@@ -11,7 +11,7 @@ from .celery_worker import init_celery
 from .celery_beat import register_beat_schedule
 import json
 from decimal import Decimal
-from lt_crm.config import PRODUCT_IMAGES_DIR
+from config import PRODUCT_IMAGES_DIR
 
 
 # Custom JSON encoder to handle Decimal objects
