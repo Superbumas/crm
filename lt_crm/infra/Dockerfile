@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # Copy poetry configuration files
-COPY pyproject.toml poetry.lock* ./
+COPY lt_crm/pyproject.toml lt_crm/poetry.lock* ./
 
 # Install dependencies
 RUN pip install --upgrade pip && \
@@ -29,7 +29,7 @@ RUN pip install --upgrade pip && \
     poetry install --no-root --only main
 
 # Copy application code
-COPY . .
+COPY lt_crm/ .
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
