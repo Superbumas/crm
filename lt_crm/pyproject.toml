@@ -32,6 +32,8 @@ babel = "^2.13.0"
 httpx = "^0.25.0"
 sentry-sdk = {extras = ["flask"], version = "^1.32.0"}
 prometheus-flask-exporter = "^0.23.0"
+flask-wtf = "^1.1.0"
+flask-caching = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
