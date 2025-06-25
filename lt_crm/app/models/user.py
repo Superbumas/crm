@@ -4,8 +4,8 @@ from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 import json
 
-from lt_crm.app.extensions import db, login_manager
-from lt_crm.app.models.base import TimestampMixin
+from app.extensions import db, login_manager
+from app.models.base import TimestampMixin
 
 
 class User(UserMixin, TimestampMixin, db.Model):

@@ -1,6 +1,6 @@
 """Base models and mixins."""
 from datetime import datetime
-from lt_crm.app.extensions import db
+from app.extensions import db
 
 
 class TimestampMixin:

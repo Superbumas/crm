@@ -2,11 +2,11 @@
 import pandas as pd
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
-from lt_crm.app.extensions import db
-from lt_crm.app.models.product import Product
-from lt_crm.app.models.stock import StockMovement, MovementReasonCode
-from lt_crm.app.models.order import OrderStatus
-from lt_crm.app.services.image_service import process_product_images
+from app.extensions import db
+from app.models.product import Product
+from app.models.stock import StockMovement, MovementReasonCode
+from app.models.order import OrderStatus
+from app.services.image_service import process_product_images
 
 
 def import_products_from_dataframe(df, channel=None, reference_id=None, user_id=None):

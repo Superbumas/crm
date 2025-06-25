@@ -6,8 +6,8 @@ from io import BytesIO
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 from flask import current_app
-from lt_crm.app.extensions import db
-from lt_crm.app.models.product import Product
+from app.extensions import db
+from app.models.product import Product
 import logging
 
 # Set up logger for image service

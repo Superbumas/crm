@@ -1,10 +1,10 @@
 """Context processors for the application."""
 from datetime import datetime
 from flask import current_app
-from lt_crm.app import get_locale
-from lt_crm.app.models.settings import CompanySettings
+from app import get_locale
+from app.models.settings import CompanySettings
 from sqlalchemy.exc import SQLAlchemyError
-from lt_crm.app.extensions import db
+from app.extensions import db
 
 def inject_template_globals():
     """Inject global variables into templates."""

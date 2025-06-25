@@ -1,9 +1,9 @@
 """Export configuration models for the CRM application."""
 import json
 import enum
-from lt_crm.app.extensions import db
-from lt_crm.app.models.base import TimestampMixin
-from lt_crm.app.models.user import User
+from app.extensions import db
+from app.models.base import TimestampMixin
+from app.models.user import User
 
 
 class ExportFormat(enum.Enum):

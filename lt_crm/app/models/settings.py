@@ -1,6 +1,6 @@
 """Settings models for the application."""
-from lt_crm.app.extensions import db
-from lt_crm.app.models.base import TimestampMixin
+from app.extensions import db
+from app.models.base import TimestampMixin
 from sqlalchemy.exc import SQLAlchemyError
 from flask import current_app
 

@@ -1,8 +1,8 @@
 """Stock movement model for the CRM application."""
 import enum
 from datetime import datetime
-from lt_crm.app.extensions import db
-from lt_crm.app.models.base import TimestampMixin
+from app.extensions import db
+from app.models.base import TimestampMixin
 
 
 class MovementReasonCode(enum.Enum):
