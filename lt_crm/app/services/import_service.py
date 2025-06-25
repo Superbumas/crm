@@ -161,6 +161,17 @@ def import_products(file_obj, channel=None, reference_id=None, user_id=None, enc
         df = parse_product_file(file_obj, encoding=encoding, delimiter=delimiter)
         logger.info(f"Parsed file with {len(df)} rows and columns: {list(df.columns)}")
         
+        # DEBUG: Check if extra_image_urls column exists and show sample data
+        if 'extra_image_urls' in df.columns:
+            logger.info(f"FOUND extra_image_urls column!")
+            sample_data = df['extra_image_urls'].dropna().head(3).tolist()
+            logger.info(f"Sample extra_image_urls values: {sample_data}")
+        else:
+            logger.warning(f"extra_image_urls column NOT FOUND! Available columns: {list(df.columns)}")
+            # Check for similar column names
+            similar_cols = [col for col in df.columns if 'image' in col.lower() or 'url' in col.lower()]
+            logger.info(f"Columns containing 'image' or 'url': {similar_cols}")
+        
         # If no header, assign default column names
         if not has_header and len(df.columns) > 0:
             default_columns = ['sku', 'name', 'description_html', 'barcode', 'quantity', 
