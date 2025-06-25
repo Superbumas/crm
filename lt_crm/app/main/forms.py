@@ -6,7 +6,7 @@ from wtforms.validators import DataRequired, Email, Length, Optional, NumberRang
 from datetime import date
 
 # Shipment-related models
-from lt_crm.app.models.stock import ShipmentStatus
+from app.models.stock import ShipmentStatus
 
 
 class ShipmentItemForm(FlaskForm):

@@ -13,7 +13,7 @@ def make_celery(app_name=__name__):
         app_name,
         broker=broker_url,
         result_backend=result_backend,
-        include=["lt_crm.app.tasks"],
+        include=["app.tasks"],
     )
 
     # Load additional configuration from Flask app if needed

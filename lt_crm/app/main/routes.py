@@ -18,17 +18,17 @@ import json
 import logging
 
 from . import bp
-from lt_crm.app.models.user import User
-from lt_crm.app.extensions import db
-from lt_crm.app.models.product import Product, ProductCategory
-from lt_crm.app.models.customer import Customer, Contact, Task
-from lt_crm.app.models.order import Order, OrderItem, OrderStatus
-from lt_crm.app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
-from lt_crm.app.models.stock import StockMovement, Shipment, ShipmentItem, ShipmentStatus, MovementReasonCode
-from lt_crm.app.models.settings import CompanySettings
-from lt_crm.app.main.forms import ShipmentForm, ShipmentItemForm, CompanySettingsForm
-from lt_crm.app.models.integration import IntegrationSyncLog, IntegrationType
-from lt_crm.app.services.image_service import get_image_url
+from app.models.user import User
+from app.extensions import db
+from app.models.product import Product, ProductCategory
+from app.models.customer import Customer, Contact, Task
+from app.models.order import Order, OrderItem, OrderStatus
+from app.models.invoice import Invoice, InvoiceStatus, InvoiceItem
+from app.models.stock import StockMovement, Shipment, ShipmentItem, ShipmentStatus, MovementReasonCode
+from app.models.settings import CompanySettings
+from app.main.forms import ShipmentForm, ShipmentItemForm, CompanySettingsForm
+from app.models.integration import IntegrationSyncLog, IntegrationType
+from app.services.image_service import get_image_url
 
 
 @bp.route("/")
@@ -288,7 +288,7 @@ def products():
     categories = [c[0] for c in categories if c[0]]
     
     # Import columns data at the beginning to make sure it's properly loaded
-    from lt_crm.app.models.product import PRODUCT_COLUMNS
+    from app.models.product import PRODUCT_COLUMNS
     
     # Get selected columns or default
     if hasattr(current_user, 'get_product_columns'):
@@ -1223,7 +1223,7 @@ def product_import_file():
         print(f"Has header: {has_header}")
         
         # Use our improved import service
-        from lt_crm.app.services.import_service import import_products
+        from app.services.import_service import import_products
         
         # Import the products directly - this function handles parsing internally
         result = import_products(
@@ -1362,7 +1362,7 @@ def order_new():
             # Process inventory changes if order is created with a special status (not NEW)
             # This ensures stock movements are created when an order is created with SHIPPED status
             if new_order.status != OrderStatus.NEW:
-                from lt_crm.app.services.inventory import process_order_stock_changes
+                from app.services.inventory import process_order_stock_changes
                 try:
                     movements = process_order_stock_changes(new_order, None)
                     current_app.logger.info(f"Created {len(movements)} stock movements for new order {new_order.id}")
@@ -1415,7 +1415,7 @@ def order_update_status(id):
         current_app.logger.info(f"Order {order.id} status updated from {old_status} to {order.status}")
         
         # Process inventory changes based on status
-        from lt_crm.app.services.inventory import process_order_stock_changes
+        from app.services.inventory import process_order_stock_changes
         
         try:
             movements = process_order_stock_changes(order, old_status)
@@ -1676,7 +1676,7 @@ def invoice_new():
                 item_subtotal = quantity * price
                 
                 # Create invoice item using SQLAlchemy class from models
-                from lt_crm.app.models.invoice import InvoiceItem
+                from app.models.invoice import InvoiceItem
                 
                 # Get product_id if available
                 product_id = int(product_ids[i]) if product_ids[i] else None
@@ -2282,7 +2282,7 @@ def order_edit(id):
             
             # Process stock changes if status changed
             if status_changed:
-                from lt_crm.app.services.inventory import process_order_stock_changes
+                from app.services.inventory import process_order_stock_changes
                 try:
                     movements = process_order_stock_changes(order, old_status)
                     current_app.logger.info(f"Created {len(movements)} stock movements for order {order.id} status change")
@@ -3241,7 +3241,7 @@ def product_columns_api():
     import logging
     logger = logging.getLogger(__name__)
     
-    from lt_crm.app.models.product import PRODUCT_COLUMNS
+    from app.models.product import PRODUCT_COLUMNS
     
     # GET returns all available columns and user's current selection
     if request.method == "GET":
