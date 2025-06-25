@@ -231,8 +231,9 @@ def create_app(test_config=None):
     if not app.debug and not app.testing:
         talisman.init_app(app)
 
-    # Initialize database tables if they don't exist
-    init_database(app)
+    # Initialize database tables if they don't exist (skip in production with preload)
+    if not os.environ.get("SKIP_DB_INIT", "false").lower() == "true":
+        init_database(app)
 
     # Register Celery
     init_celery(app)

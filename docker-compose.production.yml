@@ -14,6 +14,7 @@ services:
       - BABEL_DEFAULT_TIMEZONE=Europe/Vilnius
       - SECRET_KEY=${SECRET_KEY:-dev}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - SKIP_DB_INIT=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -45,6 +46,7 @@ services:
       - BABEL_DEFAULT_TIMEZONE=Europe/Vilnius
       - SECRET_KEY=${SECRET_KEY:-dev}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - SKIP_DB_INIT=true
     volumes:
       - /mnt:/app/lt_crm/static
     restart: unless-stopped
@@ -66,6 +68,7 @@ services:
       - BABEL_DEFAULT_TIMEZONE=Europe/Vilnius
       - SECRET_KEY=${SECRET_KEY:-dev}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - SKIP_DB_INIT=true
     volumes:
       - /mnt:/app/lt_crm/static
     restart: unless-stopped
